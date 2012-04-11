@@ -1,0 +1,131 @@
+Windows Explorer Integration
+============================
+
+.. module:: explorer
+	:synopsis: Windows explorer integration
+
+Context Menus
+-------------
+
+TortoiseHg commands may be accessed via the context menu of Explorer
+windows and other applications which use the standard File/Open dialogs.
+Here is the context menu for a revisioned folder:
+
+.. figure:: figures/cmenu-nofiles.png
+	:alt: Context menu
+
+	Context menu for a folder under Mercurial revision control
+
+And here is the context menu for selected files or folders:
+
+.. figure:: figures/cmenu-files.png
+	:alt: Context menu
+
+	Context menu for file or folder selection
+
+TortoiseHg provides dialogs for the most regularly used Mercurial
+commands.  Less frequently used and newly added Mercurial commands
+may be accessed from the CLI (command line interface) through
+:file:`cmd.exe` on Windows.
+
+Overlay Icons
+-------------
+
+TortoiseHg provides visual representation of the file status via overlay
+icons in the MS-Explorer windows. This is similar to those that found on
+other Tortoise client, such as TortoiseCVS and TortoiseSVN.
+
+TortoiseHg shares the overlay icons with TortoiseSVN (version 1.5.x or
+later) and the other "Tortoise" projects via the use of TortoiseOverlays
+(another project created by TortoiseSVN team).
+
+.. figure:: figures/overlayicons.png
+	:alt: Overlay icons
+
+	Overlay icons in Icons view (XP)
+
+The context menu has an :guilabel:`Update Icons` option which forces
+TortoiseHg to refresh the icons in the currently browsed repository or
+directory of repositories. The taskbar icon will turn green and the
+directory icons will turn into question marks while this refresh is in
+progress.
+
+Shell Configuration
+-------------------
+
+The overlay handler and context menus are configurable.  From any folder
+background (even the desktop), right click and select
+:menuselection:`TortoiseHg --> Explorer Extension Settings`. This opens the
+TortoiseHg Shell Configuration dialog.
+
+On the tab "Context Menu" you can promote individual menu options to the
+top level menu.
+
+.. figure:: figures/shell-config-cmenu.png
+	:alt: Shell Configuration dialog, Context Menu tab
+
+	Shell Configuration Dialog, Context Menu tab
+
+On the "Icons" tab you configure settings related to the overlay icons and the
+icon of the "Overlay Icons Server" in the taskbar (in the notification area of
+Windows).
+
+.. figure:: figures/shell-config-icons.png
+	:alt: Shell Configuration dialog, Icons tab
+
+	Shell Configuration Dialog, Icons tab
+
+:guilabel:`Enable overlays:`
+	If checked, overlay icons are shown on folders and files in the
+	working directory (woking copy) of Mercurial repositories.
+	(Default: checked)
+
+:guilabel:`Local disks only:`
+	If checked, overlay icons are only shown for volumes on local disks, not
+	on network shares. Scanning for Mercurial repositories over the network
+	may result in high latency in the user interface of explorer. Check this
+	option if browsing network shares becomes too slow and/or you do not need
+	overlay icons on non-local volumes.
+	(Default: not checked)
+
+:guilabel:`Enabled Overlay Handlers:`
+	These (per user) settings provide the possibility to disable overlay
+	icon handlers in the shared TortoiseOverlays component.
+	The TortoiseOverlays component is shared by all Tortoises (TortoiseHg,
+	TortoiseSVN, etc), with the goal to avoid registering too many icon slots,
+	by using a common set of icons slots for all Tortoises (thus using the
+	same set of icons for all Tortoises).
+	The total number of overlay slots available on Windows is fairly limited and
+	depends on the exact Windows version. For example, on a pristine install
+	of Windows 7, there are only 8 free overlay handler slots available.
+	This section allows to disable certain non-essential overlay
+	handlers, to reduce icon handler slot consumption by the TortoiseOverlays
+	component. Unchecking handlers in this section increases the chances that
+	important handlers like "Normal" (green checkmark) or "Modifed" (red
+	exclamation mark) will still get an icon slot, even if there are too many
+	handlers registered on a computer.
+	Unchecking handlers that are not used by TortoiseHg (that is: Locked,
+	Readonly, Ignored, Deleted) is highly recommended, if you know that no
+	other Tortoises (e.g. TortoiseSVN) uses them. 
+	Make sure the "Added" and "Unversioned" handlers are enabled, as these
+	are used by TortoiseHg.
+	(Default: all checked)
+
+.. warning::
+	The "Enabled Overlay Handlers" settings affect all Tortoises for a user.
+	A logoff/login is required to make changes in that section effective.
+
+:guilabel:`Taskbar:`
+	Checkmark "Show Icon" to show the icon of the Overlay Icon Server in the
+	taskbar in the notification area. "Highlight Icon" highlights that icon
+	using a light green color while the icon server is busy updating cache files
+	in the repository (files :file:`.hg\\dirstate` and :file:`.hg\\thgstatus`).
+	(Default: both checked)
+
+One can selectively disable overlay icons in a specific repository by
+editing the :file:`.hg\\thgstatus` file inside the repository and
+replacing its contents with a single line containing::
+
+	@@noicons
+
+.. vim: noet ts=4

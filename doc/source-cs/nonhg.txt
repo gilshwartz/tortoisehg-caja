@@ -1,0 +1,129 @@
+****************************
+Použití s jinými systémy VCS 
+****************************
+ 
+.. module:: nonhg
+    :synopsis: Describe using TortoiseHg as a front-end to other VCS
+
+
+Tato kapitola popisuje tři nejoblíbenější extenze Mercurialu pro spolupráci s *cizími* systémy VCS. Viz také `Konverze repozitáře <http://mercurial.selenic.com/wiki/RepositoryConversion>`_.
+
+.. _perfarce-perforce:
+
+Perfarce (Perforce) 
+===================
+
+* `Perfarce <http://www.kingswood-consulting.co.uk/hg/perfarce/>`_ home page.
+* `Mercurial for Perforce users <http://mercurial.selenic.com/wiki/PerforceConcepts>`_
+
+Tato extenze upravuje obsluhu vzdáleného repozitáře tak, že cesta repozitáře, která připomíná::
+
+	p4://p4server[:port]/clientname
+
+způsobí operace na jmenované klientské specifikaci p4 na serveru p4. Klientská specifikace musí již na serveru existovat před použitím této extenze. Provádění změn u klienstské specifikace Views působí problémy při synchronizaci repozitářů a měli bychom se jim vyhnout.
+
+Extenze přepisuje pět vestavěných příkazů Mercurialu.
+
+outgoing (odchozí)::
+
+	Začíná-li název destinace repozitáře p4://, potom jsou vybrány soubory ovlivněné revizemi lokálního repozitáře, nikoliv repozitáře v lokaci p4.
+
+push (poslat)::
+
+	Začíná-li název destinace repozitáře p4://, potom jsou exportovány změny z lokálního repozitáře do lokace p4. Není-li určena žádná revize, potom jsou odeslány všechny změny od posledního výpisu změn p4. V obou případech jsou všechny revize, které mají být odeslány, shrnuty v jediném výpisu změn p4. 
+    Volitelně je výsledný changelist předán serveru p4 na základě opce --submit pro push nebo na základě nastavení **perfarce.submit** na True. Je-li **perfarce.keep** nastaveno na False potom se po úspěšném předání souborů smaže pracovní prostor p4.
+
+pull (stáhnout)::
+
+	Začíná-li název zdrojového repozitáře p4://, potom jsou změny importovány z depotu p4, přičemž se automaticky slučují changelisty podané příkazem hg push. Je-li **perfarce.keep** nastaveno na False, potom se po úspěšném importu souborů smaže pracovní prostor p4; v opačném případě je pracovní prostor p4 novými soubory aktualizován.
+
+incoming (příchozí)::
+
+	Začíná-li název zdrojového repozitáře p4://, potom jsou oznámeny změny v depotu p4, které dosud nejsou v lokálním repozitáři.
+
+clone::
+
+	Začíná-li název zdrojového repozitáře p4://, potom se vytvoří cílový repozitář a přetáhnou se do něho všechny změny z depotu p4.
+
+Nastavení konfigurační opce **perfarce.tags** určí, zda se perfarce pokusí importovat popisky (labels) Perforce jako tagy Mercurialu.	
+
+*Integrace TortoiseHg*
+
+Je-li umožněna extenze perfarce, přidá se volba :guilabel:`start revision` do nástroje *klonovat* a tlačítko :guilabel:`P4` do synchronizační lišty.
+
+Tlačítko nástrojové lišty provádí operace "p4pending". Vyhledá nevyřízené (pending) seznamy změn (changelists) Perforce, které byly poslány (pushed) do vašeho klienta Perforce ale nebyly postoupeny (submitted) nebo staženy (pulled) zpět. Otevře se dialogové okno se seznamem nevyřízených změn, které můžeme buď postoupit (submit) nebo vrátit zpět (revert). Když se proceduře Perforce úkon submit nepodaří, protože vaše soubory jsou zastaralé, musíte zrušit (revert) seznam změn (changelist), provést pull z Perforce, sloučit a provést push znovu.
+
+
+*Instalace*
+
+Perfarce se dodává společně s instalátory TortoiseHg 1.0 pro Windows takže jej snadno zavedeme přidáním záznamu do souboru Mercurial.ini nebo do konfiguračního souboru hgrc repozitáře::
+
+	[extensions]
+	perfarce=
+	
+.. note::
+	Je známo, že extenze perfarce nepracuje spolu s extenzí hgsubversion, takže pokud zamýšlíte používat obě, měly by být povoleny lokálně pro ty repozitáře, které je potřebují.
+	
+ 
+hgsubversion (SVN)
+==================
+
+* `hgsubversion <http://bitbucket.org/durin42/hgsubversion/wiki/Home>`_ home page
+* `hgsubversion Extension <http://mercurial.selenic.com/wiki/HgSubversion>`_ wiki page
+* `Working with Subversion Repositories <http://mercurial.selenic.com/wiki/WorkingWithSubversion>`_
+
+hgsubversion, jak název napovídá, umožňuje použít Mercurial jako klientskou aplikaci pro server SVN. Lze jej také použít pro přímý převod repozitářů SVN do Mercurialu.
+
+*Instalace*
+
+Instalační programy TotroiseHg pro Window obsahují pojítka python-svn, potřebná pro hgsubversion, takže je možné klonovat repozitář hgsubversion do vlastního počítače::
+
+	hg clone http://bitbucket.org/durin42/hg-git/ C:\hg-git
+
+Potom povolíme extenzi v našem souboru Mercurail.ini uvedením názvu vyhrazené složky::
+
+	[extensions]
+	hgsubversion = C:\hgsvn\hgsubversion
+
+Funkčnost instalace si ověříme zadáním :command:`hg help hgsubversion`
+
+Podrobnosti nalezneme na stránkách wiki pro hgsubversion. Doporučujeme verzi minimálnfě 1.2.1 s Mercurialem 1.8.
+
+.. warning::
+   Při klonování serveru Subversion se vřele doporučuje klonovat jenom několik prvních revizí a zbytek přetáhnout (pull). Vyskytne-li se chyba při klonování, bývá smazán celý neúplný klon. Akce pull je mnohem shovívavější. 
+
+*Integrace TortoiseHg*
+
+Importované changesety ze Subversion se ve Verpánku zobrazí s původními čísly v Subversion.
+
+hg-git (git)
+============ 
+
+* `hg-git <http://hg-git.github.com/>`_ home page
+* `hg-git Extension <http://mercurial.selenic.com/wiki/HgGit>`_ wiki page
+* `Mercurial for Git users <http://mercurial.selenic.com/wiki/GitConcepts>`_
+
+hg-git, jak název naznačuje, nám umožní použít Mercurial jako klientskou aplikaci pro server git. Lze jej použít také pro přímý převod repozitáře Git do Mercurialu.
+
+*Instalace*
+
+Instalační programy TotroiseHg pro Window obsahují pojítka python-git (označovaná jako dulwich), potřebná pro hg-git, takže je možné klonovat repozitář hg-git do vlastního počítače::
+
+	hg clone http://bitbucket.org/durin42/hg-git/ C:\hg-git
+
+Potom povolit hggit a bookmarks v souboru Mercurial.ini::
+
+	[extensions]
+	bookmarks =
+	hggit = C:\hg-git\hggit
+
+Funkčnost instlace si ověříme zadáním :command:`hg help hggit`
+
+Stávající verze TortoiseHg obsahují verzi dulwich 0.6.0. Doporučujeme ji používat spolu s verzí hg-git 0.2.2.
+ 
+Podrobnosti viz dokumentace hggit.
+
+Mějme na vědomí, že příkazy 'příchozí' a 'odchozí' při komunikaci s repozitáři git mají deformované zobrazení. Jsme tedy odkázání na prostá push a pull, což není neobvyklé při propojení s nástroji externího systému revizí.
+
+
+.. vim: noet ts=4

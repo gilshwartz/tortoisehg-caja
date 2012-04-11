@@ -1,0 +1,114 @@
+*******
+Preface
+*******
+
+.. module:: preface
+	:synopsis: About this manual
+
+Audience
+========
+
+This book is written for computer literate folk who want to use
+Mercurial to manage their data, but are uncomfortable using the command
+line client to do so. Since TortoiseHg is a Windows shell extension it's
+assumed that the user is familiar with the Windows explorer and knows
+how to use it.
+
+You can find the most up to date version of this documentation at our
+`web <http://tortoisehg.org>`_ site.
+
+Reading guide
+=============
+
+This Preface explains a little about the TortoiseHg project, the
+community of people who work on it, and the licensing conditions for
+using it and distributing it.
+
+The :doc:`intro` explains what TortoiseHg is, what it does, where it
+comes from and the basics for installing it on your PC.
+
+:doc:`quick` is a quick tutorial on how to start with TortoiseHg.
+
+:doc:`daily` is the main chapter, it describes the frequently used
+components of TortoiseHg.
+
+:doc:`settings` describes how to configure TortoiseHg.
+
+:doc:`nonhg` describes how to use TortoiseHg as a client for
+non-Mercurial servers.
+
+:doc:`faq` has a list of common questions and their answers.
+
+:doc:`debugging` describes how to debug any problems that you find.
+
+TortoiseHg is free!
+===================
+
+TortoiseHg is released under 
+`GPLv2 <http://www.gnu.org/licenses/gpl-2.0.html>`_.  You are free to
+install it on as many computers as you like, and to redistribute it
+according to the GPLv2 license.
+
+Community
+=========
+
+Mailing Lists:
+
+* `Users <https://lists.sourceforge.net/lists/listinfo/tortoisehg-discuss>`_ - Announcements, user Q&A, and feature discussions.
+* `Developers <thg-dev@googlegroups.com>`_ - Patches, bug reports, development discussions.
+* `Issues <https://lists.sourceforge.net/lists/listinfo/tortoisehg-issues>`_ - Notifications from the issue tracker.
+
+And our `wiki <http://bitbucket.org/tortoisehg/thg/wiki/Home>`_ on Bitbucket.
+
+Acknowledgements
+================
+
+Thanks to the many people who contribute to the TortoiseHg project.  It
+takes a community of developers, translators, and users to build a
+truly useful tool (especially users who care enough to report bugs and
+file feature requests).
+
+The TortoiseHg installer for Windows includes the TortoiseOverlays handler,
+as provided by the `TortoiseSVN <http://tortoisesvn.net>`_ project.
+
+The history viewer of TortoiseHg is based on 
+`hgview <http://www.logilab.org/project/hgview>`_, a tool developed by
+`David Douard <david.douard@logilab.fr>`_ and others, with the financial
+support of `Logilab <http://www.logilab.fr>`_.
+
+
+Conventions used in this manual
+===============================
+
+The following typographical conventions are used in this manual:
+
+:kbd:`Ctrl-A`
+	Indicates a key, or combination of keys, to press.
+
+:guilabel:`Commit`
+	Indicates a label, button or anything that appears in user interfaces.
+
+:menuselection:`TortoiseHg... --> About`
+	Indicates a menu choice, or a combination of menu choice, tab
+	selection and GUI label.  For example
+	:menuselection:`TortoiseHg...  --> Global settings --> Commit --> User name`
+	means do something in :guilabel:`User name` label under
+	:guilabel:`Commit` tab selectable from the menu choice
+	:menuselection:`TortoiseHg... --> Global settings`.
+
+:file:`.hg/hgrc`
+	Indicates a filename or directory name.
+
+:command:`thg log`
+	Indicates a command to enter into command window.
+
+``myproxy:8000``
+	Indicates a text to enter into a text input field in the GUI.
+	
+.. note::
+	This is a note.
+
+.. warning::
+	An important note. Pay attention.
+
+.. vim: noet ts=4

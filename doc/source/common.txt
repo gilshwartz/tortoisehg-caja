@@ -1,0 +1,136 @@
+Common Features
+===============
+
+.. module:: common.dialog
+	:synopsis: Features common to many dialogs
+
+These features are common to many TortoiseHg tools, so we document them
+here just once.
+
+Visual Diffs
+------------
+
+.. figure:: figures/visual-diff.jpg
+	:alt: Visual Diff Window 
+
+	Visual Diff Window
+
+In TortoiseHg 1.0, the visual (external) diff infrastructure was
+refactored.  The new system uses tool descriptions in
+:file:`mergetools.rc` to detect most common diff tools on your computer
+(including KDiff3, which ships in our installer) and select the best
+available tool.
+
+If the user has selected a merge tool
+(:menuselection:`TortoiseHg --> Three-way Merge Tool`), that tool will
+also be used to perform visual diffs, bypassing the tool selection
+process.  However the user can still select a separate tool
+(:menuselection:`TortoiseHg --> Visual Diff Tool`) for visual diffs if
+they chose.
+
+The merge tool configuration file contains optimal command lines for
+each tool, so no further configuration is required by the user.  They
+only need to select the tools they wish use, or accept the defaults.
+
+The visual diff system will use any existing extdiff configuration it
+finds.  Since extdiff did not support three way diff arguments until
+very recently and still does not support label arguments, you will
+likely have a better experience by disabling or deleting any extdiff
+configuration you may have.
+
+The visual diff system will directly use the selected diff tool unless
+the action you are attempting requires the use of the TortoiseHg visual
+diff window.  The list of conditions includes:
+
+1) The selection of files being compared require multiple tools
+2) The selected tool forks detached background processes
+3) The selected tool does not support the required directory diffs
+4) The selected tool does not support three way comparisons
+5) The file changes include renames or copies
+
+When the visual diff window is used, the temporary files are cleaned up
+when the dialog is closed.  Thus it should be left open until you close
+all of your diff tool instances.  When your diff tool is launched
+directly, the temporary files are deleted when your tool exits.
+
+If your diff tool is launched directly to compare a working copy file,
+it will directly diff against the working file so you may modify it from
+within the diff tool.  If you are comparing multiple files, the visual
+diff system will make a snapshot of the working copy files and track
+their initial sizes and timestamps.  When your diff tool exits, the
+system compares the sizes and timestamps and copies modified files back
+over the original working copies.  In this way, you can still modify
+your working copy files from your visual diff tool even when performing
+directory comparisons.
+
+When the visual diff window is used to compare working copy files, it
+always directly diffs against the working copy files since it always
+operates on a single file at a time.
+
+.. note::
+	The :menuselection:`TortoiseHg --> Skip Diff Window` configurable
+	has been removed because it is now redundant.
+
+Adding Tools
+~~~~~~~~~~~~
+
+If you have a visual diff tool installed that is not supported by
+TortoiseHg, you can create a tool configuration for it in your user
+:file:`Mercurial.ini` file.  See Mercurial's
+`documentation <http://www.selenic.com/mercurial/hgrc.5.html#merge-tools>`_
+on how to configure your tool for use in file merges.  When that is
+complete, you can add the extra keys used by TortoiseHg for visual
+diff::
+
+	diffargs:  the arguments to use for two-way file comparisons
+	diff3args: the arguments to use for three-way file comparisons
+	dirdiff:   this tool supports two-way directory comparisons
+	dir3diff:  this tool supports three-way directory comparisons
+
+When building command line arguments, you can use the following
+variables::
+
+	$parent1:  the file or directory from the first parent revision
+	$parent2:  the file or directory from the second parent revision
+	$child:    the file or directory from the revision being compared
+	$ancestor: the file or directory from the ancestor of a merge
+	$parent:   a synonym for $parent1
+
+	$plabel1:  a symbolic name for the first parent revision
+	$plabel2:  a symbolic name for the second parent revision
+	$clabel:   a symbolic name for the revision being compared
+	$alabel:   a symbolic name for the ancestor revision
+
+Obviously, $parent2 and $ancestor are only meaningful when used in three
+way diff arguments, for viewing merge changesets.  If your diff tool
+cannot use the ancestor revision in any productive way, it is safe to
+leave it out of the diff3args command line.
+
+.. note::
+	On Windows, the `executable` parameter can use environment variables
+	using the syntax ${ProgramFiles}
+
+If unconfigured, the default value of **diffargs** is '$parent $child'.
+The default value of **diff3args** is "", indicating the visual diff
+tool cannot perform three way comparisons.
+
+If you create a new visual diff tool configuration, or improve upon an
+existing configuration, please email it to our development mailing list
+so it may be incorporated in a future release.
+
+
+Word Diffs
+~~~~~~~~~~
+
+The TortoiseHg Windows installers now include TortoiseSVN's scripts for
+comparing (and sometimes merging) many binary document formats.  These
+are configured in the site-wide :file:`mergepatterns.rc` as handlers for
+each binary format's common file extensions, so no user intervention is
+required.
+
+In order to support file extension based tool selection, TortoiseHg has
+added support for a **[diff-patterns]** section equivalent to Mercurial's
+`merge-patterns <http://www.selenic.com/mercurial/hgrc.5.html#merge-patterns>`_
+section.
+
+.. vim: noet ts=4

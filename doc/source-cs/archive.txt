@@ -1,0 +1,49 @@
+Archivace
+=========
+
+.. module:: archive.dialog
+	:synopsis: Dialog used to make an archive of a repository
+
+Při tvorbě archivu repozitáře lze vybírat z řady nabízených formátů.
+Je možné vytvářet komprimované formáty. Je také možné vytvořit obyčejnou složku souborů mimo pracovní adresář (jako klon ale bez složky .hg). To může být použitelné při tvorbě sestav (builds), viz 'svn export'. Lze vytvořit archiv pouze ze souborů vybrané revize. To lze použít pro posílání změn partnerům, kteří nemají přístup k repozitáři.
+
+
+V kontextovém menu vybraného changesetu ve Verpánku volíte :menuselection:`Exportovat > Archive...`, nebo - byvše nacédován do složky, zadáte z příkazového řádku  :command:`thg archive`.
+
+.. figure:: figures/archive.png
+	:alt: Archive dialog
+
+	Repository Archive Dialog
+
+:guilabel:`Revision`
+	Zadání revize, kterou chcete archivovat nebo exportovat.
+:guilabel:`Only files modified/created in this revision`
+	Omezíte si počet souborů v archivu.
+:guilabel:`Destination path`
+	Jméno souboru nebo složky, kde bude archiv vytvořen. Jméno se skládá z názvu aktuálního repozitáře s připojeným číslem vybrané revize, případně s příponou vybraného formátu archivního souboru.
+	:guilabel:`Archive types`
+	Zde můžete zvolit typ vytvářeného archivu od prosté složky se soubory až k řadě standardních archivních typů.
+	:guilabel:`Hg command`
+	Toto pole zobrazuje příkaz, který bude proveden.
+	:guilabel:`Always show output`
+	Pro zobrazení záznamového panelu s výsledky prováděného příkazu.
+	
+Archivovat repozitář znamená vytvořit archivní soubor nebo podadresář s obsahem vybrané revize.
+
+
+Spuštění z příkazového řádku
+----------------------------
+
+::
+
+	thg archive
+
+Úplná skladba je ::
+
+	thg archive -r [REV] -t [TYPE] [DEST]
+
+kde [REV] je archivovaná revize, [TYPE] je typ vytvářeného archivu, a [DEST] je název souboru nebo složky, která se má vytvořit.
+
+Podrobněji viz `hg.1.html#archive <http://www.selenic.com/mercurial/hg.1.html#archive>`_, nebo zadejte :command:`hg help archive` z příkazového řádku systémové konzoly nebo v panelu Output Log ve Verpánku.
+
+.. vim: noet ts=4

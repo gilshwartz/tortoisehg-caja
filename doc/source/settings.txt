@@ -1,0 +1,445 @@
+********
+Settings
+********
+
+.. module:: settings.dialog
+	:synopsis: Dialog used to set preferences
+
+.. figure:: figures/settings.png
+	:alt: Settings dialog
+
+	Settings dialog
+
+The Settings dialog is used to configure both TortoiseHg and the
+underlying Mercurial DVCS.  Since TortoiseHg uses Mercurial's underlying
+configuration system to store and retrieve its settings, these are
+essentially the same thing.
+
+Mercurial on Windows has a three-tier configuration system.
+
+1) A site-wide configuration file in
+   :file:`C:\\Program Files\\TortoiseHg\\Mercurial.ini`
+   This file is read first and thus has the lowest priority.
+2) A per-user configuration file in
+   :file:`C:\\Documents and Settings\\username\\Mercurial.ini`
+   This file is read second and thus can override settings in the
+   site-wide configuration file.
+3) A per-repository configuration file in :file:`repo-root\\.hg\\hgrc` This
+   file is read last and can override site-wide and user global settings.
+
+The site-wide file can be overwritten on upgrades so it is recommended
+that you do not make changes to this file.  Instead, you should make
+changes to your user :file:`Mercurial.ini` and/or the repository
+:file:`hgrc` file.  The TortoiseHg Settings dialog enforces this
+suggestion by only operating in two modes:
+
+Global
+	edits your user :file:`Mercurial.ini` file
+Repository
+	edits a repository :file:`.hg/hgrc` file
+
+You may toggle between the two modes using the combo box at the top of
+the dialog, or directly edit the file in your configured visual editor.
+
+Most TortoiseHg users will want to store all configurables in their
+global user settings, and only use the repository hgrc to store paths
+(remote repository aliases) and web settings, though it is possible to
+override many configurables per-repository (a common example is to
+configure a username for use in a specific repository).  Also note that
+the user and repository configuration files may not exist until you run
+the Settings dialog for the first time.
+
+Tabs
+====
+
+The Settings tool is a tabbed application.
+
+Each tab corresponds roughly to a section of your :file:`Mercurial.ini`
+file, though there is a certain amount of overlap. Some sections were
+split across multiple tabs for clarity.
+
+Every tab but :guilabel:`Sync` has the same format, a list of
+configurable options with a drop-down combo box with possible values and
+a history of options you have used for that setting. The configurable
+name (label) has a tooltip which describes in more detail what you are
+configuring and its default value.  The description of the currently
+focused configurable is also shown in a text box at the bottom of the
+dialog.
+
+Please consult the Mercurial wiki for more detailed information about
+these configurables (except for the first three tabs:
+:guilabel:`TortoiseHg`, :guilabel:`Commit`, :guilabel:`Changelog`, which
+are specific to TortoiseHg).
+
+.. module:: TortoiseHg.settings
+	:synopsis: Dialog used to set general TortoiseHg preferences
+
+TortoiseHg
+----------
+
+:guilabel:`3-way Merge Tool:`
+	Graphical merge program for resolving merge conflicts.  If left
+	unspecified, Mercurial will use the first applicable tool it finds
+	on your system or use its internal merge tool that leaves conflict
+	markers in place.  Chose :guilabel:`internal:merge` to force
+	conflict markers, :guilabel:`internal:prompt` to always select local
+	or other, or :guilabel:`internal:dump` to leave files in the working
+	directory for manual merging.
+
+:guilabel:`Visual Diff Tool:`
+	Specify visual diff tool as described in the [merge-tools] section
+	of your Mercurial configuration files.  If left unspecified,
+	TortoiseHg will use the selected merge tool. Failing that it uses
+	the first applicable tool it finds.
+
+:guilabel:`Skip Diff Window:`
+	Bypass the builtin visual diff dialog and directly use your
+	visual diff tool's directory diff feature.  Only enable this
+	feature if you know your diff tool has a valid extdiff
+	configuration.  Default: False.
+
+:guilabel:`Visual Editor:`
+	Specify the visual editor used to view files, etc.
+
+:guilabel:`CLI Editor:`
+	The editor to use during a commit and other
+	instances where Mercurial needs multiline input from
+	the user.  Only used by command line interface commands.
+
+:guilabel:`Tab Width:`
+	Specify the number of spaces that tabs expand to in various
+	TortoiseHg windows. Default: Not expanded.
+
+:guilabel:`Max Diff Size:`
+	The maximum size file (in KB) that TortoiseHg will
+	show changes for in the changelog, status, and commit windows.
+	A value of zero implies no limit.  Default: 1024 (1MB).
+
+:guilabel:`Bottom Diffs:`
+	Show the diff panel below the file list in status, shelve, and
+	commit dialogs.  Default: False (show diffs to right of file list).
+
+:guilabel:`Capture stderr:`
+	Redirect stderr to a buffer which is parsed at the end of the process
+	for runtime errors. Default: True.
+
+:guilabel:`Fork GUI:`
+	When running thg from the command line, fork a background process
+	to run graphical dialogs. Default: True.
+
+:guilabel:`Full Path Title:`
+	Show a full directory path of the repository in the dialog title
+	instead of just the root directory name.  Default: False
+
+:guilabel:`Spell Check Language:`
+	Default language for spell check.  System language is used if not
+	specified.  Examples: en, en_GB, en_US.  Spell checking requires
+	gtkspell, which is only available on Mate PCs.
+
+.. module:: commit.settings
+	:synopsis: Dialog used to set commit specific preferences
+
+Commit
+------
+
+:guilabel:`Username:`
+	Name associated with commits.
+
+:guilabel:`Summary Line Length:`
+	Maximum length of the commit message summary line.
+	If set, TortoiseHg will issue a warning if the
+	summary line is too long or not separated by a
+	blank line. Default: 0 (unenforced).
+
+:guilabel:`Message Line Length:`
+	Word wrap length of the commit message.  If
+	set, the popup menu can be used to format
+	the message and a warning will be issued
+	if any lines are too long at commit.
+	Default: 0 (unenforced).
+
+:guilabel:`Push After Commit:`
+	Attempt to push to default push target after every successful
+	commit.  Default: False
+
+:guilabel:`Auto Commit List:`
+	Comma separated list of files that are automatically included in
+	every commit.  Intended for use only as a repository setting.
+	Default: None
+
+:guilabel:`Auto Exclude List:`
+	Comma separated list of files that are automatically unchecked when
+	the status, commit, and shelve dialogs are opened.  Default: None
+
+.. module:: changelog.settings
+	:synopsis: Dialog used to set changelog specific preferences
+
+Changelog
+---------
+
+:guilabel:`Author Coloring:`
+	Color changesets by author name.  If not enabled,
+	the changes are colored green for merge, red for
+	non-trivial parents, black for normal.
+	Default: False.
+
+:guilabel:`Long Summary:`
+	If true, concatenate multiple lines of changeset summary
+	until they reach 80 characters.
+	Default: False.
+
+:guilabel:`Log Batch Size:`
+	The number of revisions to read and display in the
+	changelog viewer in a single batch.
+	Default: 500.
+
+:guilabel:`Dead Branches:`
+	Comma separated list of branch names that should be ignored when
+	building a list of branch names for a repository.  Default: None
+
+:guilabel:`Branch Colors:`
+	Space separated list of branch names and colors of the form
+	branch:#XXXXXX. Spaces and colons in the branch name must be escaped
+	using a backslash (\\). Likewise some other characters can be
+	escaped in this way, e.g. \\u0040 will be decoded to the @
+	character, and \\n to a linefeed.  Default: None
+
+:guilabel:`Hide Tags:`
+	Space separated list of tags that will not be shown.
+	Useful example: Specify "qbase qparent qtip" to hide the
+	standard tags inserted by the Mercurial Queues Extension.
+	Default: None.
+
+.. module:: web.settings
+	:synopsis: Dialog used to set web server specific preferences
+
+Web
+---
+
+:guilabel:`Name:`
+	Repository name to use in the web interface.
+	Default is the working directory.
+
+:guilabel:`Description:`
+	Textual description of the repository's purpose or
+	contents.
+
+:guilabel:`Contact:`
+	Name or email address of the person in charge of the
+	repository.
+
+:guilabel:`Style:`
+	Which template map style to use.
+
+:guilabel:`Archive Formats:`
+	Comma separated list of archive formats allowed for
+	downloading.
+
+:guilabel:`Port:`
+	Port to listen on.
+
+:guilabel:`Push Requires SSL:`
+	Whether to require that inbound pushes be transported
+	over SSL to prevent password sniffing.
+
+:guilabel:`Stripes:`
+	How many lines a "zebra stripe" should span in multiline output.
+	Default is 1; set to 0 to disable.
+
+:guilabel:`Max Files:`
+	Maximum number of files to list per changeset.
+
+:guilabel:`Max Changes:`
+	Maximum number of changes to list on the changelog.
+
+:guilabel:`Allow Push:`
+	Whether to allow pushing to the repository. If empty or not
+	set, push is not allowed. If the special value "*", any remote
+	user can push, including unauthenticated users. Otherwise, the
+	remote user must have been authenticated, and the authenticated
+	user name must be present in this list (separated by whitespace
+	or ","). The contents of the allow_push list are examined after
+	the deny_push list.
+
+:guilabel:`Deny Push:`
+	Whether to deny pushing to the repository. If empty or not set,
+	push is not denied. If the special value "*", all remote users
+	are denied push. Otherwise, unauthenticated users are all
+	denied, and any authenticated user name present in this list
+	(separated by whitespace or ",") is also denied. The contents
+	of the deny_push list are examined before the allow_push list.
+
+:guilabel:`Encoding:`
+	Character encoding name.
+
+
+.. module:: proxy.settings
+	:synopsis: Dialog used to set proxy specific preferences
+
+Proxy
+-----
+
+:guilabel:`Host:`
+	Host name and (optional) port of proxy server, for
+	example ``myproxy:8000``.
+
+:guilabel:`Bypass List:`
+	Optional. Comma-separated list of host names that
+	should bypass the proxy.
+
+:guilabel:`User:`
+	Optional. User name to authenticate with at the
+	proxy server.
+
+:guilabel:`Password:`
+	Optional. Password to authenticate with at the
+	proxy server.
+
+
+.. module:: email.settings
+	:synopsis: Dialog used to set email specific preferences
+
+Email
+-----
+
+:guilabel:`From:`
+	Email address to use in the "From" header and for the SMTP envelope.
+
+:guilabel:`To:`
+	Comma-separated list of recipient email addresses.
+
+:guilabel:`Cc:`
+	Comma-separated list of carbon copy recipient email
+	addresses.
+
+:guilabel:`Bcc:`
+	Comma-separated list of blind carbon copy recipient
+	email addresses.
+
+:guilabel:`method:`
+	Optional. Method to use to send email messages. If value is "smtp" (default),
+	use SMTP (configured below).  Otherwise, use as name of program to run that
+	acts like sendmail (takes :command:`-f` option for sender, list of recipients on
+	command line, message on stdin). Normally, setting this to ``sendmail`` or
+	``/usr/sbin/sendmail`` is enough to use sendmail to send messages.
+
+:guilabel:`SMTP Host:`
+	Host name of mail server.
+
+:guilabel:`SMTP Port:`
+	Port to connect to on mail server.
+	Default: 25.
+
+:guilabel:`SMTP TLS:`
+	Connect to mail server using TLS.
+	Default: False.
+
+:guilabel:`SMTP Username:`
+	Username to authenticate to mail server with.
+
+:guilabel:`SMTP Password:`
+	Password to authenticate to mail server with.
+
+:guilabel:`Local Hostname:`
+	Hostname the sender can use to identify itself to the mail server.
+
+
+.. module:: diff.settings
+	:synopsis: Dialog used to set diff specific preferences
+
+Diff
+----
+
+:guilabel:`Patch EOL:`
+	Normalize file line endings during and after patch to lf or crlf.
+	Strict does no normalization.  Auto (introduced in hg 1.5) does
+	per-file detection and is the recommended setting.  Default: strict
+
+:guilabel:`Git Format:`
+	Use git extended diff header format.
+	Default: False.
+
+:guilabel:`No Dates:`
+	Do not include modification dates in diff headers.
+	Default: False.
+
+:guilabel:`Show Function:`
+	Show which function each change is in.
+	Default: False.
+
+:guilabel:`Ignore White Space:`
+	Ignore white space when comparing lines.
+	Default: False.
+
+:guilabel:`Ignore WS Amount:`
+	Ignore changes in the amount of white space.
+	Default: False.
+
+:guilabel:`Ignore Blank Lines:`
+	Ignore changes whose lines are all blank.
+	Default: False.
+
+:guilabel:`Coloring Style:`
+	Adjust the coloring style of diff lines in the changeset viewer.
+	Default: foreground.
+
+
+.. module:: font.settings
+	:synopsis: Dialog used to set font specific preferences
+
+Font
+----
+
+:guilabel:`Theme default fonts`
+	Use default fonts based on current GTK theme.
+
+:guilabel:`Preset fonts:`
+	Select preset fonts from drop-down combo.  These font sets are tuned
+	specifically for each language and/or environment.
+
+:guilabel:`Custom fonts:`
+	Set font names and sizes individually for each usage place.
+
+The group which contains drop-down combo entries under
+:guilabel:`Custom fonts:` radio button is enabled when you activate it.
+
+:guilabel:`Commit Message:`
+	Font used in changeset viewer and commit log text.
+	Default: monospace 10.
+
+:guilabel:`Diff Text:`
+	Font used for diffs in status and commit tools.
+        Default: monospace 10.
+
+:guilabel:`File List:`
+	Font used in file lists in status and commit tools.
+        Default: sans 9.
+
+:guilabel:`Command Output:`
+	Font used in command output window.
+        Default: monospace 10.
+
+Keyboard navigation
+===================
+
+:kbd:`Ctrl-Enter`
+	Apply changes and close the tool, the equivalent of pressing the
+	'Ok' button.
+
+From command line
+=================
+
+The setting dialog can be started from command line ::
+
+	thg repoconfig
+
+for the repository settings (:file:`.hg/hgrc` file) or ::
+
+	thg userconfig
+
+for the user configuration (:file:`Mercurial.ini` file).
+
+The syntax is simple, no options or parameters are needed, except the global
+options.
+
+.. vim: noet ts=4

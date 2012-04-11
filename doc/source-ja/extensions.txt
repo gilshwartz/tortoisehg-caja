@@ -1,0 +1,231 @@
+********
+拡張機能
+********
+
+.. module:: extensions
+	:synopsis: TortoiseHg バイナリパッケージに同梱されている拡張機能について
+
+この章では Windows 向けの TortoiseHg バイナリパッケージに標準添付されている
+Mercurial の拡張機能について述べます。これらの拡張機能は TortoiseHg
+をより便利に使ってもらうためで、必要になったらすぐに簡単に有効にできます。
+
+Hgfold
+======
+
+`hgfold <http://mercurial.selenic.com/wiki/CaseFoldExtension>`_
+は VFAT および NTFS 上におけるファイル名の大文字小文字の違いによる名前衝突を回避したい
+Windows ユーザ向けの Mercurial 拡張機能です。
+
+この拡張機能は以下の Mercurial コマンドにオプションを追加します。詳しいヘルプは
+:command:`hg help <command>` で見ることができます： ::
+
+	up    - ファイル名の衝突を解決して特定のリビジョンへ更新
+	merge - ファイル名の衝突を解決してマージ
+
+**インストール**
+
+この拡張機能をテストするためにコマンドラインから次のように実行します： ::
+
+	hg --config "extensions.fold=" status
+
+今後も継続して使用したい場合は Mercurial.ini またはリポジトリの hgrc に次のように記述してください： ::
+
+	[extensions]
+	fold=
+
+この設定をすればコマンドラインで --config 引数を指定する必要はありません。
+
+**注意**
+
+通常のマージコマンドと同様、 fold.py は作業ツリーの親を変更する必要があります。
+まだ実験的な拡張機能ですので十分注意して使用してください。
+
+:command:`hg recover` を実行後に何かエラーが発生した場合は
+:command:`hg debugsetparents <number of tip revision>`
+を試してみてください。tip リビジョンの番号は :command:`hg log -l 2`
+で調べることができます。
+
+Hgcr-gui
+========
+
+`コードレビュー <http://bitbucket.org/glimchb/hgcr-gui/wiki/Home>`_ 管理ツール
+
+* この拡張機能はプロジェクトのコードレビューを管理します。
+* レビュー管理を Mercurial 内で完結させます。
+* One can add files to the review, remove them and notify reviewr that files are ready for review.
+* レビューアはコードに "完了" とマークして、開発者にメッセージを返します。
+* プロジェクトマネージャはレビュー状況を確認できます - どのファイルがレビュー済みでどれがまだなのか。
+* hgcr は自動的に最後にレビューした時点から変更されたファイルを見つけ出して通知します。
+* この拡張機能は TortoiseHg の GUI を利用しますが、コマンドラインから使うことができます。
+* コードレビューのデータベースはリポジトリのルートディレトリに .code-review という名前のファイルとして保存されます。
+
+**使い方**::
+
+	hg cr [OPTIONS] [FILES]
+
+	Code Review Plugin (requires Mercurial 1.3.x and TortoiseHg 0.9)
+
+	options:
+
+	 -c --complete  Mark CR as complete
+	 -a --add       Add files to CR list
+	 -r --remove    Remove files from CR list
+	 -l --list      Print files in CR list
+
+	use "hg -v help cr" to show global options
+
+.. note::
+	オプションなしで実行すると GUI が起動します。
+
+**詳細説明**
+
+.. NEEDFORTRANSLATION
+
+* I've implemented the review around files and not changesets, because at the end,
+  I want to be able to tell for the specific project if all the files went through
+  code review process or not - the project status.
+* おそらくあなたは多くの開発者と管理しなければならない複数のプロジェクトを持っていて、
+  開発者のコードをレビューするグループがあります。
+* 開発者のように変更点を追い続けるのは非常に難しいことですが、どのファイルが
+  (レビューアによって) レビュー済みでどれがまだなのかを知るのは簡単です。
+* この拡張機能を使えば開発者は作業が終わった段階でレビューが必要なファイルにマークを付けて、
+  レビューアに知らせることができます。
+* コードレビューのデータベースにチェンジセットが保管されているので、
+  レビューアはチェンジセットをひろってきてコードレビューを始めます
+  (開発者のコードに注釈を付けられる)。
+* そしてコードレビューが終わり次第レビューアは "レビュー完了"
+  のマークを付けて開発者に知らせます。
+* プロジェクトマネージャはいつでもプロジェクトがどうなっているのか確認できます。
+
+**インストール**
+
+Mercurial.ini またはリポジトリの hgrc に次のように記述してください： ::
+
+	[extensions]
+	hgcr-gui=
+
+Perfarce
+========
+
+`ウェブサイト <http://www.kingswood-consulting.co.uk/hg/perfarce/>`_
+
+この拡張機能については `こちら <nonhg.html#perfarce>`_ で解説しています。
+
+HGEOL
+=====
+
+hgeol は将来 win32text 拡張機能に取って代わる拡張機能で、
+より完全で確実な方法で改行文字問題の解決を試みます。
+まだ未確定な部分も多く、頻繁に内容が書き変わることが予想されるため、
+ここに詳細な説明を書くかわりにリンクを張っておきます。
+
+* `EOLTranslationPlan <http://mercurial.selenic.com/wiki/EOLTranslationPlan>`_
+* `ソースコード <http://bitbucket.org/mg/hg-eol/>`_
+
+Mercurial-Keyring
+=================
+
+* `Mercurial Keyring <http://pypi.python.org/pypi/mercurial_keyring>`_ ウェブサイト
+* `Keyring 拡張機能 <http://mercurial.selenic.com/wiki/KeyringExtension>`_ Wiki
+
+keyring 拡張機能は安全に認証パスワード (HTTP/HTTPS and SMTP) をシステム固有の
+パスワードデータベース (Mate Keyring, KDE KWallet, OSXKeyChain, Win32,
+コマンドライン) に保存するために keyring ライブラリのサービスを使います。
+
+**何をするのか**
+
+この拡張機能は初回のリモートリポジトリとのプル/プッシュ操作時に
+HTTP パスワードの入力を促し、それをパスワードデータベースに保存します
+(ユーザ名とリポジトリ URL の組み合せのキーで)。
+それ以後は .hg/hgrc のユーザ名を確認して適切なパスワードを
+パスワードデータベースから取り出して使用します。
+
+同様に認証を必要とする SMTP 経由のメール送信についても初回のみ入力を要求し、
+次回からはパスワードデータベースのパスワードを再利用します。
+
+パスワード認証に失敗した場合は再び入力を求めます。
+
+**インストール**
+
+まずは拡張機能を Mercurial.ini ファイルで有効にしてください： ::
+
+	[extensions]
+	mercurial_keyring=
+
+**バックエンドの設定**
+
+使用しているシステムに最適なバックエンドは自動的に選択されますが、
+必要に応じて ~/keyringrc.cfg ファイル (ユーザのホームディレクトリの
+keyringrc.cfg ファイル) を設定することで指定可能です。
+設定に関する詳細は `keyring ドキュメント <http://pypi.python.org/pypi/keyring>`_
+を参照してください。
+
+.. note::
+	Windows XP 以降の Windows では、暗号化されたパスワードは
+	`CredRead <http://msdn.microsoft.com/en-us/library/aa374804%28VS.85%29.aspx>`_ と
+	`CredWrite <http://msdn.microsoft.com/en-us/library/aa375187%28VS.85%29.aspx>`_
+	を用いて、Credentials Subsystem に保管されます。
+
+.. note::
+	Windows 2000 では、暗号化されたパスワードはシステムレジストリ
+	HKCU\\Software\\Mercurial\\Keyring
+	以下に保管されます。
+
+**リポジトリの設定 (HTTP)**
+
+リポジトリローカルの .hg/hgrc ファイルにリモートリポジトリの URL とユーザ名を記述して保存します。
+パスワードは keyring から提供されるためここでは記述しないでください： ::
+
+	[paths]
+	myremote = https://my.server.com/hgrepo/someproject
+
+	[auth]
+	myremote.schemes = http https
+	myremote.prefix = my.server.com/hgrepo
+	myremote.username = mekk
+
+次のようにリポジトリ URL にユーザ名を含める形式を使用すれば、より簡潔に記述できます： ::
+
+	[paths]
+	bitbucket = https://User@bitbucket.org/User/project_name/
+
+.. note::
+	.hg/hgrc ファイル内にユーザ名とパスワードの両方を記述した場合、
+	keyring 拡張機能はパスワードデータベースを使用せず、
+	記述してあるパスワードを使用します。
+	また、ユーザ名が記述されていない場合は認証が必要になるたびに
+	ユーザ名とパスワードの入力を要求しますが、
+	それらはパスワードデータベースに保管されません。
+	つまりこれら両方の状況は keyring 拡張機能を使用していない、
+	Mercurial 標準の動作になるということです。
+
+Mercurial の認証に関するより詳しい説明はマニュアルの
+`[auth] <http://www.selenic.com/mercurial/hgrc.5.html#auth>`_
+セクションにあります。
+
+**リポジトリの設定 (SMTP)**
+
+リポジトリローカルの .hg/hgrc ファイル、またはホームディレクトリの hgrc
+ファイル (メール送信の認証情報はリポジトリ共通で使えるので通常は後者)
+に SMTP パスワード以外の SMTP メール設定を記述してください。例えば： ::
+
+	[email]
+	method = smtp
+	from = Joe Doe <Joe.Doe@remote.com>
+
+	[smtp]
+	host = smtp.gmail.com
+	port = 587
+	username = JoeDoe@gmail.com
+	tls = true
+
+前述の HTTP の設定と同様に、ユーザ名だけを設定してパスワードは設定しません。
+パスワードを記述した場合の動作は Mercurial 標準の振る舞いになります。
+
+**使い方**
+
+上記設定を終えたら、あとは普通にプルやプッシュ (またはメール送信)
+をするだけです。(ユーザ名とリポジトリ URL の組み合せで)
+初回のみパスワードを要求されます。
+
+.. vim: noet ts=4

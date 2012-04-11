@@ -1,0 +1,263 @@
+# purge.py - working copy purge dialog, based on Mercurial purge extension
+#
+# Copyright 2010 Steve Borho <steve@borho.org>
+#
+# This software may be used and distributed according to the terms of the
+# GNU General Public License version 2, incorporated herein by reference.
+
+import os
+import stat
+import shutil
+
+from mercurial import hg, ui
+
+from tortoisehg.util import hglib
+from tortoisehg.hgqt.i18n import _, ngettext
+from tortoisehg.hgqt import qtlib, cmdui
+
+from PyQt4.QtCore import *
+from PyQt4.QtGui import *
+
+class PurgeDialog(QDialog):
+
+    progress = pyqtSignal(QString, object, QString, QString, object)
+    showMessage = pyqtSignal(QString)
+
+    def __init__(self, repo, parent):
+        QDialog.__init__(self, parent)
+        f = self.windowFlags()
+        self.setWindowFlags(f & ~Qt.WindowContextHelpButtonHint)
+        layout = QVBoxLayout()
+        layout.setMargin(0)
+        layout.setSpacing(0)
+        self.setLayout(layout)
+        
+        toplayout = QVBoxLayout()
+        toplayout.setMargin(10)
+        toplayout.setSpacing(5)
+        layout.addLayout(toplayout)
+
+        cb = QCheckBox(_('No unknown files found'))
+        cb.setChecked(False)
+        cb.setEnabled(False)
+        toplayout.addWidget(cb)
+        self.ucb = cb
+
+        cb = QCheckBox(_('No ignored files found'))
+        cb.setChecked(False)
+        cb.setEnabled(False)
+        toplayout.addWidget(cb)
+        self.icb = cb
+
+        cb = QCheckBox(_('No trash files found'))
+        cb.setChecked(False)
+        cb.setEnabled(False)
+        toplayout.addWidget(cb)
+        self.tcb = cb
+
+        self.foldercb = QCheckBox(_('Delete empty folders'))
+        self.foldercb.setChecked(True)
+        toplayout.addWidget(self.foldercb)
+        self.hgfilecb = QCheckBox(_('Preserve files beginning with .hg'))
+        self.hgfilecb.setChecked(True)
+        toplayout.addWidget(self.hgfilecb)
+
+        BB = QDialogButtonBox
+        bb = QDialogButtonBox(BB.Ok|BB.Cancel)
+        bb.accepted.connect(self.accept)
+        bb.rejected.connect(self.reject)
+        self.bb = bb
+        toplayout.addStretch()
+        toplayout.addWidget(bb)
+
+        self.stbar = cmdui.ThgStatusBar(self)
+        self.progress.connect(self.stbar.progress)
+        self.showMessage.connect(self.stbar.showMessage)
+        layout.addWidget(self.stbar)
+
+        self.setWindowTitle(_('%s - purge') % repo.displayname)
+        self.setWindowIcon(qtlib.geticon('hg-purge'))
+        self.repo = repo
+
+        self.bb.setEnabled(False)
+        self.progress.emit(*cmdui.startProgress(_('Checking'), '...'))
+        s = QSettings()
+        desktopgeom = qApp.desktop().availableGeometry()
+        self.resize(desktopgeom.size() * 0.25)
+        self.restoreGeometry(s.value('purge/geom').toByteArray())
+        QTimer.singleShot(0, self.checkStatus)
+
+    def checkStatus(self):
+        repo = self.repo
+        class CheckThread(QThread):
+            def __init__(self, parent):
+                QThread.__init__(self, parent)
+                self.files = (None, None)
+                self.error = None
+
+            def run(self):
+                try:
+                    wctx = repo[None]
+                    wctx.status(ignored=True, unknown=True)
+                    trashcan = repo.join('Trashcan')
+                    if os.path.isdir(trashcan):
+                        trash = os.listdir(trashcan)
+                    else:
+                        trash = []
+                    self.files = wctx.unknown(), wctx.ignored(), trash
+                except Exception, e:
+                    self.error = str(e)
+
+        def completed():
+            self.th.wait()
+            self.files = self.th.files
+            self.bb.setEnabled(True)
+            self.progress.emit(*cmdui.stopProgress(_('Checking')))
+            if self.th.error:
+                self.showMessage.emit(hglib.tounicode(self.th.error))
+            else:
+                self.showMessage.emit(_('Ready to purge.'))
+                U, I, T = self.files
+                if U:
+                    self.ucb.setText(ngettext(
+                        'Delete %d unknown file',
+                        'Delete %d unknown files', len(U)) % len(U))
+                    self.ucb.setChecked(True)
+                    self.ucb.setEnabled(True)
+                if I:
+                    self.icb.setText(ngettext(
+                       'Delete %d ignored file',
+                       'Delete %d ignored files', len(I)) % len(I))
+                    self.icb.setChecked(True)
+                    self.icb.setEnabled(True)
+                if T:
+                    self.tcb.setText(ngettext(
+                        'Delete %d file in .hg/Trashcan',
+                        'Delete %d files in .hg/Trashcan', len(T)) % len(T))
+                    self.tcb.setChecked(True)
+                    self.tcb.setEnabled(True)
+
+        self.th = CheckThread(self)
+        self.th.finished.connect(completed)
+        self.th.start()
+
+    def reject(self):
+        s = QSettings()
+        s.setValue('purge/geom', self.saveGeometry())
+        super(PurgeDialog, self).reject()
+
+    def accept(self):
+        unknown = self.ucb.isChecked()
+        ignored = self.icb.isChecked()
+        trash = self.tcb.isChecked()
+        delfolders = self.foldercb.isChecked()
+        keephg = self.hgfilecb.isChecked()
+
+        if not (unknown or ignored or trash or delfolders):
+            QDialog.accept(self)
+            return
+        if not qtlib.QuestionMsgBox(_('Confirm file deletions'),
+            _('Are you sure you want to delete these files and/or folders?'),
+            parent=self):
+            return
+
+        def completed():
+            self.th.wait()
+            if self.th.failures:
+                qtlib.InfoMsgBox(_('Deletion failures'),
+                    _('Unable to delete %d files or folders') %
+                                 len(self.th.failures), parent=self)
+            if self.th.failures is not None:
+                self.reject()
+
+        opts = dict(unknown=unknown, ignored=ignored, trash=trash,
+                    delfolders=delfolders, keephg=keephg)
+
+        self.th = PurgeThread(self.repo, opts, self)
+        self.th.progress.connect(self.progress)
+        self.th.showMessage.connect(self.showMessage)
+        self.th.finished.connect(completed)
+        self.th.start()
+
+class PurgeThread(QThread):
+    progress = pyqtSignal(QString, object, QString, QString, object)
+    showMessage = pyqtSignal(QString)
+
+    def __init__(self, repo, opts, parent):
+        super(PurgeThread, self).__init__(parent)
+        self.failures = 0
+        self.root = repo.root
+        self.opts = opts
+
+    def run(self):
+        try:
+            self.failures = self.purge(self.root, self.opts)
+        except Exception, e:
+            self.failures = None
+            self.showMessage.emit(hglib.tounicode(str(e)))
+
+    def purge(self, root, opts):
+        repo = hg.repository(ui.ui(), self.root)
+        keephg = opts['keephg']
+        directories = []
+        failures = []
+
+        if opts['trash']:
+            self.showMessage.emit(_('Deleting trash folder...'))
+            trashcan = repo.join('Trashcan')
+            try:
+                shutil.rmtree(trashcan)
+            except EnvironmentError:
+                failures.append(trashcan)
+
+        self.showMessage.emit('')
+        match = hglib.matchall(repo)
+        match.dir = directories.append
+        status = repo.status(match=match, ignored=opts['ignored'],
+                             unknown=opts['unknown'], clean=False)
+        files = status[4] + status[5]
+
+        def remove(remove_func, name):
+            try:
+                if keephg and name.startswith('.hg'):
+                    return
+                remove_func(repo.wjoin(name))
+            except EnvironmentError:
+                failures.append(name)
+
+        def removefile(path):
+            try:
+                os.remove(path)
+            except OSError:
+                # read-only files cannot be unlinked under Windows
+                s = os.stat(path)
+                if (s.st_mode & stat.S_IWRITE) != 0:
+                    raise
+                os.chmod(path, stat.S_IMODE(s.st_mode) | stat.S_IWRITE)
+                os.remove(path)
+
+        for i, f in enumerate(sorted(files)):
+            data = ('deleting', i, f, '', len(files))
+            self.progress.emit(*data)
+            remove(removefile, f)
+        data = ('deleting', None, '', '', len(files))
+        self.progress.emit(*data)
+        self.showMessage.emit(_('Deleted %d files') % len(files))
+
+        if opts['delfolders']:
+            for i, f in enumerate(sorted(directories, reverse=True)):
+                if not os.listdir(repo.wjoin(f)):
+                    data = ('rmdir', i, f, '', len(directories))
+                    self.progress.emit(*data)
+                    remove(os.rmdir, f)
+            data = ('rmdir', None, f, '', len(directories))
+            self.progress.emit(*data)
+            self.showMessage.emit(_('Deleted %d files and %d folders') % (
+                                  len(files), len(directories)))
+        return failures
+
+def run(ui, *pats, **opts):
+    from tortoisehg.hgqt import thgrepo
+    from tortoisehg.util import paths
+    repo = thgrepo.repository(ui, path=paths.find_root())
+    return PurgeDialog(repo, None)

@@ -1,0 +1,383 @@
+*********************************
+A Quick Start Guide to TortoiseHg
+*********************************
+
+.. module:: tour
+	:synopsis: A Gentle Introduction to Using TortoiseHg on Windows
+
+Welcome to TortoiseHg and the Mercurial!  TortoiseHg is a set of graphical
+applications and Windows Explorer shell extension that serve as a friendly
+front-end to the Mercurial distributed version control system (DVCS).
+
+All TortoiseHg functionality is reachable from 3 places:
+
+1. The :command:`Workbench` application
+	
+	You can start the Workbench from the Start Menu, or by right clicking on the
+	Desktop and selecting :menuselection:`Hg Workbench`.
+
+	.. figure:: figures/desktop-workbench.png
+		:alt: Desktop Context Menu
+
+	Start the Workbench from the Desktop
+
+2. The :command:`Explorer` context menu
+	
+	All you have to do is right click on the right folder or files in Explorer,
+	and select a context menu entry.
+
+3. The :command:`thg` command line application
+	
+	Type the appropriate commands from any command line interface, in the form
+	:kbd:`thg <command> [options]`.
+
+In this quick guide we would like to make you get started using the Workbench
+application, but we will also indicate how to do the same with the other
+possibilities.
+
+Mercurial commands are also available from the standard :command:`hg` command
+line application.
+
+
+Configuring TortoiseHg
+======================
+
+Your first step should be to make sure that you are correctly identified
+to TortoiseHg.  You do this by opening the global settings dialog.
+
+Workbench: select :menuselection:`File --> Settings...` from the menu
+
+Explorer: choose :menuselection:`TortoiseHg --> Global Settings` from the
+context menu
+
+Command line: type :command:`thg userconfig`
+
+This opens the TortoiseHg settings dialog, editing your global
+(user) configuration.
+
+.. figure:: figures/settings.png
+	:alt: Settings Dialog
+
+	TortoiseHg Settings Dialog
+
+First select the :guilabel:`Commit` page and enter a name in the
+:guilabel:`Username` field.
+
+.. note::
+	If you neglect to configure a username TortoiseHg will ask you to
+	enter one when you try to *commit*, which is the first time a
+	username is actually required.
+
+.. note::
+	There are no hard fast rules on how to format your username, the
+	field is free form, but the following convention is commonly used::
+	
+		FullName <email>
+		
+	for example ::
+	
+		Donald Duck <donaldduck@example.net>
+	
+	The email address is stripped when viewing history in the revision history
+	viewer, and the built-in web server obfuscates email addresses to
+	prevent SPAM.
+
+
+Next, select the :guilabel:`TortoiseHg` page and select the
+:guilabel:`Three-way Merge Tool` entry.  In the drop down list you will
+find all of the merge tools detected on your computer (kdiff3 is
+provided by the Windows installer) and a number of internal merge
+behaviors.  Select your preferred merge tool.
+
+If you prefer for TortoiseHg to also use your selected merge tool for
+visual diffs, you can leave the :guilabel:`Visual Diff Tool`
+unspecified.  Otherwise, select your favorite visual diff tool from the
+drop down list of detected visual diff tools.
+
+If there are no options in either drop-down list, you must install a
+diff/merge tool that is supported by our mergetools.rc or configure your
+own tool.
+
+.. note::
+	If you installed TortoiseHg from source, you need to add our
+	:file:`contrib/mergetools.ini` file to your HGRC path in some way.  One
+	approach is to *%include* it from your :file:`~/.hgrc` file.
+
+Feel free to configure other global settings while you have the dialog
+open.  You will have the chance later to override these global settings
+with repository local settings, if required.
+
+Click the :guilabel:`OK` button to save the changes you have made and
+close the settings dialog.
+
+.. note::
+	Most TortoiseHg settings changes are noticed immediately, but
+	loading or unloading extensions usually requires restarting all open
+	applications for the changes to take effect.
+
+Getting Acquainted
+==================
+
+Mercurial supports many different
+`collaboration models <http://tortoisehg.bitbucket.org/hgbook/1.7/collaborating-with-other-people.html>`_.
+This chapter describes just one of those models: a single central repository.
+The central repository model does not scale as well as other models, but
+it is the most familiar to those coming from other revision tools and
+thus is the most common approach people start with.
+
+To get started, suppose you volunteer to create the central repository.
+There are ways to `convert <http://mercurial.selenic.com/wiki/RepositoryConversion>`_
+non-Mercurial repositories into Mercurial repositories, but this example
+assumes you are starting from scratch.
+
+Initialize the repository
+=========================
+
+Create the initial repository on your local machine:
+
+Workbench: select :menuselection:`File --> New Repository...` from the menu
+
+Explorer: select :menuselection:`TortoiseHg --> Create Repository Here` from
+the context menu
+
+Command line: type :command:`thg init`
+
+You can do this from within the folder you want to create the repository in, or
+enter the correct path in the dialog. You only need to do this once in the root
+folder of your project.
+
+.. figure:: figures/init.png
+	:alt: Init dialog
+
+	Repository Init Dialog
+
+We suggest you keep :guilabel:`Add special files (.hgignore, ...)`
+checked, and do not check :guilabel:`Make repo compatible with Mercurial < 1.7`, 
+unless you have a strong reason to do so.
+
+After pressing :guilabel:`Create`, Mercurial creates a subdirectory in
+your project folder named :file:`.hg`.  This is where Mercurial keeps all
+its version data.  It is called the *repository* or *store*, while the
+directory containing the source files is called the *working directory*.
+You never need to specify the :file:`.hg` directory when running
+commands, you only need to specify the working directory root.  It is
+mentioned here just so you better understand how Mercurial works.
+
+The new repository will also be added to the RepoRegistry when you perform this
+operation from the Workbench.
+
+.. warning::
+	It is dangerous to manually edit the files in :file:`.hg` directory,
+	repository corruption can occur.  :file:`.hg/hgrc` is perhaps the
+	only exception to this rule.
+
+.. note::
+	Perhaps you already created one or more repositories.  As you can manage
+	multiple repositories in the Workbench at the same time, you can add these
+	existing repositories by selecting :menuselection:`File --> Open Repository...`
+	from its menu, and selecting their folder.  Or you could drag their folder
+	from Explorer into the RepoRegistry pane.
+
+
+Add files
+=========
+
+Now it's time to tell Mercurial which files must be tracked. There are various
+ways to do this:
+
+1. Workbench: goto the Commit task tab, rightclick on the file, and select
+   :menuselection:`Add` from the context menu. This will change the status
+   indication of that file into 'A' and the filename will turn green.
+
+2. Explorer: select :menuselection:`TortoiseHg --> Add Files...` in the context
+   menu. A dialog will open for you to check the selected files and accept the
+   add operation. You can also open the status tool by selecting
+   :menuselection:`TortoiseHg --> View File Status`. Check the files you want
+   to add and select :guilabel:`Add` from the file context menu.
+
+3. Command line: type :command:`thg status`
+
+4. Or skip adding new files as a separate step and have the commit tool add them
+   implicitly.  The commit tool is very similar to the status tool and allows
+   you to do all of the same tasks. In this tool you can add and commit an
+   untracked file by just checking the file and pressing :guilabel:`Commit`.
+
+
+Ignore files
+============
+
+You may have some files in the foldertree of your repository that you don't want
+to track. These can be intermediate results from builds f.i. that you do not
+wish to always delete immediately, or files your editor generates, etc. You can
+mark these files as ignored in some different ways too.
+
+1. Workbench: goto the Commit task tab, rightclick on the file, and select
+   :menuselection:`Ignore...` from the context menu to open the ignore filter
+   dialog.
+
+2. Explorer: select :menuselection:`TortoiseHg --> Edit Ignore Filter`.
+	
+3. Command line: type :command:`thg hgignore` to bring up the ignore filter dialog.
+
+4. You can also launch the ignore filter from the status tool (the menu option
+   is named :guilabel:`Ignore`).
+
+Choose a file from the list or manually type in a *Glob* or *Regular expression*
+filter and then press :guilabel:`Add`. Changes to the ignore filter take effect
+immediately.
+
+.. note::
+	The :file:`.hgignore` file, contained in the working directory root,
+	is typically tracked (checked in).
+
+.. note::
+	It is good practice to not have many *unknown* files in your working
+	directory, as it makes it too easy to forget to add vital new files.
+	It is recommended that you keep your :file:`.hgignore` file up to
+	date.
+
+
+Commit
+======
+   
+Commit your local repository now:
+
+Workbench: click on the Working Directory revision which also selects the Commit
+task tab, or directly select the Commit task tab
+
+Explorer: right-clicking anywhere in the folder, or on the folder itself, and
+then selecting :guilabel:`Hg Commit...`
+
+Command line: type :command:`thg commit`
+
+Write a commit message, select the files you wish to commit, then press
+:guilabel:`Commit`.  Your previous commit message will be in the message history
+drop-down, so you do not have to type it in again from scratch.
+
+.. figure:: figures/commit.png
+	:alt: Commit dialog
+
+	Commit Tool
+
+Share the repository
+====================
+
+Now you are ready to share your work. You do this by making a copy of
+your repository in a public location that everyone in your group can
+read. Mercurial calls this copy operation *cloning your repository*.
+
+To clone your repository to a shared drive:
+
+Workbench: select :menuselection:`File --> Clone Repository...` from the menu
+
+Explorer: select :menuselection:`TortoiseHg --> Clone...` from
+the context menu
+
+Command line: type :command:`thg clone`
+
+Then enter the destination path, and click :guilabel:`Clone`.
+
+.. figure:: figures/share.png
+	:alt: Clone dialog
+
+	Clone Dialog
+
+When you create a clone for the purposes of generating a *central
+repository* there is no reason for that clone to have a working
+directory.  Checking :guilabel:`Do not update the new working directory` under
+:guilabel:`Options` will prevent Mercurial from checking out a working copy of
+the repository in the central repository clone.  It will only have the
+:file:`.hg` directory, which stores the entire revision history of the project.
+
+Other team members can clone from this clone with or without a checked
+out working directory.
+
+
+Fetching from the group repository
+==================================
+
+You want to start collaborating with your team.  They tell you something
+like *fetch the repository from x*.  What does that mean? It means that
+you want to make a copy of the repository located at x on your local machine.
+Mercurial calls this cloning and TortoiseHg has a dialog for it.
+
+Workbench: select :menuselection:`File --> Clone Repository...` from the menu
+
+Explorer: select :menuselection:`TortoiseHg --> Clone...` from
+the context menu
+
+Command line: type :command:`thg clone`
+
+Then enter the destination path, and click :guilabel:`OK`.
+
+.. figure:: figures/clone.png
+	:alt: Clone dialog
+
+	Clone Dialog
+
+This time you do want to update the working directory because you want
+to work on the project, under :guilabel:`Options` uncheck
+:guilabel:`Do not update the new working directory` so Mercurial updates
+the working directory with the *tip* revision in your new clone.
+
+
+Working with your repository
+============================
+
+Suppose you've introduced some changes.  It is easy to discover what pending
+changes there are in the repository.  
+
+Workbench: go to the Commit task tab and inspect the filelist at the left
+
+Any files marked with 'A' (added, green), with '?' (unversioned but not ignored,
+fuchsia), with 'M' (modified, blue), or with '!' (removed, red) indicate pending
+changes that should be committed.
+
+The Commit task tab in the Workbench gives you a way to see differences within
+the files, or you can use your visual difference tool (kdiff3).  Mercurial
+allows you to commit many changes before you decide to synchronize (share
+changes) with the group repository.
+
+Explorer: inspect the icons on the folders and files in your repository
+
+Folders or files in Explorer marked with one of the icons below are another way of
+indicating pending changes.  You can traverse the directories to find specific
+changes and commit them from Explorer. Though it might be quicker to do that
+from the Commit task tab in the Workbench.
+
+.. figure:: figures/overlayicons.png
+	:alt: Overlay Icons 
+
+	Overlay Icons on Vista
+
+Command line: type :command:`thg commit`
+
+When you're ready to publish your changes, you
+
+1. Commit your changes to your local repository (see above).
+2. Pull changes from the group repository into your repository using
+   :menuselection:`TortoiseHg --> Workbench` or :command:`thg log`, select the
+   Sync task tab, choose the path to the group repository in the syncbar and
+   then click the :guilabel:`Pull` button.
+3. If some changesets were pulled, merge those changes with your local
+   changes and then commit the merge into your local repository. From
+   the revision history viewer (:menuselection:`TortoiseHg --> Workbench`
+   or :command:`thg log`) open the context menu over the changeset
+   which you want to merge and select :guilabel:`Merge with local...`.
+   Finally, in the merge dialog, press :guilabel:`Merge` and then
+   :guilabel:`Commit`.
+4. Ensure your merged work still builds and passes your extensive test suite.
+5. Push your changes to the group repository,
+   :menuselection:`TortoiseHg --> Workbench` or :command:`thg log`,
+   select the path to group repository and then click the :guilabel:`Push`
+   button.
+
+Which may sound complicated, but is easier than it sounds.
+
+.. note::
+	Merges can be safely restarted if necessary.
+
+Mercurial makes collaboration easy, fast, and productive.
+Learn more at Mercurial's `wiki <http://mercurial.selenic.com/wiki/>`_.
+
+.. vim: noet ts=4

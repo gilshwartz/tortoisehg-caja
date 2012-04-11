@@ -1,0 +1,482 @@
+Workbench
+==========
+
+.. module:: workbench.dialog
+	:synopsis: Description of the Workbench
+
+Workbench, neboli Verpánek je hlavní procedura programu TortoiseHg. Umožňuje procházet lokálními repozitáři, předávat změny do repozitáře (commit), provádět vyhledávání, synchronizaci s jinými repozitáři a vykonávat různé údržbové úlohy. Téměř každá další procedura Mercurialu je dostupná z Verpánku.
+
+.. figure:: figures/workbench.png
+	:alt: Workbench
+
+	Dialogové okno Verpánku
+	
+Hlavní kutidla (widgets) Verpánku jsou tato:
+
+	:guilabel:`Přehled revizí`
+		Widget s aktivovatelnými kartami pro zobrazení vícero repozitářů v jednom okně. Ve sloupcích jsou uváděny základní informace o každém changesetu. Lze si nastavit, které sloupce mají být viditelné (:menuselection:`View > Choose Log Columns...`) a v jakém pořadí. Je to hlavní, neboli centrální widget v aplikaci Workbench.
+  
+	:guilabel:`Registr repozitářů`
+		Implicitně je tento přemístitelný widget umístěn na levé straně okna Verpánku. Můžeme je skrýt nebo aktivovat tlačítkem s ikonou nebo volbou :menuselection:`View > Show Repository Registry`. Volba :menuselection:`View > Show Paths` umožní zobrazení nejenom jmen repozitářů ale i cest k nim.
+
+	:guilabel:`Output Log`
+		Tento přemístitelný widget, který vyvoláme tlačítkem s ikonou nebo výběrem :menuselection:`View > Show Outpt Log` poskytuje uživateli informaci o příkazech Mercurialu, které byly provedeny během stávající seance. Můžete jej také použít jako příkazový řádek pro přímé zadávání příkazů Mercurialu. V určitých situacích také zobrazuje chybová hlášení. Okno kutidla se smaže zavřením Verpánku.
+
+	:guilabel:`Task Tabs`
+		Vpravo dole jsou dva panely, kde lze provádět různé časté úlohy. Podrobněji viz dále.
+   
+Hlavní menu
+-----------
+
+Workbench má lištu s roletkovými nabídkami pro přístup k nástrojům a pro spouštění různých úloh. 
+
+	:guilabel:`File`
+		
+		.. figure:: figures/file-menu.png
+			:alt: File menu
+			
+   
+	:guilabel:`View`
+		
+		.. figure:: figures/view-menu.png
+			:alt: View menu
+			
+			
+	:guilabel:`Repozitory`
+		Provádění speciálních akcí s aktivním repozitářem	
+		
+		.. figure:: figures/repository-menu.png
+			:alt: Repository menu
+			
+			
+
+	:guilabel:`Help`	
+		Obsahuje info o programu a popis Verpánku. 
+		
+
+Editovací nástrojová lišta
+--------------------------  
+ 
+.. figure:: figures/edit-toolbar.png
+	:alt: Edit Toolbar
+	
+	
+Putování revizemi. Všechna tlačítka pracují s aktuálním repozitářem. 
+
+    :guilabel:`Refresh`
+        Znovu načíst (oživit) přehled revizí aktuálního repozitáře.
+  
+    :guilabel:`Zpět`:
+		Vrátit se k předchozí vybrané revizi.
+   
+    :guilabel:`Vpřed`
+		Přejít k následující revizi. 
+
+    :guilabel:`Filter toolbar`
+		Ukázat a aktivovat nástrojovou lištu pro editaci filtru.
+
+   
+Parkovací nástrojová lišta
+--------------------------	
+
+.. figure:: figures/dock-toolbar.png
+	:alt: Dock Toolbar
+	
+	
+Zobrazí nebo skryje parkovatelné widgety Verpánku.
+
+    :guilabel:`Repozitory Registry`
+
+    :guilabel:`Output Log`
+  
+
+Synchronizační nástrojová lišta
+-------------------------------   
+
+.. figure:: figures/sync-toolbar.png
+	:alt: Sync Toolbar
+    
+Nástrojová lišta slouží pro synchronizaci s jinými repozitáři.
+
+    :guilabel:`Incoming`
+		Stáhne případné (příchozí) changesety ze vzdáleného repozitáře, uloží je v dočasném svazku souborů a zobrazí je.	Zobrazení těchto changesetů je normální, zatímco zobrazení ostatních revizí je šedivé. Nad přehledem revizí se vynoří tlačítka :guilabel:`Accept` a :guilabel:`Reject`.
+   
+    :guilabel:`Pull`
+		Stáhne příchozí changesety ze vzdáleného repozitáře a potom uplatní některý z "after-pull" procedur (update, fetch nebo rebase). 
+
+    :guilabel:`Outgoing`
+		Určí případné odchozí changesety, které by mohly být vyslány (push) ke vzdálenému repozitáři. Odchozí changesety se zobrazí normálně, zatímco zobrazení ostatních revizí je šedivé.
+
+    :guilabel:`Push`
+		Vyšle odchozí chanchesety do vzdáleného repozitáře. 
+
+
+Lišta s úlohami
+---------------
+
+	
+.. figure:: figures/task-toolbar.png
+  	:alt: Task Toolbar		
+		
+Nástroje lišty zajišťují řadu úkolů
+	
+    :guilabel:`Revision Details`
+		Zobrazí informaci o aktuální revizi: soubory přidané, odstraněné,  přejmenované nebo modifikované, obsahy souborů, informaci o changesetu.
+
+..		.. figure:: figures/revdetails-takstab.png
+		    :alt: Revision Details Task Tab
+				
+..			
+   
+    :guilabel:`Commit`
+		Zde je možné přidávat nové soubory a provádět předání (commit) do repozitáře.
+		
+..		.. figure:: figures/commit-tasktab.png
+		   :alt: Commit Task Tab
+
+..
+		   
+    :guilabel:`Synchronize`
+		Umožňuje podrobné nastavení cesty ke vzdálenému repozitáři. Přitom se zobrazí další lišta Synchronize.
+		
+..		.. figure:: figures/sync-tasktab.png
+		   :alt: Synchronise Task Tab
+
+..
+		   
+    :guilabel:`Manifest`
+		Zobrazí úplnou informaci o obsahu repozitáře pro zadanou revizi.  Lze vidět obsah souborů nebo jejich anotace. V seznamu souborů a složek je k disposici kontextové menu pro další podrobné zkoumání. Dokonce lze odtud porovnávat soubory z různých revizí. 
+		
+..      .. figure:: figures/manifest-tasktab.png
+           :alt: Manifest Task Tab
+
+..
+
+	:guilabel:`Search`
+		Slouží pro vyhledávání zadaného textu v souboru. 
+
+..		.. figure:: figures/search-tasktab.png
+           :alt: Search Task Tab
+
+..
+		   
+    :guilabel:`Patch Queue`
+		Tento widget (Fronta oprávek) používá procedury extenze MQ.
+
+..		.. figure:: figures/mq-tasktab.png
+           :alt: Patch Queue Task Tab
+		   
+		   
+Mezi vybranou revizí nebo oprávkou a popisovanou nástrojovou lištou existují jisté relace:
+
+* Poklep na revizi "Working Directory" aktivuje panel s úlohou Commit.
+* Poklep na kteroukoliv jinou revizi aktivuje panel Revision Details. 
+  
+Toto standardní chování lze potlačit klávesou :kbd:`Alt`, stisknutou před označením revize. Stávající panel zůstane potom zachován bez ohledu na to, jakou revizi či oprávku vyberete.
+
+Pracovní lišta filtru
+---------------------
+   
+.. figure:: figures/filter-toolbar.png
+	:alt: Filter Toolbar
+	
+Zobrazení této lišty aktivujeme buď tlačítkem s ikonou v editovací liště nebo přepínačem :kbd:`Ctrl+S`. Lišta obsahuje následující sadu procedur (zleva doprava):
+
+	:guilabel:`Clear`
+		Smaže přilehlé textové pole. Vlastně anuluje zadání filtru.
+		
+	:guilabel:`Filter entry`
+		Zde lze zapsat filtrovací podmínku. Tento widget je rozvinovací seznam, obsahující přehled předchozích filtrovacích podmínek.
+	:guilabel:`Trigger`
+		Aplikuje zadanou sadu podmínek.
+	:guilabel:`Open`
+		Otvírá dialogové okno "Revision Set Query". Zde můžete vybrat a/nebo zadat svou podmínku.
+	:guilabel:`Delete`
+		Smaže zadaný vyhledávací dotaz (query).
+	:guilabel:`Toggle filter`
+		Přepínač pro aktivaci filtru. Aktivní filtr prosévá changesety a barevně označí ty, které podmínce nevyhovují.   
+	:guilabel:`Branch options`
+		Rozvinovací výběrový seznam s možností zadat typ větve. Viz :menuselection:`File > Settings > Workbench > Dead Branches`.   
+	:guilabel:`Branches Combo`
+		Rozvinovací seznam pojmenovaných větví v repozitáři.
+	:guilabel:`Custom Filter Combo`
+		Rozvinovací seznam jednotlivých typů filtrů.
+   
+V situaci, kdy hlavní panel ukazuje náhled na příchozí changesety, se na počátku filtrové lišty vynoří dvě tlačítka:
+
+	:guilabel:`Accept`
+		Přijmout (pull) changesety z prohlíženého svazku.  
+   
+	:guilabel:`Reject`
+		Odmítnout changesety z prohlíženého svazku.
+   
+Workbench se pokusí nalézt zadanou vyhledávací frázi v repozitáři, porovnávaje ji s tagem, záložkou, názvem větve, hešem changesetu nebo s číslem revize. Není-li žádná shoda nalezena, zjistí Workbench, zda fráze obsahuje závorky. Pokud ne, předpokládá Workbench, že fráze je klíčovým slovem a provede hledání :command:`keyword ()`. Jsou-li závorky zjištěny, předpokládá Workbench, že fráze je specifikací sady revizí a pokusí se	sadu řešit.
+
+Potřebujete-li provést hledání s klíčovým slovem, které obsahuje závorky, použijte příkaz :command:`keyword` ("fráze(foo)").
+
+Detaily grafu revizí
+--------------------
+
+Sloupcový graf ukazuje vztah dítě-rodič mezi revizemi. Šířka grafu se přizpůsobuje počtu zobrazených větví. 
+
+Výkonové implikace
+------------------
+
+Některá nastavení Verpánku mohou mít u velkých  repozitářů vliv na výkon.
+
+	:menuselection:`View > Choose Log Columns...`
+		Povolení sloupce :guilabel:`Changes` může být náročné na přepočet repozitářů s rozsáhlými pracovními kopiemi, což může vést ke zpomalení u rolování a oživení.
+   
+	:menuselection:`Vew > Load all`
+		Normálně se při rolování revizemi postupně načítají dávky changesetů, což může někdy způsobovat trhavé zobrazení. Načtení všech changesetů najednou může vést k 'hladšímu' zobrazení. 
+
+Kontextová menu revizí
+----------------------
+
+Pravý poklep na revizi v hlavním panelu vyvolá různá kontextová menu v závislosti na počtu vybraných revizí. Kontextová menu se mohou také lišit v závislosti na typu vybrané revize (pracovní adresář, normální revize, (ne)aplikovaná oprávka mq). Dále uvádíme seznam všech existujících kontextových menu. 
+
+Pravý poklep na vybrané revizi v hlavním panelu vyvolá toto kontextové menu (u pracovního adresáře je většina voleb nepřístupných).
+
+Vybrána jen jedna revize (nikoliv pracovní):
+
+.. figure:: figures/single-revision-cmenu.png
+    :alt: Single revision context menu
+	
+..	
+	
+	:guilabel:`Update...`
+		Aktualizovat pracovní adresář k označené revizi. Otevře se dialogové okno s podrobnostmi o aktualizaci.
+
+	:guilabel:`Visual diff...`
+		Otevře zobrazení změny v nastavenem diffovém nástroji.
+
+	:guilabel:`Diff to local...`
+		Zobrazí změny (visual diff) mezi vybranou revizí a pracovním adresářem.
+
+	:guilabel:`Browse at rev...`
+		Vyvolá okno "Manifest" se zobrazením všech složek a souborů vybrané revize
+
+	:guilabel:`Merge with local...`
+		V otevřeném dialogovém okně sloučí vybraný changeset s pracovním adresářem.
+
+	:guilabel:`Tag...`
+		Umožní zadat tag pro vybranou revizi.
+
+	:guilabel:`Bookmark...`
+		Umožní zadat záložku pro vybranou revizi. Tato volba je přístupná při povolené extenzi 'bookmarks'.
+
+	:guilabel:`Backout...`
+		Vytvoří pomocný changeset pro zrušení vybrané revize. 
+   
+	:guilabel:`Export`
+	
+		:guilabel:`Export patch`
+			Generuje oprávkový soubor, obsahující změny revize.
+   
+		:guilabel:`Email patch...`
+			Otevře okno pro odeslání emailu se změnami revize.
+	  
+		:guilabel:`Archive...`
+			Otevře okno pro archivaci revize s možností generovat záložní kopii revize.
+
+		:guilabel:`Copy patch`
+			-TODO- *Přístupné jen při povolené extenzi MQ*	
+
+	:guilabel:`Copy hash`
+		Zkopíruje celý heš revize do schránky. 
+
+	:guilabel:`Modify history`
+	
+		:guilabel:`QGoto`
+			Vyslat/vysunout oprávky až k této revizi. *Přístupné jen při povolené extenzi MQ*
+   
+		:guilabel:`Import to MQ`
+			Importovat vybranou revizi do aktuální fronty oprávek. *Přístuppné jen při povolené extenzi MQ*
+	  
+		:guilabel:`Finish patch`
+			Přemění oprávku MQ na normální changeset. *Přístupné jen při povolené extenzi MQ*
+
+		:guilabel:`Rebase`
+			Přeskupit. Přemístí vybranou revizi a všechny její potomky do rodičovské revize aktuálního pracovního adresáře. *Přístupné jen při povolené extenzi MQ*
+	  
+		:guilabel:`Strip`
+			Odstranit vybranou revizi a všechny její potomky z repozitáře. [#rcm1]_ *Přístupné jen při povolené extenzi MQ*
+
+Vybrány dvě revize:
+
+	:guilabel:`Visual diff...`
+		Zobrazí vybrané revize v diffovém prohlížeči.
+
+	:guilabel:`Export selected...`
+		Pro každou revizi vytvoří oprávkový soubor.
+
+	:guilabel:`Email selected...`
+		Otevře okno pro odeslání vybraných changesetů.
+
+	:guilabel:`Export DAG range...`
+		Pro každou revizi vybraného rozsahu vytvoří oprávkový soubor.
+
+	:guilabel:`Email DAG range...`
+		Otevře okno pro odeslání vybraného rozsahu changesetů.
+
+	:guilabel:`Bisect - Good, Bad...`
+		TODO, viz odstavec `bisect <#id10>`_ níže
+
+	:guilabel:`Bisect - Bad, Good...`
+		TODO, viz odstavec `bisect <#id10>`_ níže
+
+	:guilabel:`Compress history...`
+		Otevře okno, v němž lze zkomprimovat novější revizi se starší. 
+
+Vybrány více než dvě revize:
+
+	:guilabel:`Export selected...`
+		Vytvoří oprávkové soubory pro všechny vybrané revize.
+   
+	:guilabel:`Email selected...`
+		Otevře okno pro odeslání vybraných changesetů.   
+   
+
+.. [#rcm1] Tento příkaz uloží odtržené revize do svazku souborů, které  mohou  být později znovu použity. Viz také `EditingHistory <http://mercurial.selenic.com/wiki/EditingHistory>`_
+
+
+Kontextové menu souboru
+-----------------------
+
+Pravým poklepem na souboru v panelu se seznamem souborů (vlevo dole) vyvoláme kontextové menu pro vybraný soubor:
+
+	:guilabel:`Visual Diff`
+		Otevře verzi souboru v diffovém prohlížeči.
+   
+	:guilabel:`Visual Diff to Local`
+		Zobrazí rozdíly mezi aktuální a zadanou revizí.
+
+	:guilabel:`View at Revision`
+		Otevře revizi souboru v nastaveném textovém editoru [#f1cm1]_.
+   
+	:guilabel:`Edit Local`
+		Otevře vybranou verzi souboru v nastaveném textovém editoru [#f1cm1]_.   
+
+	:guilabel:`Revert to revision`
+		Vrátí soubor ke stavu označené revize [#f1cm3]_.
+   
+	:guilabel:`File History`
+		Ukáže revize, které měnily tento soubor [#f1cm2]_.   
+
+	:guilabel:`Compare file revisions`
+		Otevře nové okno, kde lze porovnat kteroukoukoli revizi souboru s libovolnou jinou revizí.
+
+
+.. [#f1cm1] :menuselection:`File > Global Settings > TortoiseHg >   Visual Editor`
+.. [#f1cm2] Ve které revizi byl soubor smazán se neukáže, protože to je jenom "vnějšková" změna, která neovlivňuje historii souboru.
+.. [#f1cm3] Nový obsah se objeví jako lokální změna a musí být předána (committed) repozitáři.
+
+Pravý poklep na názvu souboru v panelu pro seznam souborů při aktivované úloze Commit vyvolá pro vybraný soubor odlišné kontextové menu:
+
+	:guilabel:`Edit`
+		Otevře revizi souboru v nastaveném textovém editoru.
+	:guilabel:`Add`
+		Příkaz k přidání souboru do repozitáře k registraci.
+	:guilabel:`Detect Renames...`
+		Otevře okno, kde lze vysledovat přejmenované soubory.  
+	:guilabel:`Ignore`
+		Přidá vybraný soubor do seznamu v souboru .hgignore.
+	:guilabel:`Delete unversioned`
+		Smaže neverzované soubory z disku.   
+
+Message Parsing
+---------------
+
+V souhrnném zobrazení changesetů (vpravo uprostřed) jsou podtrženy heše, URL adresy a označení chybových zpráv, nalezené v popisech changesetů. Tyto podtržené údaje jsou aktivní linky.
+
+Každý "word-boundary" rozdělený řetězec 12ti nebo 40ti znaků v rozsahu [0-9af] je považován za link k changesetu. Poklepem na link k němu přejdeme.
+
+URL adresy HTTP a HTTPS se podobně změní na klikatelné linky které se otevřou ve vašem implicitním webovém prohlížeči.
+
+Linky bestiáře (issue tracker) se vytvoří, pokud je to nastaveno v sekci 'tortoisehg' vašeho konfiguračního souboru. Protože lze nastavit pouze jeden issue tracker, je obvykle uváděn v souboru `.hg/hgrc`. Jsou dva klíče: issue.regex a issue.link. První definuje regex shody při výběru čísla problému, druhý definuje příkaz, který má být po určení čísla problému proveden.
+
+Do issue.regex můžete vložit skupiny a odpovídajících {n} znaků (tokens) do issue.link (kde n je pozitivní celé číslo). {0} odkazuje na celý řetězec, porovnávaný issue.regexem, zatímco {1} odkazuje na první skupinu, atd. Nejsou-li v issue.linku nalezeny žádné {n} znaky, je připojen celý porovnávaný řetězec.
+
+Příklady::
+
+	BitBucket:
+	issue.regex = #(\d+)\b
+	issue.link = http://bitbucket.org/<your project and repo>/issue/{1}/
+
+	Mercurial:
+	issue.regex = \bissue\d+\b
+	issue.link = http://mercurial.selenic.com/bts/
+
+Konzola Output Log
+------------------
+
+V konzole, vestavěné do přemístitelného kutidla Output Log, lze spouštět příkazy Mercurialu (hg), TortoiseHg (thg), řadu speciálních příkazů a omezený počet "shell commands". Příkazy se vždy provedou v kořenovém adresáři aktuálního repozitáře. Prompt je aktualizován pro udržení souvislosti.
+
+Začíná-li příkaz 'hg', je proveden v prováděcím prostředí TortoiseHg; což znamená, že výstup je poslán do Output Log ale požadavky na vstupy jsou obslouženy dialogovými okny.
+
+Začíná-li příkaz 'thg', je zadaný příkaz proveden v novém okně pro tentýž proces. Například 'thg ci' otevře nové okno s procedurou pro předání změn (commit) do aktuálního repozitáře.
+
+Je-li zadaným příkazem 'clear' nebo 'cls' smaže se obsah konzoly.
+
+Příkaz 'exit' toto okno zavře.
+
+Otherwise, the command line is forwarded to your platform’s default command shell with a limited execution context. There is no stdin while stdout and stderr are piped to the output log.
+
+Klávesová navigace
+------------------
+
+:kbd:`Ctrl-P`
+	Přesun do rodičovské revize pracovního adresáře
+:kbd:`Ctrl-D`
+	Zobrazit visuální diffy pro vybraný changeset nebo soubor
+:kbd:`Ctrl-S`
+	Přepínač mezi sadou revizí a lištou filtru.
+
+Viz také `KeySequences <https://bitbucket.org/tortoisehg/thg/wiki/KeySentences>`_ na stránkách Wiki. 
+
+
+Nastavitelné možnosti
+---------------------
+
+Workbench má několik nastavitelných voleb, které lze zadat v dialogu :menuselection:`File > Settings`.
+
+	:guilabel:`Author coloring`
+		Zadáno-li 'true', budou changesety barevně označeny podle autorů.
+	:guilabel:`Long Summary`
+		Pospojovat délky předávacích zpráv až do počtu 80 znaků na řádku
+	:guilabel:`Graph batch limit`
+		Počet revizí, který má být načítán v jedné dávce
+	:guilabel:`Dead Branches`
+		Seznam čárkami oddělených názvů větví, které by měly být ignorovány při sestavování seznamu větví pro repozitář.
+	:guilabel:`Branch Colors`
+		Seznam mezerami oddělených názvů větví a barev ve formuláři pro větev:#XXXXXX. Mezery a dvojtečky v názvu větve musí být předznamenány zpětným lomítkem (\\). Podobně mohou být předznamenány některé další znaky, např. \\u0040 will bude dekódováno na znak @, a \\n na 'linefeed'.
+	:guilabel:`Hide Tags`
+		Seznam mezerami oddělených tagů, které nebudou zobrazovány. Užitečný příklad: Zadání "qbase qparent qtip" způsobí skrytí standardních tagů, vložených  extenzí MQ.
+
+Nastavení barev pro jednotlivé uživatele lze provést přidáním následujících řádků do souboru :file:`Mercurial.ini`::
+
+	[tortoisehg]
+	authorcolor.USERNAME = color
+
+Workbench také respektuje následující nastavení:
+
+	:guilabel:`Tab Width`
+		Number of spaces to expand tabs in diffs
+	:guilabel:`Max Diff Size`
+		Maximum size of file to be diffed
+	
+
+Spuštění z příkazového řádku
+----------------------------
+
+::
+
+	thg log [OPTIONS] [FILE]
+
+	aliases: history, explorer, workbench
+
+	workbench application
+
+	use "thg -v help log" to show global options
+
+.. vim: noet ts=4

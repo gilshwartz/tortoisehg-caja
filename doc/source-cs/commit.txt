@@ -1,0 +1,169 @@
+Commit
+======
+
+.. module:: commit.dialog
+    :synopsis: Dialog used to perform commit
+
+Commit je druhá nejvíce používaná procedura po Verpánku. Tento nástroj provede nejenom požadované předání (commit), ale umí také přezkoumat stav pracovního adresáře a provádět nejběžnější udržovací úlohy, jako je přidání nových souborů, zjistit přejmenování a manipulovat s filtrem pro ignorování souborů.
+
+
+.. figure:: figures/commit.png
+	:alt: Commit dialog
+
+	Dialogové okno Commit
+
+Popis prvků
+-----------
+
+Výčet prvků nástrojové lišty nahoře:
+
+	:guilabel:`### filter text ###`
+		Pole pro zadání filtrovacího řetězce.
+	:guilabel:`Status`
+		Rozvinovací seznam různých módů souborů. V panelu se seznamem souborů se zobrazí pouze ty soubory, jejichž módy jsou v seznamu Status zatrženy.
+		Označení *Removed* znamená, že revizovaný soubor byl označen jako smazaný.
+		Označení *Deleted* znamená, že revizovaný soubor chybí ale Mercurial nebyl požádán, aby přestal tento soubor sledovat. Když napřiklad přejmenujete revizovaný soubor ve Windows Exploreru, objeví se jako smazaný a jeho nové jméno jako neznámé. Pravým poklepem na novém názvu vyvoláme dialog, ve kterém lze přejmenování odhalit porovnáním obsahů a označit starý soubor jako odstraněný, nový soubor jako přidaný a zapsat celou operaci jako přejmenování.
+		Označení *Unknown* patří souborům, které Mercurial nesleduje, ani nejsou uvedeny v seznamu ignorovaných souborů. Toto označení je implicitní pro soubory, které mají být do správy revizí teprve přídány. Kontextové menu neznámého souboru obsahuje volbu "Ignore", která otevře dialogové okno pro podrobnější nastavení volby.
+		Označení *Clean* platí pro soubory, které nebyly editovány.
+		Označení *Ignored* patří nesledovaným souborům, uvedeným ale v seznamu ignorovaných souborů.
+	:guilabel:`Refresh`
+		Obnovit seznam souborů.
+	:guilabel:`Copy message`
+		Rozvinovací seznam posledních 10ti popisek u komitů.
+	:guilabel:`Branch`
+		Uvádí název aktuální větve pracovního adresáře. Poklepem otevřeme dialogové okno, kde lze s větví manipulovat. Nedoporučujeme používat bez dobré znalosti `pojmenovaných větví Mercurialu <http://mercurial.selenic.com/wiki/NamedBranches>`_.
+	:guilabel:`Možnosti`
+		Dialogové okno pro podrobné nastavení náležitostí komitu.	
+
+Na posledním řádku vpravo dole rozhodujeme:
+
+	:guilabel:`Commit`
+		Předat vybrané diffy v označených souborech.
+	:guilabel:`Undo`
+		Zrušit platnost posledního komitu. Zpráva komitu bude dostupná v historii zpráv, takže lze v případě potřeby komit opakovat.
+
+		
+		
+		
+Panel se seznamem souborů má pět (šest) sloupců:
+
+	1) Zatržítko, které označuje soubor, vybraný pro operaci. Neoznačené soubory se akce Commit nezůčastní.
+	2) Sloupec :guilabel:`Stat` uvádí status (mód) jednotlivého souboru. Status 'S' označuje 'nečistý subrepozitář', který potřebuje být komitován.
+	3) Sloupec :guilabel:`MS` označuje stav sloučení souboru, což může být R(esolved) nebo U(nresolved).
+	4) Sloupec :guilabel:`Název souboru` uvádí kanonickou cestu souboru relativně ke kořeni repozitáře.
+	5) Sloupec :guilabel:`Typ` uvádí příponu souboru (pokud existuje).
+	6) Sloupec :guilabel:`Size` uvádí velikost neodebraného souboru.
+		
+.. note::
+	If the commit tool was started with a file pattern or selection, a
+	button will appear at the bottom of the file list that can clear the
+	file pattern and give you an unfiltered view of the entire working
+	directory.	
+
+Klávesová navigace
+------------------
+
+:kbd:`Ctrl-Enter`
+	Spustit nástroj Commit
+:kbd:`Ctrl-E`
+	Reflow the paragraph currently under the cursor.  You must configure
+	a message format policy for this shortcut to work.
+
+
+Kontextová menu souborů
+-----------------------
+
+Pravým poklepem na soubor v seznamu otevřeme kontextové menu příkazů, použitelných právě pro tento soubor.
+
+U neznámých **?** souborů umožňuje kontextové menu zjistit přejmenování (pokud si myslíte, že neznámý soubor je kopií nebo přejmenování revizovaného souboru) nebo nastavit seznam ignorovaných souborů repozitáře (pokud nemá být neznámý soubor revizován a chcete, aby jej Mercurial ignoroval).
+
+
+Slučování
+---------
+
+Procedura komitu má speciální režim, je-li otevřena v repozitáři, který je ve slučovaném stavu (buďto slučování probíhá nebo byla provedena aktualizace, která způsobila konflikt).	
+
+Stavový sloupec *MS* je v tomto režimu zvlášť užitečný. Soubory, označené *R* jsou ty, kde Mercurial nebo uživatel úspěšně sloučil (rozřešil / resolved) změny od obou rodičů. Soubory, označené *U* mají nerozřešené (unresolved) změny. Můžete použít nabídku kontextového menu *Restart Merge* pro opětovné spuštění slučovacího procesu nebo nabídku *Editovat* pro rozřešení konfliktu ručně. Nabídka *Restart Merge* vám dovolí vybrat slučovací nástroj nebo dokonce vybrat jednu z verzí nepodmínečně (internal:local, internal:other). Po ručním rozřešení konfliktů musíte použít kontextovou nabídku *mark resolved* abyste změnili stav sloučení souboru na *R*.
+
+Mercurial nedovolí provést komit, pokud má některý ze souborů nerozřešený (*U*) stav sloučení.
+
+Pro úplnost dodejme, že *local* je revize, u níž začíná proces slučování a *other* je revize, s níž má být sloučení provedeno.
+
+Abychom zrušili neúspěšný pokus o sloučení, musíme přikázat, aby Mercurial odstranil druhého rodiče z pracovního adresáře. To obvykle znamená provést čistou aktualizaci prvního rodiče. Slučovací nástroj má tlačítko :guilabel:`Undo`, jímž lze zařídit přesně to samé.
+
+Jakmile máte svůj pracovní adresář zpět u jedné rodičovské revize, můžete zopakovat proces sloučení.
+
+Panel pro zprávy komitů
+-----------------------
+
+Panel pro zprávy komitů má tyto speciální kontextové nabídky:
+
+	:guilabel:`Paste Filenames`:
+		Vlepit vybrané názvy souborů do komitové zprávy v místě kurzoru.
+	:guilabel:`Apply Format`:
+		Použít nastavenou délku řádků.
+	:guilabel:`Configure Format`:
+		Otevře dialogové okno TortoiseHg Settings.
+
+Má-li váš projekt pravidla pro formátování komitových zpráv, můžete je nastavit v tomto konfiguračním okně.	Procedura komitu uplatní vaše zadání formátu při provádění komitu.
+Záložka :guilabel:`Commit` konfiguračního okna má tyto dvě možnosti pro nastavení formátu komitové zprávy:
+
+    :guilabel:`Délka souhrnného řádku`:
+		Maximální délka řádku souhrnného popisu komitu. 
+    :guilabel:`Průvodní texty anglicky`:
+		...
+		
+
+Subrepozitáře
+-------------
+
+`Subrepozitář <http://mercurial.selenic.com/wiki/subrepos>`_ je entita, zavedená v Mercurialu 1.3. Umožňuje repozitáři Mercurialu ukládat odkazy na externí repozitáře (případně jiných VCS) a připojit stavy těchto externích repozitářů do historie hlavního repozitáře.
+
+TortoiseHg 1.0 zavedl rudimentární podporu pro subrepozitáře a to pouze v nástroji commit a status. Považuje-li Mercurial subrepozitář za "nečistý", objeví se v seznamu souborů nástroje Commit s označením stavu *S* a je potom komitován spolu s jinými změnami, přičemž se aktualizuje soubor .hgsubstate v kořenovém adresáři repozitáře.
+
+
+Nastavitelné parametry záložky Commit
+-------------------------------------
+
+Na záložce Commit konfiguračního okna TortoiseHg Settings lze nastavit tyto parametry:
+
+:menuselection:`Commit > Jméno uživatele`
+	Nastaví uživatelské jméno spojené s vašimi komity (viz :doc:`quick`)
+:menuselection:`Commit > Délka souhrnného řádku`
+	Nastaví délku řádku souhrnné zprávy komitu
+:menuselection:`Commit > Po komitu zavřít`:
+	Zadáno-li True, komitový nástroj se zavře po úspěšném provedení komitu.
+	
+A tři další paremetry pro *pokročilé* uživatele:
+
+:menuselection:`Commit > Push po komitu`:
+	Je-li nastaveno, pokusí se komitový nástroj po každém komitu provést push do zadané adresy URL nebo aliasu. 
+:menuselection:`Commit > Seznam auto-include`:
+	Čárkami oddělený seznam souborů, které jsou automaticky včleněny do každého komitu. Zamýšleno pouze jako nastavení repozitáře.
+:menuselection:`TortoiseHg > Max. velikost diffu`
+	Nastaví limitní hodnotu pro velikost diffu.
+
+
+Spuštění z příkazového řádku
+-----------------------------
+
+::
+
+	thg commit [OPTIONS] [FILE]...
+
+	aliases: ci
+
+	commit tool
+
+	options:
+
+	 -u --user  record user as committer
+	 -d --date  record datecode as commit date
+
+	use "thg -v help commit" to show global options
+
+Pro rychlou nápovědu o formátu datového typu::
+	
+	hg help dates
+
+.. vim: noet ts=4

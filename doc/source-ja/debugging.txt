@@ -1,0 +1,95 @@
+TortoiseHg のデバッグ
+=====================
+
+.. module:: debugging
+	:synopsis: TortoiseHg のダイアログやシェル拡張をデバッグするためのヒント
+
+
+ダイアログ
+----------
+
+標準エラー出力はプログラムの終了時点でバッファに補足されます。
+何らかの深刻なエラーが標準エラー出力で見つかった場合、ユーザがバグを報告できるように
+そのすべての内容がバグレポートツールに送信されます。
+出力されていないエラーがあるかもしれない場合は環境変数 **THGDEBUG** を設定して
+標準エラー出力のバッファリングを無効化してください。
+
+多少 Python の経験があれば： ::
+
+    hgtk --debugger <command>
+
+を使うこともできます。
+
+hgtk によるダイアログ用の別プロセス生成を無効にするには環境変数 **THG_HGTK_SPAWN**
+を設定するか、コマンドラインから '--nofork' オプションを使って起動してください。
+
+
+Windows
+~~~~~~~
+
+例えばチェンジログビューアをデバッグする場合、コマンドプロンプト (:command:`cmd.exe`)
+を起動してリポジトリに移動し、次のコマンドを実行してください： ::
+
+	set THGDEBUG=1
+	hgtk log
+
+
+Linux または MacOSX
+~~~~~~~~~~~~~~~~~~~
+
+例えばチェンジログビューアをデバッグする場合、ターミナルでリポジトリに移動し、
+次のコマンドを実行してください： ::
+
+	export THGDEBUG=1
+	hgtk log
+
+
+シェル拡張
+----------
+
+デバッグ方法はプラットフォームに依存します。
+
+
+Windows エクスプローラ
+~~~~~~~~~~~~~~~~~~~~~~
+
+http://msdn.microsoft.com/en-us/library/cc144064(VS.85).aspx に
+Windows シェル拡張を実行・デバッグするための情報が掲載されています。
+
+SysInternals による :command:`DbgView` ツールはシェル拡張からのデバッッグ情報を
+補足することができます。
+
+:command:`ThgTaskbar` アプリケーションの設定ダイアログにはエラーログが表示される
+タブがあります。このダイアログを開いた状態でエクスプローラを使ってリポジトリを
+閲覧すると各種デバッグメッセージを取得することができます。
+
+
+Caja ファイルマネージャ
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+環境変数 DEBUG_THG を設定して、
+
+* 個別のプロセスをテストします： ::
+
+    DEBUG_THG=Ne TMPDIR=/tmp/anydir/ --no-desktop caja [path]
+
+* メインインスタンスをテストします： ::
+
+    caja -q
+    DEBUG_THG=NOe caja
+
+* 常にデバッグ状態で起動したい場合は環境変数 DEBUG_THG をセッション開始と共に
+  読み込まれる設定ファイル (~/.profile, ~/.xprofile など) に設定してください。
+
+.. NEEDFORTRANSLATION
+
+Upper case characters in DEBUG_THG specify modules.  Only *O* and *N*
+for *OverlayCache* and *Caja*, respecively, are supported module
+names.  Lower case characters imply parts. Only *e* is supported,
+implying *error* messages.
+
+Caja を再起動は次のどちらかの方法で可能です：
+
+1) すべての Caja プロセスを削除する (セッションが自動的に Caja を再起動し、標準入出力先は ~/.xsession-errors)
+
+2) コマンドラインから :command:`caja -q; caja` を実行 (標準入出力先はコンソール)

@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   height="256"
+   id="svg2"
+   inkscape:output_extension="org.inkscape.output.svg.inkscape"
+   inkscape:version="0.48.0 r9654"
+   sodipodi:docname="thg-subrepo.svg"
+   sodipodi:version="0.32"
+   version="1.0"
+   width="256">
+  <metadata
+     id="metadata3">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:title></dc:title>
+        <dc:description />
+        <dc:subject>
+          <rdf:Bag>
+            <rdf:li>unsorted</rdf:li>
+          </rdf:Bag>
+        </dc:subject>
+        <dc:publisher>
+          <cc:Agent
+             rdf:about="http://www.openclipart.org/">
+            <dc:title>Open Clip Art Library, Source: Wiki Commons, Source: Wikimedia Commons</dc:title>
+          </cc:Agent>
+        </dc:publisher>
+        <dc:creator>
+          <cc:Agent>
+            <dc:title />
+          </cc:Agent>
+        </dc:creator>
+        <dc:rights>
+          <cc:Agent>
+            <dc:title />
+          </cc:Agent>
+        </dc:rights>
+        <dc:date />
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <cc:license
+           rdf:resource="GPL" />
+        <dc:language>en</dc:language>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs22">
+    <inkscape:perspective
+       id="perspective26"
+       inkscape:persp3d-origin="35.5 : 8.6666667 : 1"
+       inkscape:vp_x="0 : 13 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_z="71 : 13 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient6551"
+       id="linearGradient6557"
+       x1="55.080357"
+       y1="110.15236"
+       x2="73.14286"
+       y2="110.15236"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.00344154,1.2102096,-1.6263159,0.18275943,243.22716,8.6686994)" />
+    <linearGradient
+       id="linearGradient6551">
+      <stop
+         style="stop-color:#f2f53a;stop-opacity:1;"
+         offset="0"
+         id="stop6553" />
+      <stop
+         style="stop-color:#fdff8e;stop-opacity:0;"
+         offset="1"
+         id="stop6555" />
+    </linearGradient>
+    <linearGradient
+       y2="110.15236"
+       x2="73.14286"
+       y1="110.15236"
+       x1="55.080357"
+       gradientTransform="matrix(0.00344154,1.2102096,-1.6263159,0.18275943,309.0051,57.366183)"
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient3022"
+       xlink:href="#linearGradient6551"
+       inkscape:collect="always" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient6551"
+       id="linearGradient3848"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.00344154,1.2102096,-1.6263159,0.18275943,309.0051,57.366183)"
+       x1="55.080357"
+       y1="110.15236"
+       x2="73.14286"
+       y2="110.15236" />
+  </defs>
+  <sodipodi:namedview
+     bordercolor="#666666"
+     borderopacity="1.0"
+     gridtolerance="10.0"
+     guidetolerance="10.0"
+     id="base"
+     inkscape:current-layer="svg2"
+     inkscape:cx="89.736991"
+     inkscape:cy="122.43398"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:window-height="738"
+     inkscape:window-width="1280"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:zoom="1.9683098"
+     objecttolerance="10.0"
+     pagecolor="#ffffff"
+     showgrid="false"
+     inkscape:window-maximized="1" />
+  <path
+     style="color:#000000;fill:#fff08b;fill-opacity:1;fill-rule:nonzero;stroke:#c4a000;stroke-width:6.1813693;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+     d="m 125.93864,98.872518 c -0.009,-0.685743 -0.68406,-1.277866 -1.42388,-1.248212 l -15.76003,0.630734 -56.285668,2.25282 -45.5914241,1.82489 c -1.0459723,0.0424 -1.9589962,0.93548 -1.9465597,1.90518 l 1.7798561,138.8014 c 0.012437,0.96977 0.947448,1.78948 1.9934245,1.74752 L 110.58138,240.70913 c 1.046,-0.0402 1.95917,-0.93553 1.94667,-1.90515 l -0.98024,-76.44525 13.78995,-0.55375 c 0.74031,-0.0302 1.39924,-0.67454 1.39041,-1.3607 l -0.78971,-61.573643 z"
+     id="rect2995"
+     inkscape:connector-curvature="0" />
+  <path
+     style="color:#000000;fill:#fff08b;fill-opacity:1;fill-rule:nonzero;stroke:#c4a000;stroke-width:6.90631437;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+     d="m 126.53106,174.8151 c -0.002,-0.73164 -0.68305,-1.31092 -1.58265,-1.35089 l -18.6286,-0.81954 -0.18942,-62.78471 c -0.002,-0.674 -0.75201,-1.31432 -1.58251,-1.35078 L 7.3000652,104.2305 c -0.8291401,-0.0366 -1.5767724,0.53831 -1.5747635,1.21186 l 0.4190185,138.89489 c 0.00201,0.67395 0.7526549,1.31425 1.5825125,1.35078 l 70.7257353,3.11177 c 0.209509,0.54277 0.538841,1.0484 1.265881,1.08068 l 45.466451,2.00049 c 0.89981,0.0402 1.57713,-0.48056 1.5749,-1.21195 l -0.22887,-75.85389 z"
+     id="rect3043"
+     inkscape:connector-curvature="0" />
+  <text
+     xml:space="preserve"
+     style="font-size:142.12782288px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000080;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial Bold"
+     x="12.382761"
+     y="221.77342"
+     id="text3821"
+     sodipodi:linespacing="125%"
+     transform="scale(0.9640397,1.0373017)"><tspan
+       sodipodi:role="line"
+       id="tspan3823"
+       x="12.382761"
+       y="221.77342">S</tspan></text>
+</svg>

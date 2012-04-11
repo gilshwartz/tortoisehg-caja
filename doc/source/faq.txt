@@ -1,0 +1,109 @@
+**************************
+Frequently Asked Questions
+**************************
+
+
+*What is TortoiseHg?*
+
+	A Windows shell extension for the Mercurial revision control system,
+	similar to the Tortoise clients for Subversion and CVS. It also
+	includes a thg application for command line use on many platforms.
+
+*What comes included in the TortoiseHg binary installer for Windows?*
+
+	`Mercurial <http://mercurial.selenic.com/wiki/>`_,
+	`kdiff3 <http://kdiff3.sourceforge.net/>`_,
+	`TortoisePlink <http://www.chiark.greenend.org.uk/%7Esgtatham/putty/>`_
+	bonus extensions: hgfold, perfarce, mercurial-keyring.  fixfrozenexts,
+	python-svn for hgsubversion and convert extensions, and dulwich for
+	hg-git use.
+	See :file:`extension-versions.txt` in the TortoiseHg folder for more
+	details on the exact versions packaged.
+
+*Is Mercurial on Windows compatible with the index service and virus scanners?*
+
+	No. Like TortoiseSVN, `we recommend <http://www.selenic.com/pipermail/mercurial/2010-January/029680.html>`_
+	to turn off the indexing service on the working copies and repositories,
+	and exclude them from virus scans.
+
+*How can I get translations for the Explorer context menu?*
+
+	The available translations were stored by the installer under
+	:file:`C:\\Program Files\\TortoiseHg\\i18n\\cmenu`.  Select the
+	locale you would like to use, double-click on it, and confirm all
+	requests.
+
+*How do I do merges and arbitrary version checkouts?*
+
+	Merges and updates are intended to be done within the
+	:guilabel:`Workbench`, using changeset context menus
+
+*Why can't I connect to an ssh server (remote: bash: <server name>: command not found)?*
+
+	TortoisePlink (and basic Plink) will try to use the :guilabel:`Host
+	Name` configured in Putty under the :guilabel:`Default Settings`.
+	It adds this host name to its command line parameters, causing the
+	hostname to be specified twice, causing this particular error.
+	Clearing the host name from the :guilabel:`Default Settings` is a
+	possible workaround.
+
+*How can I use tool X as my visual diff tool?*
+
+	Since version 1.0, TortoiseHg should autodetect most popular visual
+	diff tools and make them available for selection from the
+	:guilabel:`Visual Diff Tool` item in the settings tool.
+
+*How is TortoiseHg configured?*
+
+	TortoiseHg gets configuration settings from two systems.
+    
+	1. The Mercurial configuration system, which is three-tiered
+		a. Site-wide :file:`Mercurial.ini` in :file:`%ProgramFiles%\\TortoiseHg`
+		b. Per-User :file:`Mercurial.ini` in :file:`%UserProfile%`
+		c. Per-Repository :file:`hgrc` in :file:`{repo-root}\\.hg`
+	2. The folder :file:`%APPDATA%\\TortoiseHg`:
+		a. File :file:`thg-reporegistry.xml` holds the content of the RepoRegistry.
+		b. File :file:`TortoiseHgQt.ini` contains the settings for application state (window positions, etc).
+
+	These are some of the configurables that are stored in the Mercurial
+	configuration system. ::
+	
+		[tortoisehg]
+		vdiff = vdiff
+		editor = gvim
+		tabwidth = 4
+		longsummary = True
+		authorcolor = True
+		authorcolor.steve = blue
+
+*Where do TortoiseHg extensions look for external Python modules on Windows?*
+
+	TortoiseHg includes an entire Python distribution bundled up as
+	DLLs. The standard library modules are all in the
+	:file:`library.zip` file in :file:`C:\\Program Files\\TortoiseHg`.
+
+	If you try to use an extension that imports a non-standard Python
+	module, you will find that the extension will fail to load because
+	it can't find the module. For example the ReviewBoard extension
+	imports the simplejson module, which is not part of the standard
+	Python distribution.
+
+	In order to make it work you need to add a couple of lines to the
+	top of the extension's .py file, before the line that imports the
+	foreign module::
+
+		import sys
+		sys.path.append(r'C:\path\to\module')
+
+	Note that this will not work for modules distributed as .egg files;
+	the supplied path must contain the module's .py or .pyc files.
+
+	If you have many extensions and/or hooks that all share the same
+	Python package, you can create an extension which explicitly
+	modifies sys.path for all the others.  Simply name the extension
+	such that it is loaded first (alphabetically).  Something like::
+
+		[extensions]
+		00setSysPath = C:\path\to\setsyspath.py
+
+.. vim: noet ts=4

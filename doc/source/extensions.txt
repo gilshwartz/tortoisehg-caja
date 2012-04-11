@@ -1,0 +1,231 @@
+**********
+Extensions
+**********
+
+.. module:: extensions
+	:synopsis: Describe extensions bundled with TortoiseHg binary packages
+
+This chapter describes Mercurial extensions that are shipped with
+TortoiseHg binary packages for Windows.  These external extensions are
+included as a convenience to users, so they can be easily enabled as
+soon as they are needed.
+
+Hgfold
+======
+
+`hgfold <http://mercurial.selenic.com/wiki/CaseFoldExtension>`_ is a
+Mercurial extension that helps Windows users deal with filename case
+collisions on VFAT and NTFS.
+
+It adds options to the following Mercurial commands. Type
+:command:`hg help <command>` for more information::
+
+	up    - allows you to update to a revision with filename collisions
+	merge - allows you to merge with a changeset that would create filename collisions
+    
+The extension does not currently do anything to prevent filename
+collisions. See discussion on the Mercurial Wiki
+
+**Installation**
+
+To test the use of this plugin, you can specify it on the Mercurial
+command line like this::
+
+	hg --config "extensions.fold=" status
+
+You may want to add it to your Mercurial.ini or a repository's hgrc like this::
+
+	[extensions]
+	fold=
+ 
+If you do this, you can omit the --config command-line option.
+
+**Warnings**
+
+Like all merge operations, fold.py has to change the parents of the
+working directory. It is still in early testing, so use with caution.
+
+If you get an error about an unknown changeset after running
+:command:`hg recover` try
+:command:`hg debugsetparents <number of tip revision>`.
+You can find the number of the tip revision by running :command:`hg log -l 2`.
+
+Perfarce
+========
+
+`Perfarce <http://www.kingswood-consulting.co.uk/hg/perfarce/>`_ home
+page.
+
+This extension is documented in :ref:`perfarce-perforce` section of
+:doc:`nonhg` chapter.
+ 
+HGEOL
+=====
+
+The hgeol extension is the eventual successor to the win32text
+extension.  It tries to resolve the EOLN compatibility problems in a
+more complete and robust fashion.  Instead of documenting it here, we
+will link to it's online documents which are continually evolving.
+
+* `EOLTranslationPlan <http://mercurial.selenic.com/wiki/EOLTranslationPlan>`_
+* `Source code <http://bitbucket.org/mg/hg-eol/>`_
+
+Mercurial-Keyring
+=================
+
+* `Mercurial Keyring <http://pypi.python.org/pypi/mercurial_keyring>`_ home page
+* `Keyring Extension <http://mercurial.selenic.com/wiki/KeyringExtension>`_ wiki page
+
+Keyring extension uses services of the keyring library to securely save
+authentication passwords (HTTP/HTTPS and SMTP) using system specific
+password database (Mate Keyring, KDE KWallet, OSXKeyChain, dedicated
+solutions for Win32 and command line).
+
+**What it does**
+
+The extension prompts for the HTTP password on the first pull/push
+to/from given remote repository (just like it is done by default), but
+saves the password (keyed by the combination of username and remote
+repository url) in the password database. On the next run it checks for
+the username in :file:`.hg/hgrc`, then for suitable password in the password
+database, and uses those credentials if found.
+
+Similarly, while sending emails via SMTP server which requires
+authorization, it prompts for the password on first use of given server,
+then saves it in the password database and reuses on successive runs.
+
+In case password turns out incorrect (either because it was invalid, or
+because it was changed on the server) it just prompts the user again.
+
+**Installation**
+
+First, the extension must be enabled in your Mercurial.ini file as::
+
+	[extensions]
+	mercurial_keyring=
+
+**Password backend configuration**
+
+The most appropriate password backend should usually be picked automatically,
+without configuration. Still, if necessary, it can be configured using
+:file:`~/keyringrc.cfg` file (:file:`keyringrc.cfg` in the home directory of
+the current user).
+Refer to `keyring docs <http://pypi.python.org/pypi/keyring>`_
+for more details.
+
+.. note::
+	On Windows XP and above, your encrypted passwords are stored in the
+	credentials subsystem using
+	`CredRead <http://msdn.microsoft.com/en-us/library/aa374804%28VS.85%29.aspx>`_ and `CredWrite <http://msdn.microsoft.com/en-us/library/aa375187%28VS.85%29.aspx>`_
+
+.. note::
+	On Windows 2K, the encrypted passwords are stored in the system
+	registry under HKCU\\Software\\Mercurial\\Keyring.
+
+**Repository configuration (HTTP)**
+
+Edit repository-local :file:`.hg/hgrc` and save there the remote repository
+path and the username, but do not save the password. For example::
+
+	[paths]
+	myremote = https://my.server.com/hgrepo/someproject
+
+	[auth]
+	myremote.schemes = http https
+	myremote.prefix = my.server.com/hgrepo
+	myremote.username = mekk
+
+Simpler form with url-embedded name can also be used::
+
+	[paths]
+	bitbucket = https://User@bitbucket.org/User/project_name/
+
+.. note::
+	If both username and password are given in :file:`.hg/hgrc`, extension
+	will use them without using the password database. If username is not
+	given, extension will prompt for credentials every time, also
+	without saving the password. So, in both cases, it is effectively
+	reverting to the default behaviour.
+
+Consult `[auth] <http://www.selenic.com/mercurial/hgrc.5.html#auth>`_
+section documentation for more details.
+
+**Repository configuration (SMTP)**
+
+Edit either repository-local :file:`.hg/hgrc`, or :file:`~/.hgrc` (the latter
+is usually preferable) and set there all standard email and smtp properties,
+including smtp username, but without smtp password. For example::
+
+	[email]
+	method = smtp
+	from = Joe Doe <Joe.Doe@remote.com>
+
+	[smtp]
+	host = smtp.gmail.com
+	port = 587
+	username = JoeDoe@gmail.com
+	tls = true
+
+Just as in case of HTTP, you must set username, but must not set password here
+to use the extension, in other cases it will revert to the default behaviour.
+
+**Usage**
+
+Configure the repository as above, then just pull and push (or email) You
+should be asked for the password only once (per every username +
+remote_repository_url combination). 
+
+.. vim: noet ts=4
+
+pbranch
+=======
+
+Patch Branches (`pbranch <http://mercurial.selenic.com/wiki/PatchBranchExtension>`_) 
+is a way to develop a series of patches for submission into a main 
+repo. It is based on topic branches, one per patch, and is thus highly 
+suitable for collaborative and/or long-term patch development and 
+maintenance.
+
+`A detailed manual <http://arrenbrecht.ch/mercurial/pbranch/>`_ can be found online.
+
+It adds a number of commands which can be listed with 
+:command:`hg help pbranch`::
+
+ pbackout       - backs out the current patch branch (undoes all its changes)
+ pdiff          - prints the final diff for the current or given patch branch
+ peditmessage   - edit the patch message
+ pemail         - send patches by email
+ pexport        - exports patches
+ pextdiff       - combines pdiff and extdiff
+ pgraph         - print an ASCII art rendering of the patch dependency graph
+ pmerge         - merge pending heads from dependencies into patch branches
+ pmessage       - print the patch message(s)
+ pnew           - start a new patch branch
+ pstatus        - print status of current (or given) patch branch
+ reapply        - reverts the working copy of all files touched by REV to REV
+
+TortoiseHg will provide a new task tab that shows the patch dependency graph.
+
+ .. figure:: figures/pbranch.png
+	:alt: Pbranch task tab
+
+	Pbranch task tab
+ 
+
+**Installation**
+
+As this extension is not installed with TortoiseHg, you have to download 
+it from `<http://bitbucket.org/parren/hg-pbranch>`_. Be sure to dowload the
+right one according to the Mercurial version included with TortoiseHg (see the
+wiki page on the download site).
+To test the use of this plugin, you can specify it on the Mercurial
+command line like this::
+
+	hg --config "extensions.pbranch=C:\path\to\pbranch.py" pstatus
+
+You may want to add it to your Mercurial.ini or a repository's hgrc like this::
+
+	[extensions]
+	pbranch = C:\path\to\pbranch.py
+ 
+If you do this, you can omit the --config command-line option.

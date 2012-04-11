@@ -1,0 +1,77 @@
+Debugging 
+==========
+
+.. module:: debugging
+    :synopsis: Debug problems in shell extension or dialogs
+
+Dialogy
+-------
+
+Stderr je zachycen v bufferu, který je prohlížen při ukončení programu. Je-li v bufferu nalezena jakákoliv vážná chyba (tracebacky, atp), je celý jeho obsah poslán do nástroje pro hlášení chyb a uživatel má možnost chybu hlásit. Máte-li podezření, že se vyskytly nezaznamenané chyby, můžete nastavit proměnnou prostředí **THGDEBUG** na jakoukoliv hodnotu, čímž vyřadíte ukládání stderr do bufferu.
+
+Máte-li elementární znalost Pythonu, můžete také použít::
+
+    thg --debugger <command>
+
+Chcete-li vyřadit dělení nástrojem thg, můžete buď zadat proměnnou prostředí **THG_HGTK_SPAWN**, nebo přidat parametr k CLI příkazu '--nofork'.
+
+
+Windows
+~~~~~~~
+
+Pro odstranění závad např. ve Verpánku, zadejte tyto příkazy do konzoly `cmd.exe`, nacédované do repozitáře::
+
+    set THGDEBUG=1
+    thg --nofork log
+
+Linux/MacOSX
+~~~~~~~~~~~~
+
+Podobně jako ve Windows::
+    
+    export THGDEBUG=1
+    thg --nofork log
+
+
+
+Extenze shellu
+---------------
+
+Způsob odladění závisí na platformě.
+
+Windows
+~~~~~~~
+
+Viz také `Debugging with the shell <http://msdn.microsoft.com/en-us/library/cc144064(VS.85).aspx>`_ kde jsou informace o spuštění a testování extenzí shellu ve Windows.
+
+Nástroj :command:`DbgView` ze sady SysInternals odchytí chybovou zprávu
+ z extenze shellu.  Shell ovšem ladící informace neemituje implicitně. Je nutné to povolit editací klíče registru, definovaného v 
+:file:`win32/shellext/DebugShellExt.reg`
+    v repozitáři TortoiseHg. Dvojklikem na souboru můžete načíst klíč do svého registru.
+
+Jinou možností je opustit aplikaci :command:`ThgTaskbar` a spustit ji z příkazového řádku. Ladící informace jsou potom emitovány v otevřené konzole.
+
+Caja
+~~~~~~~~
+
+Ladění se provádí prostřednictvím proměnné DEBUG_THG
+
+* pro testování v odlišném procesu::
+
+    DEBUG_THG=Ne TMPDIR=/tmp/anydir/ --no-desktop caja [path]
+
+* pro testování v hlavní instanci:: 
+
+    caja -q
+    DEBUG_THG=NOe caja
+
+* pro permanentní ladění zadejte DEBUT_THG v souboru, který je načítán při spuštění seance (~/.profile, ~/.xprofile)
+
+Velká písmena v DEBUG_THG označují moduly.  Pouze *O* a *N*
+u *OverlayCache* a *Caja*, jsou podporované názvy modulů.  Malá písmena označují části. Podporováno je pouze *e*, označující *chybové* zprávy.
+
+Pro restartování caja použijte buď
+
+1) killall caja (seance restartuje caja automaticky, stdin a stdout jdou do ~/.xsession-errors)
+
+2) caja -q; caja (stdin a stdout jsou v konzole)

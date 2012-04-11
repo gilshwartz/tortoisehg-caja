@@ -1,0 +1,123 @@
+***********
+Předmluva
+***********
+
+.. module:: preface
+    :synopsis: About this manual
+
+
+Cílový čtenář
+==============
+
+Tato kniha je napsána pro "gramotného" uživatele počítače, který chce používat
+Mercurial pro správu svých dat a vyhovuje mu, není-li pro komunikaci s 
+programem omezen pouze na příkazový řádek. TortoiseHg je extenze
+uživatelského rozhraní Windows.
+
+Nejaktuálnější verzi této dokumentace lze nalézt na 
+`webových <http://tortoisehg.org>`_ stránkách TortoiseHg.
+
+Seznámení s obsahem
+====================
+
+Tato `Předmluva` stručně seznamuje s programem, s kolektivem lidí, kteří se na jeho tvorbě podílejí a s licenčními podmínkami pro jeho používání a šíření.
+
+V kapitole :doc:`intro` se seznámíme s instalací programu a s nastavením jeho jazykové verze. 
+
+Kapitola :doc:`whatsnew` uvádí rozdíly mezi TorotiseHg řady 2 a 1.
+
+Kapitola :doc:`quick` je stručným návodem na užívání programu.
+
+Hlavní kapitola :doc:`daily` popisuje často používané nástroje programu. 
+
+Kapitola :doc:`settings` popisuje konfiguraci TortoiseHg.
+
+Kapitola :doc:`patches` popisuje práci s oprávkami.
+
+Kapitola :doc:`extensions` popisuje extenze Mercurialu, které jsou součástí binárního paketu TortoiseHg.
+
+Kapitola :doc:`nonhg` popisuje použití TortoiseHg jako klientskou aplikaci pro nemercurialové servery.
+
+Kapitola :doc:`faq` obsahuje seznam otázek a odpovědí - nepřeloženo.
+
+Kapitola :doc:`debugging` popisuje řešení možných problémů.
+
+
+TortoiseHg je volně šířený program!
+===================================
+
+TortoiseHg je šířen ve shodě s licenčními podmínkami 
+`GPLv2 <http://www.gnu.org/licenses/gpl-2.0.html>`_.  Lze jej instalovat 
+na neomezené množství počítačů a šířit ve shodě s licencí GPLv2.
+
+Komunita
+========
+
+Adresy:
+
+* `Uživatelé <https://lists.sourceforge.net/lists/listinfo/tortoisehg-discuss>`_ - Oznámení, otázky-odpovědi a diskuze o vlastnostech
+* `Vývojáři <https://lists.sourceforge.net/lists/listinfo/tortoisehg-develop>`_ - Oprávky (patches), zprávy o chybách a diskuze o vývoji programu.
+* `Problémy <https://lists.sourceforge.net/lists/listinfo/tortoisehg-issues>`_ - Přehled zaznamenávaných problémů.
+
+Naše Wiki na stránkách Bitbucket je `zde <http://bitbucket.org/tortoisehg/stable/wiki/Home>`_ .
+
+Poděkování
+==========
+
+Dík všem, kteří do projektu TortoiseHg přispívají. Pro vybudování skutečně 
+použitelné aplikace je potřebný kolektiv vývojářů, překladatelů a uživatelů.
+Dík patří zejména těm uživatelům, kteří nelenují oznámit chybu nebo se podělit o svůj názor.
+
+Instalátor TortoiseHg pro Windows obsahuje ovladač TortoiseOverlays, převzaty z projektu 
+`TortoiseSVN <http://tortoisesvn.net>`_.
+
+Prohlížeč historie v TortoiseHg je založen na aplikaci `hgview <http://www.logilab.org/project/hgview>`_, kterou vytvořil David Douard s kolektivem s finanční podporou `Logilab <http://www.logilab.fr>`_.
+
+
+Konvence použité v textu
+========================
+
+V návodu jsou používány následující typografické konvence:
+
+:kbd:`Ctrl-A`
+	Označuje klávesu nebo kombinaci kláves, které mají být stisknuty.
+ 
+:guilabel:`Commit`
+	Označuje popisek, tlačítko či cokoli, co uvidíme v uživatelském rozhraní.
+
+:menuselection:`TortoiseHg -->  About`
+	Označuje výběr položky z menu nebo kombinaci položek z menu, výběr karty nebo GUI popisku. Například pořadí 
+	:menuselection:`TortoiseHg  --> Globální nastavení --> Commit --> Jméno uživatele` nám říká abychom něco zadali v textovém poli 
+	:guilabel:`Jméno uživatele`, které se nachází na záložce  :guilabel:`Commit`, jíž vybereme z nabídky 
+	:menuselection:`TortoiseHg --> Globální nastavení`.
+
+:file:`.hg/hgrc`
+	Označuje jméno adresáře a souboru.
+
+:command:`hgtk log`
+	Označuje příkaz jež má být zadán na příkazové řádce terminálu (např. cmd.exe).
+
+``myproxy:8000``
+	Označuje text, který má být zadán do textového pole grafického rozhraní.
+   
+.. note::
+	Toto je poznámka.
+
+.. warning::
+	Důležitá poznámka nebo varování.
+	
+	
+Poznámky překladatele
+=====================
+
+Program TortoiseHg lze aktivovat buď jako kontextové menu v Průzkumníku Windows nebo jej lze volat příkazem :command:`thg <command>` z konzoly cmd.exe. U příkazů pro thg se nelze vyhnout anglickým termínům. Rovněž příkazy Mercurialu :command:`hg <command>` lze zadat pouze v anglickém jazyce.
+
+Z toho vyplývá, že bez znalosti omezeného množství anglických slov se při používání TortoiseHg neobejdeme. Proto jsem si dovolil mnohá slova v manuálu i v lokalizaci nepřekládat.
+
+Slova PATCH a HUNK překládám jako oprávka a porce. SHELF (police) překládám pro zbystření pozornosti jako almárka, WORKBENCH jako Verpánek.
+
+Kde si nevím rady, ponechávám text nepřeložený, za což se laskavému čtenáři omlouvám.
+
+Případné připomínky či pomoc vítám: tovim@seznam.cz
+    
+.. vim: noet ts=4

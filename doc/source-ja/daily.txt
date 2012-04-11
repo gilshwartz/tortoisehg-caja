@@ -1,0 +1,21 @@
+*********************
+TortoiseHg ダイアログ
+*********************
+
+.. toctree::
+	:maxdepth: 3
+	
+	common
+	explorer
+	init
+	clone
+	commit
+	shelve
+	changelog
+	datamine
+	synchronize
+	serve
+	guess
+	ignore
+
+.. vim: noet ts=4

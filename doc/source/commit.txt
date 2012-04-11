@@ -1,0 +1,227 @@
+Commit
+======
+
+.. module:: commit.dialog
+	:synopsis: Dialog used to perform commit
+
+The commit tool is second most commonly used application after the
+Workbench.  Not only can the commit tool commit your changes, but it can
+also examine the state of your working directory and perform most
+routine maintenance tasks (add new files, detect renames, manage the
+ignore filter, etc).
+
+.. figure:: figures/commit.png
+	:alt: Commit dialog
+
+	Commit dialog
+
+Features
+--------
+
+Enumerating the toolbar buttons:
+
+	:guilabel:`Branch dialog`
+		Shows the current branch name of the working directory. Normally
+		this is informational only, but pressing this button opens up a
+		branch maintenance dialog.  Do not use this feature unless you
+		understand Mercurial's
+		`named branches <http://mercurial.selenic.com/wiki/NamedBranches>`_.
+	:guilabel:`Recent Commit Messages`
+		A drop-down list of the 10 most recent commit messages. The
+		the drop-down list is filled the first time it is opened.
+	:guilabel:`Commit`
+		Commit selected diffs in checked files.
+	:guilabel:`Undo`
+		Undo (rollback) last immediate commit. Your commit message will be
+		available in the message history, so you can easily repeat the
+		commit if necessary.
+
+
+The file list has four columns:
+
+	1) A checkbox that indicates whether the file is selected for an
+	   operation.  The toolbar buttons only operate on checked files.
+	   "Partially" selected files have a special check state.  This
+	   column header is checkable, it will toggle the file selection
+	   states.
+	2) The :guilabel:`st` column holds the status of the file, defined
+	   by Mercurial's status command, one of 'MARD?IC'.  A status of 'S'
+	   indicates a dirty subrepository that needs to be committed.
+	3) The :guilabel:`ms` column holds the merge state of the file,
+	   defined by Mercurial's resolve command, one of ' RU'.  See the
+	   merge section below.
+	4) The canonical path of the file relative to the repository root
+
+.. note::
+	If the commit tool was started with a file pattern or selection, a
+	button will appear at the bottom of the file list that can clear the
+	file pattern and give you an unfiltered view of the entire working
+	directory.
+
+The :guilabel:`Status` button has a menu with checkable options that
+toggle the display of the various classes of files {modified, added,
+removed, deleted, unknown, clean, ignored}.
+
+*Removed* means a revisioned file has been marked as removed. *Deleted*
+means a revisioned file is missing but Mercurial has not been told to
+quit tracking that file. For instance, if you rename a revisioned file
+in Explorer, the original filename will show up as deleted and the
+new filename will show up as unknown. By right-clicking on the new
+filename you can bring up the rename guessing dialog which can discover
+the rename by comparing file contents and mark the old file as removed
+and the new file as added while recording the whole operation as a
+rename.
+
+*Unknown* files are not tracked by Mercurial, but they also do not match
+any ignore filters you have configured.  Unknown files are shown by
+default because they are usually files that need to be added to revision
+control.  It is recommended that you keep your ignore filters up to date
+to ensure that is the case.  The context menu of unknown files has an
+option open the ignore pattern tool.
+
+*Clean* files are tracked files that have not been modified, while
+*Ignored* files are untracked files that match a configured ignore
+pattern.  Neither of those file types are shown by default, unless a the
+user includes such a file in a selection (explorer) or provides the file
+name on the command line.
+
+Keyboard navigation
+-------------------
+
+:kbd:`Ctrl-Enter`
+	Trigger the commit
+:kbd:`Ctrl-E`
+	Reflow the paragraph currently under the cursor.  You must configure
+	a message format policy for this shortcut to work.
+
+File Context Menus
+------------------
+
+When right clicking on files in the file list, you will get a context
+menu of commands that are applicable to the selected files.
+
+For unknown **?** files, the context menu will allow you to detect
+renames (if you think the unknown file is a copy or rename of a
+revisioned file) or to configure the repository's ignore filter (if the
+unknown file should never be revisioned and you want Mercurial to ignore
+it).
+
+
+Merging
+-------
+
+The commit tool has a special mode when it is opened in a repository
+that is in a merged state (either a merge is in progress, or an update
+was performed that caused a conflict).
+
+The merge state *ms* column is especially useful in this mode.  Files
+that are marked with *R* are files where Mercurial and/or the user have
+successfully merged (resolved) changes from both parents. Files that
+are marked with *U* have unresolved changes. You can use the *Restart
+Merge* context menu option to restart the merge for those files, or you
+can use the *edit* context menu option to resolve the conflict by hand.
+The *Restart Merge* menu option allows you to select the merge tool to
+use to perform the merge, or even to pick one version or the other
+unconditionally (internal:local, internal:other).  After the conflicts
+have been manually resolved, you must use the *mark resolved* context
+menu option to change the file's merge state to *R*.
+
+Mercurial will not allow you to commit a merge if any files have
+unresolved *U* merge states.
+
+For your reference, *local* is the revision you had checked out when you
+started the merge and *other* is the revision you merged with.
+
+To undo a failed merge attempt, you must tell Mercurial to remove the
+second parent from your working directory.  This usually means
+performing a clean update of the first parent.  The merge tool has an
+:guilabel:`Undo` button which does exactly that.
+
+Once you have your working directory back at one parent revision, you
+may restart the merge process.
+
+Commit Message Pane
+-------------------
+
+The commit message pane has these special context menu options:
+
+	:guilabel:`Paste Filenames`:
+		Paste checked filenames into the commit message at the cursor.
+	:guilabel:`Apply Format`:
+		Apply configured message wrap policy to current message.
+	:guilabel:`Configure Format`:
+		Opens the settings dialog to the :guilabel:`Commit` tab.
+
+If your project has guidelines for the format of commit messages, you
+can configure them in the settings tool.  The commit tool will enforce
+your policy at commit time, and you can ask the tool to apply the format
+to the current message.  The :guilabel:`Commit` tab of the settings tool
+has these two configurables for commit message policy:
+
+	:guilabel:`Summary Line Length`:
+		Maximum length of the commit message summary line.  If set,
+		TortoiseHg will draw a line at the specified width.
+
+
+Subrepositories
+---------------
+
+A `subrepository <http://mercurial.selenic.com/wiki/subrepos>`_
+is a feature introduced in Mercurial 1.3.  It allows one Mercurial
+repository to store references to external Mercurial (or potentially
+other VCS) repositories, and to include the state of those external
+repositories in the main repository's history.
+
+TortoiseHg 1.0 introduced rudimentary support for subrepositories, and
+only in the commit / status tool.  When Mercurial considers a subrepo
+dirty, it will appear in the commit tool as a special entry in the file
+list with a status of *S*.  If a subrepo is included in the file list of
+a commit, the subrepo is committed along with the other changes,
+updating the .hgsubstate file in the main repository root.
+
+
+Configurables
+-------------
+
+:menuselection:`Commit --> Username`
+	Sets username associated with your commits (see :doc:`quick`)
+:menuselection:`Commit --> Summary Line Length`
+	Configures a 'policy' limit for summary lines
+:menuselection:`Commit --> Close After Commit`:
+	When set to True, the commit tool will close after a
+	successful commit.
+
+And three other features for *advanced* users.
+
+:menuselection:`Commit --> Push After Commit`:
+	If configured, the commit tool will try to push to the configured
+	URL or alias after each commit.
+:menuselection:`Commit --> Auto Commit List`:
+	Comma separated list of files that are automatically included in
+	every commit.  Intended for use only as a repository setting.
+:menuselection:`TortoiseHg --> Max Diff Size`
+	Configures the diff size limit
+
+From command line
+-----------------
+
+The commit tool can be started from command line::
+
+	thg commit [OPTIONS] [FILE]...
+
+	aliases: ci
+
+	commit tool
+
+	options:
+
+	 -u --user  record user as committer
+	 -d --date  record datecode as commit date
+
+	use "thg -v help commit" to show global options
+
+For a quick help on the format of date type::
+	
+	hg help dates
+
+.. vim: noet ts=4

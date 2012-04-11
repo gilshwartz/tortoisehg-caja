@@ -1,0 +1,174 @@
+**************************************
+他のバージョン管理システムとの相互運用
+**************************************
+
+.. module:: nonhg
+	:synopsis: TortoiseHg を他のバージョン管理システムのフロントエンドとして使用する方法
+
+この章では他のバージョン管理システムと相互運用するために使用される3つの
+Mercurial 拡張機能について述べます。 `リポジトリの変換
+<http://mercurial.selenic.com/wiki/RepositoryConversion>`_
+も参照してください。
+
+Perfarce (Perforce)
+===================
+
+* `Perfarce <http://www.kingswood-consulting.co.uk/hg/perfarce/>`_ ウェブサイト
+* `Perforce ユーザのための Mercurial <http://mercurial.selenic.com/wiki/PerforceConcepts>`_
+
+この拡張機能は Perforce サーバ上の名前付き Perforce
+クライアント仕様に基いて ::
+
+	p4://p4server[:port]/clientname
+
+のようなリモートリポジトリパスを持つリポジトリにおける同期処理を変更します。
+
+この拡張機能を使用する前にサーバ上にクライアント仕様を用意しておく必要があります。
+
+.. NEEDFORTRANSLATION
+
+Making changes to the client specification Views causes problems when
+synchronizing the repositories, and should be avoided.
+
+5つの Mercurial 標準コマンドが上書きされます。
+
+outgoing::
+
+	送信先リポジトリのパスが p4:// で始まっている場合、
+	ローカルリポジトリにあって Perforce リポジトリにないリビジョンの
+	ファイルを表示します。
+
+push::
+
+	プッシュ先リポジトリのパスが p4:// で始まっている場合、
+	変更点をローカルリポジトリから Perforce リポジトリにエクスポートします。
+	リビジョンを指定せずに実行したときは、最後のプッシュした時点からの
+	すべてのリビジョンが送信されます。どちらの場合も単一の Perforce
+	変更リストにまとめられた状態ででプッシュされます。
+	結果の変更リストを Perforce サーバにサブミットするかどうかは --submit
+	オプションを使用するか、 **perfarce.submit** 設定を True にしてください。
+	**perfarce.keep** が False のとき、ファイルのサブミットに成功すると、
+	Perforce 作業エリアが削除されます。
+
+pull::
+
+	プル元リポジトリのパスが p4:// で始まっている場合、
+	Perforce リポジトリから変更点をインポートし、hg push で
+	自動的にサブミット済みの変更リストとマージされます。 **perfarce.keep**
+	設定が False の場合は Perforce 作業エリアからファイルが削除され、
+	True のときは Perforce 作業エリアは新しいファイルで更新されます。
+
+incoming::
+
+	受信元リポジトリのパスが p4:// で始まっている場合、
+	Perforce リポジトリにあって、まだローカルにない変更点を表示します。
+
+clone::
+
+	クローン元リポジトリのパスが p4:// で始まっている場合、
+	クローン先のリポジトリを作成し、すべての変更点を Perforce
+	リポジトリからプルします。
+
+**TortoiseHg との統合**
+
+perfarce 拡張機能が有効化されると、クローンダイアログに
+:guilabel:`開始リビジョン` オプション設定が追加され、
+チェンジログビューアのメニューバーには
+:guilabel:`Perforce` メニューが追加されます：
+
+identity::
+
+	Perforce 変更リストの tip リビジョンがローカルリポジトリにおける
+	どのリビジョンなのかを探して、そのリビジョンを選択します。
+
+pending::
+
+	Perforce クライアントにプッシュしているが、まだサブミットしていない、
+	または取り止めた保留中の Perforce 変更リストを検出します。
+	実行すると保留中の変更リストが表示され、それらをサブミットするか
+	取り止めるか決めることができます。
+
+**インストール**
+
+拡張機能を Mercurial.ini ファイルまたはリポジトリの hgrc
+ファイルで有効にしてください： ::
+
+	[extensions]
+	perfarce=
+
+hgsubversion (SVN)
+==================
+
+* `hgsubversion <http://bitbucket.org/durin42/hgsubversion/wiki/Home>`_ ウェブサイト
+* `hgsubversion 拡張機能 <http://mercurial.selenic.com/wiki/HgSubversion>`_ Wiki
+* `Subversion リポジトリを使う <http://mercurial.selenic.com/wiki/WorkingWithSubversion>`_
+
+hgsubversion はその名前の通り、Mercurial を Subversion
+サーバのクライアントとして使用するための拡張機能です。また Subversion
+リポジトリを Mercurial のリポジトリに変換するのにも使えます。
+
+*インストール*
+
+TortoiseHg の Windows インストーラは hgsubversion が必要とする Python 用の
+SVN ライブラリを同梱しているため、以下の hgsubversion
+リポジトリをローカルにクローンするだけで使えます： ::
+
+	hg clone http://bitbucket.org/durin42/hgsubversion/ C:\hgsvn
+
+そして次のようにしてクローンしたリポジトリの中を指すようにして hgsubversion
+拡張機能を Mercurial.ini で有効にします： ::
+
+	[extensions]
+	hgsubversion = C:\hgsvn\hgsubversion
+
+正しくインストールできたかどうかは :command:`hg help hgsubversion`
+をコマンドラインから実行して確認してください。
+
+より詳細な説明については hgsubversion の Wiki をご覧ください。
+
+.. warning::
+	Subversion サーバからクローンする際は、最初のいくつかのリビジョンだけを
+	クローンしてから、残りのリビジョンをプルすることをお勧めします。
+	クローンに失敗すると不完全なクローンリポジトリ全体が削除されてしまうためです。
+	その点、プル操作はより寛容です。
+
+*TortoiseHg におけるサポート*
+
+Subversion リポジトリからインポートしたチェンジセットには、Subversion
+におけるバージョン番号がログビューアに表示されます。
+
+hg-git (git)
+============ 
+
+* `hg-git <http://hg-git.github.com/>`_ ウェブサイト
+* `hg-git 拡張機能 <http://mercurial.selenic.com/wiki/HgGit>`_ Wiki
+* `Git ユーザのための Mercurial <http://mercurial.selenic.com/wiki/GitConcepts>`_
+
+hg-git はその名前の通り、Mercurial を git サーバのクライアントとして使用するための拡張機能です。
+また git リポジトリを Mercurial のリポジトリに変換するのにも使えます。
+
+*インストール*
+
+TortoiseHg の Windows インストーラは hg-git が必要とする Python 用の
+git ライブラリ (dulwich) を同梱しているため、以下の hg-git
+リポジトリをローカルにクローンするだけで使えます： ::
+
+	hg clone http://bitbucket.org/durin42/hg-git/ C:\hg-git
+
+Mercurial.ini ファイルで hggit と bookmarks 拡張機能を有効にしてください： ::
+
+	[extensions]
+	bookmarks =
+	hggit = C:\hg-git\hggit
+
+正しくインストールできたかどうかは :command:`hg help hggit`
+をコマンドラインから実行して確認してください。
+
+より詳細な説明については hg-git の Wiki をご覧ください。
+
+'incoming' コマンドは git リポジトリとのやり取りがうまくいっておらず、
+'outgoing' コマンドはあまり有用な情報を表示しません。
+他のバージョン管理システムと相互運用する拡張機能では珍しくないことですが、
+実質的に使用できるのはプルとプッシュ操作だけになります。
+
+.. vim: noet ts=4

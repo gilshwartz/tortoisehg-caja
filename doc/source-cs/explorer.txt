@@ -1,0 +1,82 @@
+Integrace s průzkumníkem Windows
+=================================
+
+.. module:: explorer
+    :synopsis: Windows explorer integration
+
+Kontextové nabídky
+------------------
+
+Přístup k příkazům TortoiseHg je možný pomocí kontextového menu v průzkumníku Windows a dalších aplikacích, které používají standardní dialogy File/Open. Zde je kontextové menu pro revizovanou složku:
+
+.. figure:: figures/cmenu-nofiles.png
+	:alt: Context menu
+
+	Kontextové menu pro složku pod správou Mercurialu
+
+A zde je kontextové menu pro vybrané soubory nebo složky:
+
+.. figure:: figures/cmenu-files.png
+	:alt: Context menu
+
+	Kontextové menu pro soubor nebo složku
+
+TortoiseHg poskytuje dialogy pro většinu pravidelně používaných příkazů aplikace Mercurial. Méně používané a nově přidané příkazy jsou ve Windows přístupné z CLI (:file:`cmd.exe`) ve Windows.
+
+Překryvné ikonky
+----------------
+
+TortoiseHg poskytuje vizuální vyjádření stavu souborů pomocí překryvných ikonek v okně Průzkumníka Windows. Stejné řešení lze nalézt i u jiných programů Tortoise, jako je TortoiseCVS a TortoiseSVN.
+
+TortoiseHg sdílí překryvné ikony s TortoiseSVN (verze 1.5.x nebo pozdější) a s jinými projekty "Tortoise" prostřednictvím TortoiseOverlays, což je další projekt vytvořený skupinou TortoiseSVN.
+
+.. figure:: figures/overlayicons.png
+	:alt: Overlay icons
+
+	Překryvné ikony na ikonách složek a souborů (XP)
+
+Kontextové menu obsahuje volbu :guilabel:`Aktualizovat ikony` která přinutí aplikaci TortoiseHg oživit ikony v právě rozbaleném repozitáři nebo ve složce s repozitáři. Ikona hlavního panelu zezelená a ikony v adresáři se změní v otazníky ve chvíli, kdy probíhá tato aktualizace.
+
+Konfigurace prostředí
+---------------------
+
+Ovladač překryvů a kontextové nabídky jsou konfigurovatelné. V ploše otevřeného adresáře nebo dokonce v ploše obrazovky provedeme pravý poklep a vybereme :menuselection:`TortoiseHg > Nastavení kontext. nabídek`. 
+
+Na kartě "Contex Menu" můžeme jednotlivé volby přesouvat ze submenu do hlavního menu a obráceně.
+
+.. figure:: figures/shell-config-cmenu.png
+	:alt: Shell Configuration dialog
+
+	Nastavení kontextových nabídek
+	
+Na kartě "Ikony" upravíme nastavení, týkající se překryvných ikon a zobrazení 'Serveru překryvných ikon' v hlavním panelu Windows.
+ 
+
+.. figure:: figures/shell-config-icons.png
+	:alt: Shell Configuration dialog, Icons tab
+
+	Nastavení překryvných ikon	
+	
+:guilabel:`Překryvy povoleny`
+    Umožnit zobrazení překryvných ikon na složkách a souborech v pracovním adresáři repozitáře Mercurialu; implicitně: ano                             
+    
+:guilabel:`Pouze lokální disky`
+    Zobrazení ikon pouze na lokálních discích. Zobrazení ikon na vzdálených složkách a souborech je náročnější na výkon počítače; implicitně: nezatrženo 
+
+:guilabel:`Povolené ovladače překryvů:`
+    Tato uživatelská nastavení poskytují možnost vypnout ovladače překryvných ikon ve sdílených komponentách TortoiseOverlays. Tyto komponenty jsou sdíleny všemi aplikacemi Tortoise (TortoiseHg, TortoiseSVN, atd) ve snaze vyhnout se registrování velkého množství ikonových slotů. Všechny tyto aplikace používají stejnou sadu ikonových slotů. Celkový počet dostupných slotů ve Windows je poměrně omezený a liší podle verzí Windows. Například u Windows 7 je k disposici pouze 8 volných slotů pro ovladače překryvných ikon. V tomto editačním poli lze nepotřebné ovladače ikon vypnout a tím snížit jejich celkovou spotřebu. Zvýší se tím šance, že důležité ovladače jako "Normal" (zelená značka) nebo "Modified" (červený vykřičník) obdrží svůj ikonový slot, i když je v počítači registrováno příliš mnoho ovladačů. Velmi se doporučuje zakázat nepoužívané ovladače, jako je Uzamčeno, Jen ke čtení, Ignorováno, Smazáno - pokud víme, že je nepoužívá jiná aplikace Tortoise. Určitě povolíme ovladače pro Přidáno a Neverzováno, protože jsou v TortoiseHg používány.
+	Implicitně jsou všechny volby zatrženy.
+    
+.. warning::
+    Nastavení v poli "Enabled Overlay Handlers" ovlivňují všechny aplikace Tortoise uživatele. Aby se změny nastavení v tomto poli projevily, je požadován logoff/login.   
+
+:guilabel:`Hlavní panel` 
+    Pro zobrazení ikony serveru překryvných ikon v dolní nástrojové liště Windows zatrhneme volbu "Zobrazit ikonu". Volba "Zvýraznit ikonu" způsobí, že tato ikona změní barvu (zezelená), když ikonový server aktualizuje cache soubory (:file:`.hg\dirstate` a :file:`.hg\thgstatus`) v repozitáři.
+    
+Překryvné ikony lze selektivně zakázat pro určitý repozitář v souboru :file:`.hg\thgstatus` zápisem jediného řádku::
+
+    @@noicons                
+
+
+
+.. vim: noet ts=4

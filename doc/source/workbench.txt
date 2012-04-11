@@ -1,0 +1,608 @@
+Workbench
+=========
+
+.. module:: workbench.dialog
+	:synopsis: Primary TortoiseHg application
+
+The Workbench is the primary TortoiseHg application.  It allows you
+to browse your local repositories, make commits, perform searches,
+synchronize with other repositories, and perform various maintenance
+tasks.  Nearly every Mercurial feature is accessible from the Workbench.
+
+.. figure:: figures/workbench.png
+	:alt: Workbench
+
+	Workbench dialog.
+
+Workbench Main Widgets are:
+
+	:guilabel:`Revision History View`
+		A tabbed widget to view multiple repositories at once. The different
+		columns show general information about each changeset in the graphlog.
+		You can configure the columns to show from the menu via
+		:menuselection:`View --> Choose Log Columns...`, and there you can reorder
+		the columns too. This is the main or central widget of the 	Workbench
+		application.
+
+	:guilabel:`Repository Registry`
+		This widget, by default shown on the left, allows to manage multiple
+		repositories from the Workbench. You can show/hide it via
+		:menuselection:`View --> Show Repo Registry` or with the corresponding button
+		in the Dock Toolbar. It's also a dockable widget.
+		The :menuselection:`View --> Show Paths` menu option allows to not only view
+		the names of the repositories but also their path in a second column.
+	
+	:guilabel:`Output Log`
+		This dockable widget, which can be shown/hidden with
+		:menuselection:`View --> Show Output Log`, gives the user information about
+		the Mercurial commands that were executed during the current session.
+		You can also use it as a commandline by typing Mercurial commands at its
+		prompt 	directly. It shows any error messages when appropriate. Content
+		is wiped when the Workbench is closed.
+
+	:guilabel:`Task Tabs`
+		The lower right part of the Workbench is occupied by a stack of widget
+		where you can perform various frequent tasks. It is a tabbed widget.
+		See further for more detail about each one.
+
+Workbench Menus
+---------------
+
+The Workbench has a menu bar for accessing tool functions and for
+launching other tools.
+
+	:guilabel:`File`
+		Handle repositories and settings.
+
+		.. figure:: figures/file-menu.png
+			:alt: File menu
+			
+			File Menu
+
+	:guilabel:`View`
+		Manage the visibility of various parts of the Workbench.
+
+		.. figure:: figures/view-menu.png
+			:alt: View menu
+			
+			View menu
+
+	:guilabel:`Repository`
+		Perform special actions on the active repository.
+
+		.. figure:: figures/repository-menu.png
+			:alt: Repository menu
+			
+			Repository menu
+
+	:guilabel:`Help`
+		About shows TortoiseHg version info.
+
+Edit Toolbar
+------------
+
+.. figure:: figures/edit-toolbar.png
+	:alt: Edit Toolbar
+	
+	Edit toolbar
+
+Moving around in the revision history. All the buttons work on the current repository.
+
+	:guilabel:`Refresh`
+		Reload the revision history of the current repository.
+	:guilabel:`Back`
+		Go back to the previously selected revision.
+	:guilabel:`Forward`
+		Go forward to the next revision in your selection history or
+		most recent revision set query.
+	:guilabel:`Filter toolbar`
+		Show and activate the Filter Toolbar at the top of the revision
+		graph.
+
+Dock Toolbar
+------------
+
+.. figure:: figures/dock-toolbar.png
+	:alt: Dock Toolbar
+	
+	Dock toolbar
+
+Show or hide some main widgets in the Workbench.
+
+	:guilabel:`Show Repository Registry`
+		Show/hide the Repository Registry widget.
+	:guilabel:`Show Output Log`
+		Show/hide the Output Log widget.
+
+
+Sync Toolbar
+------------
+
+.. figure:: figures/sync-toolbar.png
+	:alt: Sync Toolbar
+	
+	Sync toolbar
+
+Synchronize your repository with other repositories.
+
+	:guilabel:`Incoming`
+		Download incoming changesets from the remote repository, store then in
+		a temporary bundle file, then enter bundle preview mode with the
+		incoming changes applied.  Incoming changesets will be shown as normal,
+		while others will be shown grayed in the revision graph.
+		The buttons :guilabel:`Accept` and :guilabel:`Reject` are then
+		shown at the top of the revision graph.
+	:guilabel:`Pull`
+		Pull incoming changesets from the remote repository, then apply
+		after-pull effect (update, fetch, or rebase).
+	:guilabel:`Outgoing`
+		Determine outgoing changesets that would be pushed to the
+		remote repository.  Outgoing changesets will be shown as normal, while
+		others will be shown grayed in the revision graph.
+	:guilabel:`Push`
+		Push outgoing changesets to the remote repository.
+
+Task Toolbar
+------------
+
+.. figure:: figures/task-toolbar.png
+	:alt: Task Toolbar
+	
+	Task toolbar
+
+Work with the various task tabs.
+
+	:guilabel:`Revision Details`
+		Shows information about the current revision : files added, removed,
+		renamed, or modified, file contents, changeset info.
+		See _`Revision Details` for more detail.
+
+..        .. figure:: figures/revdetails-tasktab.png
+			:alt: Revision Details Task Tab
+			
+			Revision Details Task Tab
+
+..
+
+	:guilabel:`Commit`
+		Here you can add new files, and do your commits.
+		See _`Commit` for more detail.
+
+..		.. figure:: figures/commit-tasktab.png
+			:alt: Commit Task Tab
+			
+			Commit Task Tab
+
+..
+
+	:guilabel:`Synchronize`
+		Gives you full control about how you let your repositories
+		communicate with any other repository.
+		See _`Synchronize` for more detail.
+
+..		.. figure:: figures/sync-tasktab.png
+			:alt: Synchronise Task Tab
+			
+			Sync Task Tab
+
+..
+
+	:guilabel:`Manifest`
+		Shows information about the complete content of the repository as it
+		was for the current revision. Here you can view the raw content of
+		files or an Annotate view.  There is a context menu on the filelist
+		to do further digging into the history data.  You can even compare a
+		file between different revision from there.
+		See _`Manifest` for more detail.
+
+..		.. figure:: figures/manifest-tasktab.png
+			:alt: Manifest Task Tab
+			
+			Manifest Task Tab
+
+..
+
+	:guilabel:`Search`
+		For performing text searches through file content.
+		
+..		See _`Search` for more detail.
+
+..
+
+..		.. figure:: figures/search-tasktab.png
+			:alt: Search Task Tab
+			
+			Search Task Tab
+
+..
+
+	:guilabel:`Patch Queue`
+		This widget implements the MQ extension functionality.
+		See _`Patch Queue` for more detail.
+
+..		.. figure:: figures/mq-tasktab.png
+			:alt: Patch Queue Task Tab
+			
+			Patch Queue Task Tab
+
+..
+
+There is some relation between the revision or patch selected in the graph pane,
+and the task tabs.
+
+* Clicking on the Working Directory automatically switches to the Commit task tab.
+
+* Clicking on any revision other than the Working Directory switches to the
+  Revision Details task tab.
+
+You can overrule this standard behaviour by doing an :kbd:`ALT-Click` for making
+your selection. This preserves the current task tab, no matter what revision or
+patch you select.  Cursor selection movements also do not switch task tabs.
+
+
+Filter Toolbar
+--------------
+
+.. figure:: figures/filter-toolbar.png
+	:alt: Filter Toolbar
+
+	Filter features for the Workbench.
+
+The filter bar allows one to quickly filter the changesets panel. It is based
+on the Revision Sets feature of Mercurial.
+See `hg.1.html#revsets <http://www.selenic.com/mercurial/hg.1.html#revsets>`_ 
+for details on how to specify revision sets.
+The toolbar can be toggled with :kbd:`Ctrl-S`. Parts from left to right:
+
+	:guilabel:`Clear`
+		Clears the search lineedit.  Essentially disables all filters.
+	:guilabel:`Filter entry`
+		Here you can type a filtering condition. The widget is a combobox,
+		holding a history of previous filtering conditions.
+	:guilabel:`Trigger`
+		Applies the condition set by the filter.
+	:guilabel:`Open`
+		Opens the RevSet dialog. There you can select and/or enter your
+		condition in a combined way via point-and-click and by typing.
+	:guilabel:`Delete`
+		Deletes the selected query.
+	:guilabel:`Toggle filter`
+		Applies the filter condition by sowing changesets that don't conform
+		to it in a color suggesting insensitiveness, so the selected ones
+		stand out more.
+	:guilabel:`Branch options`
+		A few options for showing branches.
+		See :menuselection:`Repo Settings --> Workbench --> Dead Branches` for
+		a method to prune names from this combo box.
+	:guilabel:`Branches combo`
+		A combo box with the list of named branches in your repository.
+	:guilabel:`Custom Filter Combo`
+		Finally there is a combo box that selects among the various
+		filter types that can be manually specified.
+
+If the repository tab is previewing incoming changesets, a pair of
+buttons are prepended to the start of the filter bar:
+
+	:guilabel:`Accept`
+		Accept (pull) the changesets from the previewed bundle.  This
+		button is only visible when previewing a changeset bundle.
+		The after-pull effect is respected after pulling from a bundle.
+
+	:guilabel:`Reject`
+		Reject the changesets from the previewed bundle and exit preview
+		mode.  This button is only visible when previewing a changeset
+		bundle.
+
+The Workbench will attempt to lookup the entered search phrase in the
+repository to see if it matches a tag, bookmark, branch name, changeset
+hash, or revision number.  If no changeset match is found, the Workbench
+checks if the search phrase has any parentheses.  If no parentheses are
+found, the Workbench assumes the search is a keyword and performs a
+:command:`keyword()` revision set search. If parentheses are found, the
+Workbench assumes the search phrase is a revision set specification and
+attempts to resolve the set.
+
+If you need to perform a keyword search that includes parentheses, use
+:command:`keyword("PHRASE(FOO)")`.
+
+Revision Graph Details
+----------------------
+
+The graph column shows the child-parent relationships between revisions
+in your repository history.  This column auto-sizes for as many lines of
+ancestry that are required to visualize the revisions you have loaded.
+The column has an initial hard-limit width to prevent some degenerative
+cases from breaking the viewer, but can be resized after refreshes.
+
+Performance Implications
+------------------------
+
+There are some Workbench features that could have performance implications in
+large repositories.
+
+	:menuselection:`View --> Choose Log columns...` 
+		Enabling the :guilabel:`Changes` column can be expensive to calculate
+		on repositories with large working copies, causing both refreshes and
+		scrolling to be slow.
+
+	:menuselection:`View --> Load all`
+		Normally, when the user scrolls through the history, chunks of changesets
+		are read as you scroll. This menu choice allows you to have the Workbench
+		read all the changesets from the repository, probably allowing smoother
+		moving through the history.
+
+Revision Context Menus
+----------------------
+
+Right-clicking on revisions in the graph pane brings up a different context menu
+when one, two, or more revisions are selected. Context menus can also differ
+according to the type of revision(s) (working dir, regular revision,
+(un)applied mq patch). Here we give a list of all existing context menu entries.
+
+Right-clicking on a selection of revisions in the (top) graph pane will bring up
+the revision context menu.
+
+With only one revision selected:
+	.. figure:: figures/single-revision-cmenu.png
+		:alt: Single revision context menu
+
+	:guilabel:`Update...`
+		Update your working directory to this revision. Opens the
+		TortoiseHg update dialog with this revision selected.
+	:guilabel:`Visual diff...`
+		Open this change in your visual diff tool.
+	:guilabel:`Diff to local...`
+		Display changes (visual diff) between this revision and your
+		current working directory.
+	:guilabel:`Browse at rev...`
+		Brings up the Manifest window with the content of all files in the repo
+		at the selected revision.
+	:guilabel:`Merge with local...`
+		Merge the selected changeset with the Working Dir.  Opens the TortoiseHg
+		merge dialog with this revision selected.
+	:guilabel:`Tag...`
+		Allows to manage tags to the selected revision.
+	:guilabel:`Bookmark...`
+		Allows to manage bookmarks for the selected revision.
+		*This option requires the boomarks extension to be enabled.*
+	:guilabel:`Backout...`
+		Create a backout changeset for selected revision.
+	:guilabel:`Export`
+		:guilabel:`Export patch`
+			Generate a patch file containing this revision's changes.
+		:guilabel:`Email patch...`
+			Send this revision's changes to email recipient.  Opens the
+			TortoiseHg email dialog with this revision selected.
+		:guilabel:`Archive...`
+			Open the archive dialog for this revision, allowing user to
+			generate a backup copy of the repository at that revision.
+		:guilabel:`Copy patch`
+			todo
+			*Only visible when MQ is enabled.*
+	
+	:guilabel:`Copy hash`
+			Copy current revision's full hash to the clipboard.
+	:guilabel:`Modify history`
+		:guilabel:`QGoto`
+			Push/pop patches upto this one
+			*Only visible when MQ is enabled*
+		:guilabel:`Import to MQ`
+			Import selected revision into the current patch queue.  Only
+			valid for qbase or checked out head revision.  *Only visible
+			when MQ is enabled*
+		:guilabel:`Finish patch`
+			Transforms the MQ patch into a regular changeset.
+			*Only visible when MQ is enabled*
+		:guilabel:`Rebase...`
+			Move the selected revision and all of its descendants onto the
+			current working parent revision.
+			*Only visible when rebase is enabled*
+		:guilabel:`Strip...`
+			Remove the selected revision and all of its descendants from the
+			repository [#rcm1]_ *Only visible when MQ is enabled*
+
+With two revisions selected:
+	:guilabel:`Visual diff...`
+		Open this change in your visual diff tool.
+	:guilabel:`Export selected`
+		Creates a patch file for each changeset in selected range.
+	:guilabel:`Email selected...`
+		Opens email dialog with range of changesets.
+	:guilabel:`Export DAG range`
+		Creates a patch file for each changeset in selected range.
+	:guilabel:`Email DAG range...`
+		Opens email dialog with range of changesets.
+	:guilabel:`Bisect - Good, Bad...`
+		todo
+		See `bisect <#id10>`_ section below.
+	:guilabel:`Bisect - Bad, Good...`
+		todo
+		See `bisect <#id10>`_ section below.
+	:guilabel:`Compress history...`
+		Brings up a dialog where you can compress the youngest changeset into
+		the older one.
+
+With more than two revisions selected:
+	:guilabel:`Export selected`
+		Creates a patch file for each changeset in selected range.
+	:guilabel:`Email selected...`
+		Opens email dialog with range of changesets.
+
+.. [#rcm1] The strip command will store the stripped revisions in a bundle file
+		that can later be reapplied.
+		See also `EditingHistory <http://mercurial.selenic.com/wiki/EditingHistory>`_.
+
+File Context Menus
+------------------
+
+Right-clicking on filenames in the file list pane (bottom left of the RevDetails
+and Manifest task tabs) will bring up a context menu for the selected file:
+
+	:guilabel:`Visual Diff`
+		Open this revision of the file in your visual diff tool.
+	:guilabel:`Visual Diff to Local`
+		Visualize differences between this revision and your checked
+		out version.
+	:guilabel:`View at Revision`
+		Open this revision of the file in your visual editor [#flcm1]_.
+	:guilabel:`Edit Local`
+		Open the checked out version of the file in your visual editor [#flcm1]_.
+	:guilabel:`Revert to Revision`
+		Checkout this specific revision of this file [#flcm3]_.
+	:guilabel:`File History`
+		Show revisions that modified this file [#flcm2]_.
+	:guilabel:`Compare file revisions`
+		Brings up a new dialog where you can compare any revision of the file
+		with any other revision in the history.
+ 
+.. [#flcm1] :menuselection:`Global Settings --> TortoiseHg --> Visual Editor`
+.. [#flcm2] Does not show revisions where a file was deleted, as this is only a
+            manifest change, it does not modify the file's history.
+.. [#flcm3] The new contents will appear as local changes and must be committed.
+
+Right-clicking on filenames in the file list pane of the Commit task tab will
+bring up a different context menu for the selected file:
+
+	:guilabel:`Edit`
+		Open this revision of the file in your visual diff tool.
+	:guilabel:`Add`
+		Add this file to the repository for versioning.
+	:guilabel:`Detect Renames...`
+		Brings up a dialog where you can try to detect renamed files.
+	:guilabel:`Ignore`
+		Adds the selected file to the .hgignore content.
+	:guilabel:`Delete unversioned`
+		Deletes unversioned files from disk.
+
+Message Parsing
+---------------
+
+The changeset display pane will detect and underline changeset hashes,
+HTTP(s) URLs, and bug report identifiers inside changeset messages.
+These underlined phrases are clickable links.
+
+Every word-boundary delimited string of 12 or 40 characters from the
+range [0-9a-f] is considered a changeset link. Clicking on it in the
+repository explorer will jump to the given changeset if possible.
+
+HTTP and HTTPS URLs are similarly turned into clickable links which are
+opened in your default web browser.
+
+Issue tracker links are enabled when configured in the tortoisehg
+section of your configuration files.  Since only a single issue tracker
+can be configured at a time, it is typically configured in the
+repository's :file:`.hg/hgrc` file.  There are two keys: issue.regex and
+issue.link. The first defines the regex to match when picking up issue
+numbers, while the second defines the command to run when an issue
+number is recognized.
+
+You may include groups in issue.regex, and corresponding {n} tokens in
+issue.link (where n is a non-negative integer). {0} refers to the entire
+string matched by issue.regex, while {1} refers to the first group and
+so on. If no {n} tokens are found in issue.link, the entire matched
+string is appended instead.
+
+Examples::
+
+	BitBucket:
+	issue.regex = #(\d+)\b
+	issue.link = http://bitbucket.org/<your project and repo>/issue/{1}/
+
+	Mercurial:
+	issue.regex = \bissue\d+\b
+	issue.link = http://mercurial.selenic.com/bts/
+
+Output Log Console
+------------------
+
+The console built into the Workbench Output Log dock widget can run
+Mercurial (hg) commands, TortoiseHg (thg) commands, a couple special
+commands, and limited shell commands.  Commands are always executed in
+the root of the current repository.  The prompt is updated to keep you
+aware of the context.
+
+If the command line begins with 'hg', the Mercurial command is run in
+TortoiseHg's execution environment; meaning output is sent to the log
+widget and input requests are handled by dialog windows.
+
+If the command line begins with 'thg', the requested command is run in a
+new window but in the same process.  For instance 'thg ci' will open a
+new commit tool window for the current repository.
+
+It the command is 'clear' (or 'cls'), the output log contents are
+erased.
+
+If the command is 'exit', the output log window is closed.
+
+Otherwise, the command line is forwarded to your platform's default
+command shell with a limited execution context.  There is no stdin while
+stdout and stderr are piped to the output log.
+
+Keyboard navigation
+-------------------
+
+:kbd:`Ctrl-P`
+	Zoom to the working directory parent revision
+:kbd:`Ctrl-D`
+	Display visual diffs for selected changeset or file
+:kbd:`Ctrl-S`
+	Toggle revision set / filter toolbar
+
+See also `KeySequences <https://bitbucket.org/tortoisehg/thg/wiki/KeySequences>`_
+on the wiki pages.
+
+Configurables
+-------------
+
+The Workbench has a few configurable options that can be set in
+the TortoiseHg Settings dialog on the Workbench tab.
+
+	:guilabel:`Author coloring`
+		If true, each author's changeset will be given a unique color
+	:guilabel:`Long Summary`
+		Concatenate commit message lines until 80 chars are reached
+	:guilabel:`Graph batch limit`
+		Number of revisions to read in each batch load
+	:guilabel:`Dead Branches`
+		Comma separated list of branch names that should be ignored
+		when building a list of branch names for a repository.
+	:guilabel:`Branch Colors`
+		Space separated list of branch names and colors on the
+		form branch:#XXXXXX. Spaces and colons in the branch name must be
+		escaped using a backslash (\\). Likewise some other characters
+		can be escaped in this way, e.g. \\u0040 will be decoded to the
+		@ character, and \\n to a linefeed.
+	:guilabel:`Hide Tags`
+		Space separated list of tags that will not be shown.  Useful
+		example: Specify "qbase qparent qtip" to hide the standard tags
+		inserted by the Mercurial Queues Extension.
+
+The exact colors given to particular users can be configured by adding
+lines like these to your :file:`Mercurial.ini` file: ::
+
+	[tortoisehg]
+	authorcolor.USERNAME = color
+
+The Workbench also respects the following settings on the
+TortoiseHg tab:
+
+	:guilabel:`Tab Width`
+		Number of spaces to expand tabs in diffs
+	:guilabel:`Max Diff Size`
+		Maximum size of file to be diffed
+
+
+From command line
+-----------------
+
+The Workbench can be started from command line ::
+
+	thg log [OPTIONS] [FILE]
+
+	aliases: history, explorer, workbench
+
+	workbench application
+
+	use "thg -v help log" to show global options
+
+.. vim: noet ts=4

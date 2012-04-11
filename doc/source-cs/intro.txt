@@ -1,0 +1,82 @@
+*****
+Úvod
+*****
+
+.. module:: introduction
+    :synopsis: Introduce TortoiseHg and its various parts
+
+Co je TortoiseHg?
+=================
+
+TortoiseHg je sada grafických nástrojů a extenzí uživatelského rozhraní 
+programu `Mercurial <http://mercurial.selenic.com/wiki/>`_ pro necentralizovanou správu verzí.
+
+Ve Windows
+	se TortoiseHg skládá z grafické aplikace Workbench, z extenze uživatelského rozhranní s překryvnými ikonami a kontextovým menu v Průzkumníku a z programu pro příkazový řádek :file:`thg.exe` který spouští nástroje TortoiseHg. Binární pakety aplikace TortoiseHg pro Windows obsahují Mercurial i slučovací nástroj a je proto možné je bezprostředně použít "přímo z krabice".
+	
+V Linuxu
+	se TortoiseHg skládá ze skriptu thg pro příkazový řádek a z extenze
+	Cajau, která poskytuje překryvné ikony a kontextové menu v 
+	průzkumíku souborů.
+	Pro činnost TortoiseHg v Linuxu je potřebná oddělená instalace 
+	programu Mercurial. Binární pakety TortoiseHg znají Mercurial jako
+	závislou aplikaci, která je obvykle instalována automaticky.
+	
+.. note:: Ve Window obsahuje TortoiseHg jak thg.exe, tak thgw.exe. programy. Nástroj thgw.exe je zamýšlen pro použití v zástupci na ploše nebo v menu. Nástroj thg.exe je pro použití v konzoli a pro volání nápovědy z příkazového řádku. Dávkový soubor thg.cmd, který instalace přidá do proměnné PATH, volá thg.exe.	
+    
+TortoiseHg je napsán převážně v Pythonu a PyQt (extenze rozhraní Windowsu je významná výjimka). Skript thg a dialogy TortoiseHg lze použít na jakékoliv platformě, která podporuje PyQt, včetně Mac OS X.
+
+Instalace TortoiseHg
+====================
+
+Ve Windows
+----------
+
+TortoiseHg je dodáván se snadno ovladatelným instalačním programem. Aktuální verzi lze nalézt na naši `webové stránce <http://tortoisehg.bitbucket.org/download/windows.html>`_. Dvojím poklepem na staženém souboru spustíme instalaci a sledujeme pokyny. 
+
+Během aktualizací nás instalátor požádá, abychon zavřeli nebo restartovali všechny aplikace, které si načetly extenze rozhranní TorotiseHg. Pokud aplikace zavřeme, aktualizace nebude požadovat restart počítače. Jsou-li připojeni jiní uživatelé, nebo nelze-li některé aplikace zavřít, bude pro ukončení instalace požadován restart.
+
+.. note::
+	Máme-li nainstalovánu starší verzi TortoiseHg, požádá nás instalátor abychom ji odinstalovali.
+
+.. warning::
+	Starší instalační programy (<=0.9.3) mají tendenci při odinstalování smazat soubor Mercurial.ini. Je dobré si jej zálohovat před odinstalováním starších verzí TortoiseHg. Tento problém se nevyskytuje u novějších paketů MSI.
+
+Starší instalační programy (před verzí 1.0) byly vytvořeny s InnoSetup. Balíček TortoiseOverlay instalovaly jako separátní aplikaci, takže v ovládacím panelu *Přidat/Odebrat programy* jsme mohli vidět jak TortoiseHg, tak TortoiseOverlay. (U platforem x64 byly TortoiseOverlay dvakrát, jednou pro procesy x86 a jednou pro procesy x64).
+
+Nové instalátory pro THg obsahují pakety TortoiseOverlay jako "sloučené moduly", takže se již neobjevují jako separátní aplikace. Mohlo by být bezpečné odinstalovat starší aplikaci TortoiseOverlay nástrojem *Přidat/Odebrat programy* poté, co odinstalujeme starší TortoiseHg (<= 0.9.3) - pokud nemáme jiné produkty Tortoise (TortoiseCVS nebo TortoiseBZR), které TortoiseOverlay používají.
+
+.. note::
+	TortoiseOverlay je "shim" paket, který umožňuje sdílet překryvné sloty více extenzím rozhraní. To je nezbytné, protože i moderní platformy Windows podporují jenom omezený počet překryvných slotů (11-14). Pakety TortoiseOverlay vytvářejí vývojáři TortoiseSVN.
+
+Bezpečné jsou tyto dvě možnosti:
+
+1. Ponecháme staré balíčky TortoiseOverlay nainstalovány, neboť ničemu neškodí.
+2. Staré balíčky TortoiseOverlay odinstalujeme a přeinstalujeme všechny své produkty Tortoise. 
+
+Pokud se i potom vyskytnou problémy s extenzí rozhraní, doporučujeme znovu spustit instalátor s volbou *Repair* (Opravit).	
+  
+Jazykové nastavení ve Windows
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Uživatelské rozhraní TorotiseHg bylo přeloženo do mnoha jazyků. Jazykové balíčky nejsou potřebné, neboť všechny přeložené jazyky jsou nainstalované. Preferovaný jazyk (:guilabel:`UI Language`) lze nastavit v nástroji pro globální konfiguraci.
+
+Kontextové nabídky rozhraní Windows jsou překládány pomocí registrů Windows. Překlady pro mnohé lokalizace byly nainstalovány do složky
+:file:`C:\\Program Files\\TortoiseHg\\i18n\\cmenu`. Na vybraném jazyku proveďte dvojpoklep a potvrďte dotaz. 
+
+
+V OS Linux a Mac
+-----------------
+
+Nejposlednější pakety ke stažení pro Linux lze nalézt na našich `stránkách
+<http://tortoisehg.bitbucket.org/download/linux.html>`_.
+
+Pro MacOSX nejsou žádné balíčky k disposici, ale je možné používat
+thg a všechny dialogy pomocí instalační metody. Podrobnosti viz
+`MacOSX <http://bitbucket.org/tortoisehg/stable/wiki/MacOSX>`_.
+
+.. note::
+	Při instalaci TortoiseHg ze zdroje, je nutné nějakým způsobem přidat soubor :file:`contrib\\mergetools.rc` do cesty HGRC. Možný způsob je přidat jej ze souboru :file:`~/.hgrc`.
+
+
+.. vim: noet ts=4

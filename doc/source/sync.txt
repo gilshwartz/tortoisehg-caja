@@ -1,0 +1,274 @@
+Synchronize
+===========
+
+.. module:: synchronize.dialog
+	:synopsis: Dialog used to perform synchronization operations
+
+.. figure:: figures/synchronize.png
+	:alt: Synchronize dialog
+
+	Synchronize dialog
+
+The synchronize tool is used to transmit changesets between repositories
+or to email recipients.
+
+	:guilabel:`Incoming`
+		show changesets that would be pulled from target repository, the
+		changes in the target repository that are not in local repository
+	:guilabel:`Pull`
+		pull incoming changesets from target repository
+	:guilabel:`Outgoing`
+		show changesets that would be pushed to target repository, the
+		changes in the local repository that are not in target
+		repository
+	:guilabel:`Push`
+		push outgoing changesets to target repository, make the local
+		*tip* the new *tip* in the target repository
+	:guilabel:`Email`
+		send outgoing changesets (to target repository) as email
+	:guilabel:`Stop`
+		stop current operation
+
+The :guilabel:`Post Pull` dialog contains radio buttons for selecting
+the operation which is performed after a pull.  If you open the
+configuration tool, you can select a default behavior for your user
+account and override that selection on a per-repository basis.
+
+	:guilabel:`None`
+		No operations are performed after a pull.  You will be allowed to
+		view the pulled changesets in the log viewer, and you will have the
+		option to update to the new tip if applicable.
+	:guilabel:`Update`
+		Automatically update to the current branch tip if, and only if, new
+		revisions were pulled into the local repository.  This could trigger
+		a merge if the pulled changes conflict with local uncommitted
+		changes.
+	:guilabel:`Fetch`
+		Equivalent to hg fetch.  See the fetch extension documentation for
+		its behavior.  This feature is only available if the fetch
+		extension has been enabled by the user.
+	:guilabel:`Rebase`
+		Equivalent to pull --rebase.  See the rebase extension
+		documentation for its behavior.  This feature is only available
+		if the rebase extension has been enabled by the user.
+	:guilabel:`Automatically resolve merge conflicts where possible`
+		If update or rebase are selected, a pull operation may result in
+		a merge.  If checked, Mercurial will try to resolve trivial
+		merge conflicts without user interaction.  If not checked, all
+		merges will be interactive.
+
+The :guilabel:`Options` dialog provides checkboxes for selecting
+infrequently used command options.
+
+	:guilabel:`Allow push of a new branch`
+		allow a new named branch to be pushed
+	:guilabel:`Force pull or push`
+		override warnings about multiple heads or unrelated repositories
+	:guilabel:`Recurse into subdirectories`
+		incoming or outgoing commands can recurse into subdirectories
+		and provide a full report
+	:guilabel:`Temporarily disable configured proxy`
+		only sensitive when a web proxy is configured for the given
+		repository.  While checked it will disable that proxy.
+	:guilabel:`Remote Command`
+		provides a --remotecmd argument
+
+When the sync tool is opened within the Workbench, the toolbar has a
+:guilabel:`Target` checkbox.  While checked, the target dropdown box is
+sensitive and the selected target revision, bookmark, or branch will be
+added to every synchronization command.  When the sync tool is opened
+outside of the Workbench, the target checkbox and dropdown box is
+hidden.  Clicking on a revision in the graph will update the values in
+the dropdown box.  Holding :kbd:`Alt` while clicking on a revision will
+select the revision without switching away from the sync tool tab.
+
+Below the toolbar is the currently selected URL.  All synchronization
+commands will use this URL.  The general effect of the toolbar is that
+it can be read as a Mercurial command line.  The tool buttons select the
+command, the :guilabel:`Post Pull` and :guilabel:`Options` dialog
+specify options, the target dropdown box can specify revisions, and
+finally the URL completes the command.
+
+Adding an URL
+-------------
+
+By far the easiest way to add a new URL to your respository is to drag
+and drop the URL from another application, then press the save button
+and provide the URL an alias.
+
+The two list panes display URLs that are stored in the current
+repository's configuration file (:guilabel:`Stored Paths`) and URLs that are
+stored in other related repositories that are listed in the Workbench
+repository registry (:guilabel:`Related Paths`).  When the sync tool is opened
+outside of the Workbench, the :guilabel:`Related Paths` list will be empty.
+
+.. note::
+	Being related means two repositories share at least a common root
+	changeset.  Cloned are obviously related.  Push and pull operations
+	require that repositories to be related, or that you use --force to
+	override the relationship check.
+
+The URL lists have a context menu that allows you to browse, open a
+terminal, or delete an URL from your local configuration file.  The
+platform standard delete key sequence will also remove an URL.
+
+Security
+--------
+
+Mercurial (and TortoiseHg) support two secure protocols for exchanging
+data with remove servers.  HTTPS (SSL) and SSH.
+
+HTTPS
+~~~~~
+
+There are two asymmetrical parts to a secure HTTPS connection.  The
+first part of the secure connection is authenticating the identification
+of the server.  The second is authenticating yourself (the client) to
+the server, either via a username and passphrase or a certificate key.  
+
+Host Authentication
++++++++++++++++++++
+
+Prior to version 1.7, Mercurial ignored this half of HTTPS connection
+security.  In version 1.7 it began warning that the server's certificate
+was not being verified.  Starting with Mercurial version 1.7.3
+(TortoiseHG 1.1.7), the binary installers begain to include a CA
+certificate file so that HTTPS server certificates could be verified by
+the standard certificate authorities.  We download our certificate
+authority file from http://curl.haxx.se/ca/cacert.pem.
+
+Mercurial version 1.7.5 introduced the ability to validate an HTTPS
+server's certificate against a stored fingerprint.  TortoiseHg 2.0's
+synchronize tool has an HTTPS security dialog that allows you to select
+between using a host fingerprint or using the CA certificates.
+
+In theory, a host fingerprint is more secure than the CA certificates
+if you do not necessarily trust all of the signing authorities listed in
+the cacert.pem file.  However you must be sure that the fingerprint you
+store is the correct fingerprint for the server to which you believe you
+are communicating.
+
+TortoiseHg 2.0 also allows you to select an insecure connection for a
+given host.  This disables validation of the host's certificate but
+still uses an encrypted data stream (which was essentially the behavior
+of Mercurial pre-1.7 except for the warning messages).
+
+User Authentication
++++++++++++++++++++
+
+There are several mechanisms available for authenticating yourself to an
+HTTPS server.  The simplest is to allow Mercurial to prompt you for the
+username and passphrase.  However this quickly grows old as the two
+prompts are always made separately and each push operation can require
+multiple connections to be established.
+
+The next option is to encode the username in the URL so that Mercurial
+only prompts for a passphrase.  This cuts the number of prompts in half,
+but is still annoying.  If you do not wish to be prompted for the
+passphrase, it must be stored somewhere.  Your choices, in increasing
+security, are:
+
+1) encode the clear-text passphrase in each HTTPS URL in your repository configuration files
+2) store the clear-text passphrase in your user configuration file
+3) use the mercurial_keyring extension to store the passphrase cryptographically
+
+Until recently, TortoiseHg only supported the first option in the
+graphical interface even though the second and third options were
+supported internally.  TortoiseHg 2.0, we only support the latter two
+options in the graphical interface, and we do not allow the user
+configure the first option anymore.  By default we strip the username
+and password off of URLs when they are saved.
+
+To migrate from the first option to the later options, select an HTTPS
+URL in the sync tool, open the security dialog and enter a username and
+passphrase for the host if none are configured, and save.  Next save the
+URL itself and allow the save dialog to strip the user authentication
+data from the URL.
+
+.. note::
+	If the mercurial_keyring extension is enabled, the security dialog
+	will not allow you to enter a passphrase since you do not want to
+	store the passphrase in clear text in your configuration file if you
+	are going to later store it cryptographically.
+
+Options 2 and 3 use the [auth] section of your user configuration file
+to configure a single username and passphrase (or certificate key files)
+to authenticate to a given HTTPS hostname.  The [auth] section supports
+many more configurations than this, see the man page for details.
+
+Once the mercurial_keyring extension has been enabled (and all
+applications are restarted), you can remove the HTTPS passphrases from
+all of your configuration files.  Mercurial will prompt for the
+passphrase once, then store it cryptographically using the best back-end
+it can find for your platform.
+
+The mercurial_keyring extension requires the [auth] section to be
+configured for the host to which you are connecting, to provide the
+username.  If your URL has an encoded username or passphrase, the
+[auth] section is ignored.
+
+SSH
+~~~
+
+SSH is a symmetrical peer-to-peer secure tunnel.  SSH clients and
+servers have their own key management systems, so Mercurial does not get
+involved with password prompts when SSH is used.  This is problematic on
+Windows and thus TortoiseHg bundles the TortosePlink SSH client with its
+Windows installers.  TortoisePlink is a port of the Plink SSH client
+that uses dialog prompts for host-key authorizations and passphrase
+prompts.  TortoisePlink (developed by the TortoiseSVN project) can use
+the other SSH tools that are part of the Plink toolchain, including the
+Pageant key agent.
+
+It is a known issue that TortoisePlink does not use compression in many
+scenarios, and thus is up to four times slower than openssh and other
+clients.  TortoiseHg recommends the use of HTTPS for Windows clients.
+
+See the FAQ_ for help if you have trouble connecting to ssh servers.
+
+.. _FAQ: http://bitbucket.org/tortoisehg/stable/wiki/FAQ#tortoisehg-faq
+
+Email
+-----
+
+.. figure:: figures//email.png
+	:alt: Email dialog
+
+	Email dialog
+ 
+The email dialog can be launched from two TortoiseHg tools.
+
+1) The Workbench, in which case the user intends to email a selection
+   of revisions.
+
+2) The synchronize tool, in which case the user intends to email all
+   outgoing changes to the current target repository.
+
+The :guilabel:`Send` button is obvious, and the :guilabel:`Configure`
+dialog predictably opens the TortoiseHg Settings dialog to the email tab
+where you can configure your SMTP settings and set default
+:guilabel:`To:` and :guilabel:`From:` addresses.
+
+:guilabel:`In-Reply-To:` is used to make your patches properly threaded
+in mailing lists.
+
+Please consult the Mercurial documentation for the differences between
+plain patches, Hg patches, Git patches, and bundles.
+
+From command line
+-----------------
+
+The synchronize tool can be started from command line ::
+
+	thg sync
+
+	aliases: synchronize
+
+	Synchronize with other repositories
+
+	use "thg -v help sync" to show global options
+
+The syntax is simple, no options or parameters are needed, except the
+global options.
+
+.. vim: noet ts=4

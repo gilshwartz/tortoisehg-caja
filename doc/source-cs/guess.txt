@@ -1,0 +1,42 @@
+Vypátrat změnu jména
+====================
+
+.. module:: guess.dialog
+    :synopsis: Dialog used to detect copies and/or renames
+
+.. figure:: figures/guess.png
+	:alt: Rename guessing dialog
+
+	Dialog pro hledání změněného názvu
+	
+
+Tento dialog se používá pro vyhledání přejmenovaných, přemístěných anebo kopírovaných souborů u nichž k těmto změnám došlo bez vědomí aplikace Mercurial. Dialog lze spustit z kontextové nabídky Tortoise HG nebo z okna Commit či Status jako kontextové menu neznámého souboru.
+
+
+Používá se tento postup:
+
+1) vyberete jeden nebo více :guilabel:`Unrevisioned files`
+2) na posuvníku nastavíte požadovanou pravděpodobnost hledané shody
+3) zrušíte zatržení :guilabel:`Only consider deleted files` aby se  hledání tykalo i kopií
+4) stisknete :guilabel:`Find rename`
+5) sledujete :guilabel:`Candidate Matches` a akceptujete dobré shody
+6) opakujete tak dlouho, dokud nejsou všem neverzovaným souborům nalezeny shody.
+
+Kandidáti shod
+--------------
+
+Když vyberete shodu v panelu :guilabel:`Candidate Matches`, rozdíly mezi vybranými soubory se zobrazí v dolním panelu. Volbou :guilabel:`Accept Selected Matches` projevíte souhlas a změna se zapíše do análů Mercurialu.
+
+
+Spuštění z příkazového řádku
+----------------------------
+
+::
+
+	thg guess
+
+	guess previous renames or copies
+
+	use "thg -v help guess" to show global options
+
+.. vim: noet ts=4

@@ -1,0 +1,67 @@
+Clone a repository
+=======================
+
+.. module:: clone.dialog
+	:synopsis: Dialog used to clone a repository
+
+To clone a repository you have to run the clone dialog.
+From the explorer context menu select :menuselection:`TortoiseHg... --> Clone a repository`
+or type :command:`thg clone`.
+
+.. figure:: figures/clone.png
+	:alt: Clone dialog
+
+	Clone Dialog
+
+:guilabel:`Source`
+	It is the path (or URL) of the repository that will be cloned. Use
+	the :guilabel:`Browse...` to choose a local folder.
+:guilabel:`Destination`
+	It is the path of destination directory, a folder with the same name
+	of source repository will be created within this directory.
+
+Under the :guilabel:`Options` expander you will find:
+
+:guilabel:`Clone To Revision`
+	You can limit the clone up to this revision. Even the tags created
+	after this revision will not be imported.
+:guilabel:`Do not update the new working directory`
+	If checked, after the clone the working directory will be empty. It
+	is useful when you have to clone a repository with the purpose of
+	central repository, or backup, where you have only, in the future,
+	to *push* and *pull*.
+:guilabel:`Use pull protocol to copy metadata`
+	When the source and destination are on the same filesystem,
+	Mercurial tries to use hardlinks. Some filesystems, such as AFS
+	implement hardlink incorrectly, but do not report errors. Use this
+	option to avoid hardlinks.
+:guilabel:`Use uncompressed transfer`
+	To use uncompressed transfer (fast over LAN).
+:guilabel:`Include patch queue`
+	To also clone an MQ patch repository along with the main repository.
+	It is possible to provide a patch queue name that differs from the
+	default one.
+:guilabel:`Use proxy server`
+	To use the proxy server configured in :menuselection:`TortoiseHg... --> Global Settings --> Proxy`.
+	This is enabled only if a proxy is configured.
+:guilabel:`Do not verify host certificate`
+	Skip checking server certificate for https:// url (ignoring web.cacerts config).
+:guilabel:`Remote command`
+	Specify a Mercurial command to run on the remote side.
+:guilabel:`Hg command`
+    This field displays the command that will be executed by the dialog.
+
+From command line
+-----------------
+
+The clone tool can be started from command line ::
+
+	thg clone
+
+The syntax is ::
+
+	thg clone [SOURCE] [DEST]
+
+where [SOURCE] and [DEST] are, the paths of source repository and destination folder.
+
+.. vim: noet ts=4

@@ -1,0 +1,144 @@
+************
+Introduction
+************
+
+.. module:: introduction
+	:synopsis: Introduce TortoiseHg and its various parts
+
+What is TortoiseHg?
+===================
+
+TortoiseHg is a set of graphical tools and a shell extension for the
+`Mercurial <http://mercurial.selenic.com/wiki/>`_ distributed revision control
+system.
+
+.. note::
+	hg is the symbol for the chemical element `Mercury <http://en.wikipedia.org/wiki/Mercury_%28element%29>`_
+
+On Windows,
+	TortoiseHg consists of the Workbench graphical application, a shell
+	extension which provides overlay icons and context menus in your file
+	explorer, and a command line program named :file:`thg.exe` which can launch
+	the TortoiseHg tools.  Binary packages of TortoiseHg for Windows come with
+	Mercurial and a merge tool and are thus completely ready for use
+	"Out of the Box".
+
+On Linux,
+	TortoiseHg consists of a command line thg script and a Caja
+	extension which provides overlays and context menus in your file
+	explorer.  You must have Mercurial installed separately in order to
+	run TortoiseHg on Linux.  TortoiseHg binary packages list Mercurial
+	as a dependency, so it is usually installed for you automatically.
+
+.. note::
+	On Windows, TortoiseHg includes both thg.exe and thgw.exe.  The
+	latter is intended to be launched from desktop shortcuts or menu
+	entries as it will refuse to open a command console.  thg.exe is for
+	use on the console, and can provide command line help.  The thg.cmd
+	batch file that our installer adds into your PATH runs thg.exe.
+
+TortoiseHg is primarily written in Python and PyQt (the Windows shell
+extension being the notable exception).  The thg script and TortoiseHg
+dialogs can be used on any platform that supports PyQt, including Mac
+OS X.
+
+
+Installing TortoiseHg
+=====================
+
+On Windows
+----------
+
+TortoiseHg comes with an easy to use MSI installer.  You can always find
+the most up to date release on our `website
+<http://tortoisehg.bitbucket.org/download/windows.html>`_.
+Simply double click on the installer file and follow its instructions.
+
+After a first time install, a re-login is usually required to start the
+icon overlays.
+
+During upgrades, the installer will ask to close or restart any
+applications that have loaded the TortoiseHg shell extension.  If you
+allow those applications to be closed, the upgrade will not require a
+reboot or logout.  If other users are logged in, or if there are
+applications which cannot be shutdown, a reboot will be required to
+complete the install.
+
+.. note::
+	If you have a legacy version of TortoiseHg installed, the
+	installer will require that you to remove it.  The uninstall can be
+	initiated from the control panel or the start menu.
+
+.. warning::
+	Legacy uninstallers (<=0.9.3) have a tendency to delete your user
+	Mercurial.ini file, so backup your file before uninstalling the
+	older TortoiseHg versions.  This is not a problem with the newer MSI
+	packages.
+
+Legacy TortoiseHg installers (prior to version 1.0) were built with
+InnoSetup.  They installed a TortoiseOverlay package as a separate
+application, so you always saw both TortoiseHg and TortoiseOverlay as
+two applications in the *Add/Remove Programs* control panel program.
+(On x64 platforms, there were two TortoiseOverlays, one for x86
+processes and one of x64 processes).
+
+The new MSI installers for TortoiseHg include the TortoiseOverlay
+packages as "merge modules" so they do not appear as separate
+applications anymore.  It should be safe to uninstall the older
+TortoiseOverlay applications from *Add/Remove Programs* after you
+uninstalled the legacy (<=0.9.3) TortoiseHg installer, unless you have
+other Tortoise products that still use the separate TortoiseOverlay MSI
+approach (TortoiseCVS or TortoiseBZR).
+
+.. note::
+	TortoiseOverlay is a shim package that allows multiple Tortoise
+	style shell extension clients to share overlay slots.  This is
+	necessary because even modern Windows platforms only support a
+	limited number of overlay slots (11-14).  TortoiseOverlay
+	packages are created by the TortoiseSVN developers.
+
+To be completely safe, there are two approaches you can take:
+
+1) Just leave the old TortoiseOverlay packages installed.  They do not
+   harm anything.
+2) Uninstall all the old TortoiseOverlay packages, then re-install all
+   of your Tortoise products until they are all functional.
+
+Finally, if you have problems with the shell extension even after
+re-logging in, we recommend you re-run the installer and select the
+*Repair* option.  There were problems with a few versions of
+TortoiseOverlay that cause upgrades to subtly fail until the *Repair*
+process is run.
+
+
+
+Language settings
+^^^^^^^^^^^^^^^^^
+
+The TortoiseHg user interface has been translated into many languages.
+Language packs are not required since all available languages are
+installed by default.  You can select your preferred :guilabel:`UI
+Language` in the global settings tool.
+
+The Windows shell extension context menus get their translations from
+the Windows registry.  Translations for many locales were installed
+under :file:`C:\\Program Files\\TortoiseHg\\i18n\\cmenu`.  Select the
+locale you would like to use, double-click on it, and confirm all
+requests.
+
+On Linux and Mac
+----------------
+
+The most recent Linux packages can be found on our `download
+<http://tortoisehg.bitbucket.org/download/linux.html>`_ page.
+
+For Mac OS X, no packages are available but you can run thg and all the
+dialogs via the source install method. For details, see
+`Mac OS X <http://bitbucket.org/tortoisehg/thg/wiki/developers/MacOSX>`_.
+
+.. note::
+	If you install TortoiseHg from source, you need to add our
+	:file:`contrib/mergetools.rc` file to your HGRC path in some way.  One
+	approach is to *%include* it from your :file:`~/.hgrc file`.
+
+.. vim: noet ts=4

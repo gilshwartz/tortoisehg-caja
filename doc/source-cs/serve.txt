@@ -1,0 +1,41 @@
+Serve
+=====
+
+.. module:: serve.dialog
+    :synopsis: Dialog used to start/stop the web server
+
+.. figure:: figures/serve.png
+	:alt: Web server dialog
+
+Procedura Serve je obálkou pro vestavěný webový server Mercurialu. Jakmile je spuštěn, může se kterýkoli počítač připojit k http portu a procházet vašimi repozitáři nebo provádět úkony clone, pull, či dokonce push, pokud to konfigurace vašeho serveru dovoluje.
+
+Tlačítka nástrojové lišty:
+
+	:guilabel:`Spustit`
+		spustit webový server
+	:guilabel:`Stop`
+		zavřít webový server
+	:guilabel:`Nastavit`
+		nastavit webové zobrazení repozitáře, popis a přístupová pravidla
+
+Je-li konfigurační dialog spuštěn prostřednictvím tlačítka :guilabel:`Configure`, je spuštěn pro aktuální repozitář. Navštivte prosím wiki stránky Mercurialu pro podrobný popis různých konfigurací webu.
+
+Nástroj serve v TortoiseHg nativně podporuje kolekci lokálních repozitářů. Jednoduše je přetáhnete v dialogovém okně "serve", nebo je přidáte ručně s použitím editovacích tlačítek. Kolekci repozitářů lze uložit a znovu načíst.
+
+
+Spuštění z příkazového řádku
+----------------------------
+
+::
+
+	thg serve [OPTION]...
+
+	start stand-alone webserver
+
+	options:
+
+		--webdir-conf  name of the webdir config file
+
+	use "thg -v help serve" to show global options
+
+.. vim: noet ts=4

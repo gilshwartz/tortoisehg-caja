@@ -1,0 +1,95 @@
+Debugging 
+=========
+
+.. module:: debugging
+	:synopsis: Debug problems in shell extension or dialogs
+
+Dialogs
+-------
+
+Stderr is being captured to a buffer that is being inspected at program
+exit.  If any serious errors (tracebacks, etc) are found in the stderr
+buffer the entire contents are sent to the bug report tool so the user
+can (should) report a bug.  If you suspect there are errors that are not
+being reported, you can set the environment variable **THGDEBUG** to any
+value to disable the stderr buffering.
+
+If you have a bit of Python knowledge, you can also use::
+
+    thg --debugger <command>
+
+To disable the forking behavior of thg, you can either set an
+environment variable **THG_HGTK_SPAWN**, or add the command line
+parameter '--nofork'.
+
+
+Windows
+~~~~~~~
+
+To debug the changelog viewer, for instance, enter these commands
+into a :command:`cmd.exe` window, while inside the repository::
+
+    set THGDEBUG=1
+    thg --nofork log
+
+Linux/MacOSX
+~~~~~~~~~~~~
+
+To debug the changelog viewer, for instance, enter these commands
+into your shell window, while inside the repository::
+    
+    export THGDEBUG=1
+    thg --nofork log
+
+
+
+Shell Extension
+---------------
+
+The debugging mechanisms depend on your platform.
+
+Windows
+~~~~~~~
+
+See also http://msdn.microsoft.com/en-us/library/cc144064(VS.85).aspx
+for some info bits about Running and Testing Shell Extensions on Windows
+
+The :command:`DbgView` tool from the SysInternals suite will capture
+debug messages from the shell extension.  However, the shell
+extension does not emit debugging info by default.  It must be enabled
+by setting the registry key defined in
+:file:`win32/shellext/DebugShellExt.reg` in the TortoiseHg source
+repository.  You can double-click on this file to load the key into your
+registry.
+
+Another option is to exit the :command:`TortoiseHgOverlayServer` system tray
+application and start it from the command line.  It will emit some debug
+information to the console.
+
+Caja
+~~~~~~~~
+
+Debugging is done via the environment variable DEBUG_THG
+
+* to test in a separate process::
+
+    DEBUG_THG=Ne TMPDIR=/tmp/anydir/ --no-desktop caja [path]
+
+* to test in the main instance:: 
+
+    caja -q
+    DEBUG_THG=NOe caja
+
+* permanent debugging, set DEBUG_THG in a file which is read on session
+  start (~/.profile, ~/.xprofile)
+
+Upper case characters in DEBUG_THG specify modules.  Only *O* and *N*
+for *OverlayCache* and *Caja*, respectively, are supported module
+names.  Lower case characters imply parts. Only *e* is supported,
+implying *error* messages.
+
+To restart caja, chose either
+
+1) killall caja (the session restarts caja automatically, stdin and stdout go to ~/.xsession-errors)
+
+2) caja -q; caja (stdin and stdout are on the console)

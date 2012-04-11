@@ -1,0 +1,156 @@
+What's New
+==========
+
+.. module:: whatsnew.dialog
+	:synopsis: New features in this release
+
+TortoiseHg 2.0
+''''''''''''''
+
+Philosophy
+----------
+
+The following philosophical changes were made between TortoiseHg 1.0 and
+TortoiseHg 2.0.
+
+Workbench
+~~~~~~~~~
+
+We wanted a single 'TortoiseHg' application which can access nearly all
+TortoiseHg (and Mercurial) functionality and that could be launched by a
+desktop or start menu shortcut.  So we developed the Workbench
+application.
+
+The Workbench can support multiple repositories open at a time via "Repo
+Tabs" across the top of the main window.
+
+Each repository tab supports multiple "Task Tabs" beneath its graph
+splitter.  These task tabs are switchable via icons on the side of
+the Workbench or via application menus.  Available task tabs include a
+changeset browser, a commit tool, a manifest browser, a history search
+widget, and a sync widget.
+
+Also available are two dockable widgets - a *Repository Registry* which
+lists all known repositories on your local machine and an *Output Log
+Window* which displays running command lines and their output and can
+also function as a minimal shell.
+
+Showing Mercurial command lines
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In an effort to educate users on Mercurial's command interface, nearly
+all commands are executed in the log window, displaying the full command
+line and Mercurial's output (progress indication is provided by progress
+bars inside the Workbench status bar).  The few tools that do not use a
+command log window will generally display the command line they execute.
+
+Resolve tool, deliberate merges
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+TortoiseHg 2.0 introduces a resolve dialog for resolving conflicted
+file merges.  It shows the users all the files that require resolution
+and those files that have been resolved, allowing merges to be verified.
+
+As supported by Mercurial's resolve command, individual file merges may
+be restarted as many times as necessary to get the merge correctly
+completed.
+
+By default, TortoiseHg will use the resolve dialog to resolve all
+conflicts, including trivial conflicts.  It instructs Mercurial to never
+merge files automatically, deferring their resolution until the resolve
+dialog can be launched.  This is true for merges, update commands that
+require content merges, rebases, and backouts.
+
+Shelve Improved
+~~~~~~~~~~~~~~~
+
+TortoiseHg 2.0 includes a new shelve tool which is capable of moving
+changes between your working directory, a shelf file, or an unapplied MQ
+patch.
+
+Revision Sets
+~~~~~~~~~~~~~
+
+We have replaced the filter bar of the Repository Explorer with a
+revision set bar in the Workbench.  Revision sets were introduced in
+Mercurial 1.6 and have been integrated with an increasing number of
+commands in each subsequent release.  They are a powerful query language
+for finding and specifying revisions in your repository.
+
+The Workbench also includes a revision set editor which both teaches the
+user the available keywords and their arguments, and offers brace
+matching, auto-completions, and other editing amenities.
+
+In TortoiseHg 2.0, incoming and outgoing changesets are visualized as
+revision sets.  In previous versions they were represented by graph
+annotations.
+
+Technology
+----------
+
+Qt and PyQt
+~~~~~~~~~~~
+
+TortoiseHg 2.0 has been a near rewrite of all of the tools and dialogs
+taking advantage of Nokia's excellent `Qt <http://qt.nokia.com/products/>`_
+UI framework and Riverbank Computing's fine
+`PyQt <http://www.riverbankcomputing.co.uk/software/pyqt/intro>`_ Python
+bindings.
+
+QScintilla2
+~~~~~~~~~~~
+
+TortoiseHg uses the `QScintilla2
+<http://www.riverbankcomputing.co.uk/static/Docs/QScintilla2/index.html>`_
+editing component extensively to:
+
+* display file contents and diffs with syntax highlighting
+* display annotations with syntax highlighting
+* edit commit messages with auto-completion of filenames and source symbols
+* edit revision set strings with brace matching and auto-completion
+
+One can configure the QScintilla2 tab stop parameter using the settings
+tool, while white space visibility and wrap are controlled by context
+menus.
+
+
+Polling of repository state and config
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The Workbench and other applications like the commit tool will poll
+repositories on your local machine to detect changes made to either the
+repository or their configuration files, and automatically update
+running applications as necessary.  Nearly all configuration changes are
+effective immediately, with the notable exception of enabling or
+disabling Mercurial extensions.  Changes to extension configuration
+generally require application restarts before they take effect.
+
+Immediate bug report dialogs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Prior to TortoiseHg 2.0, bug reports were written to stderr as they
+occured and stderr was captured and scanned at exit to report those
+errors to the user.  While we gained many valuable bug reports via this
+mechanism, there was rarely any context on what operations caused these
+bugs.
+
+In TortoiseHg 2.0, we have created a generic exception handler that
+catches all Python exceptions that are otherwise unhandled by
+application code.  This allows us to display exception tracebacks almost
+immediately after they occur (after a short timeout to collect
+consecutive exceptions together).  The hope is that future bug reports
+will contain better reproduction instructions, or at least context for
+the tracebacks.
+
+Demand loaded graph
+~~~~~~~~~~~~~~~~~~~
+
+To keep refreshes as efficient as possible, the graphing algorithm will
+only load a couple hundred revisions initially during a refresh, and
+then load further revisions only when those revisions are required to be
+displayed.  You will notice scrolling through the graph is jerky, these
+are bulk loads of revisions into the graph.  To avoid this jerkiness you
+can force TortoiseHg to load all revisions in the graph via the
+:guilabel:`Load all revisions` option from the :guilabel:`View` menu.
+
+.. vim: noet ts=4 syntax=rest

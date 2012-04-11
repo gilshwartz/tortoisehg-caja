@@ -1,0 +1,202 @@
+*******
+Extenze
+*******
+
+.. module:: extensions
+    :synopsis: Describe extensions bundled with TortoiseHg binary packages
+
+Tato kapitola popisuje extenze Mercurialu, které jsou pro Windows dodávány s binárními balíčky TortoiseHg. Tato rozšíření jsou připojena pro pohodlí uživatelů, kteří si je mohou zpřístupnit, jakmile je potřebuji.
+
+Hgfold
+======
+
+`hgfold <http://mercurial.selenic.com/wiki/CaseFoldExtension>`_  je rozšíření Mercurialu, které pomůže uživatelům Windows s kolizemi jmen souborů v VFAT a NTFS.
+
+Přidá možnosti k následujícím příkazům Mercurialu. Více info viz :command:`hg help <command>`::
+
+	up    - dovolí aktualizovat k revizi s kolizemi jmen souborů
+	merge - dovolí sloučení s changesetem, který by vytvořil kolizi jmen souborů
+
+Extenze v současné době neumí kolizi zabránit. Viz wiki Mercurialu.     
+
+**Instalace**
+
+
+Abychom si vyzkoušeli použití tohoto pluginu, zadáme příkaz z příkazového řádku::
+
+	hg --config "extensions.fold=" status
+	
+Můžeme jej zaké zapsat do konfiguračního souboru Mercurial.ini nebo do souboru hgrc v repozitáři::
+
+	[extensions]
+	fold=
+
+Učíníme-li to, můžeme vypustit opci --config.
+
+ 
+
+**Varování**
+
+Jako u všech slučovacích operací musí soubor fold.py změnit rodiče pracovního adresáře. To se stále ještě zkouší a proto používejte opatrně.
+
+Dostaneme-li po běhu příkazu :command:`hg recover` chybové hlášení, vyzkoušíme příkaz :command:`hg debugsetparents` <číslo revize **tip**>`. Toto číslo zjistíme příkazem :command:`hg log`.
+
+
+	
+Perfarce
+========
+
+`Perfarce <http://www.kingswood-consulting.co.uk/hg/perfarce/>`_ home
+page.
+
+Tato extenze je dokumentována v odstavci :ref:`perfarce-perforce` kapitoly :doc:`nonhg`.
+ 
+HGEOL
+=====
+
+Extenze hgeol je případným nástupce extenze win32text. Pokouší se řešit kompabilitní problémy EOLN kompletnějším a robustnějším způsobem. Místo popisu na tomto místě uvedeme odkazy na online-ovou dokumentaci, která se neustále vyvíjí.
+
+* `EOLTranslationPlan <http://mercurial.selenic.com/wiki/EOLTranslationPlan>`_
+* `Source code <http://bitbucket.org/mg/hg-eol/>`_
+
+Mercurial-Keyring
+=================
+
+* `Mercurial Keyring <http://pypi.python.org/pypi/mercurial_keyring>`_ home page
+* `Keyring Extension <http://mercurial.selenic.com/wiki/KeyringExtension>`_ wiki page
+
+Extenze keyring používají své knihovny pro bezpečné uložení hesel (HTTP/HTTPS a SMTP) s použitím určité databáze (Mate Keyring, KDE KWallet, OSXKeyChain, zaměřená řešení pro Win32 a příkazový řádek).
+
+
+**Co se provádí**
+
+Při první akci pull/push do/z daného vzdáleného repozitáře požádá extenze o heslo HTTP a uloží jej (zadané v kombinaci jména uživatele a URL vzdáleného repozitáře) do databáze hesel. Při další akci hledá jméno uživatele v .hg/hgrc a heslo v databázi a tyto důvěrné údaje použje, pokud je nalezne.
+
+Podobně při posílání e-mailu přes SMTP server, který vyžaduje autorizaci, požádá o zadání hesla při prvním použití serveru, uloží jej do databáze a při dalších použitích jej opět použije.
+
+Stane-li se heslo nesprávné (protože bylo neplatné, nebo že bylo změněno), je uživatel požádán o zadání hesla znovu.
+
+**Instalace**
+
+Nejprve musí být umožněna extenze v souboru Mercurial.ini::
+
+	[extensions]
+	mercurial_keyring=
+
+**Password backend configuration**
+
+The most appropriate password backend should usually be picked automatically,
+without configuration. Still, if necessary, it can be configured using
+~/keyringrc.cfg file (keyringrc.cfg in the home directory of the current user).
+Refer to `keyring docs <http://pypi.python.org/pypi/keyring>`_
+for more details.
+
+.. note::
+	On Windows XP and above, your encrypted passwords are stored in the
+	credentials subsystem using
+	`CredRead <http://msdn.microsoft.com/en-us/library/aa374804%28VS.85%29.aspx>`_ and `CredWrite <http://msdn.microsoft.com/en-us/library/aa375187%28VS.85%29.aspx>`_
+
+.. note::
+	On Windows 2K, the encrypted passwords are stored in the system
+	registry under HKCU\\Software\\Mercurial\\Keyring.
+
+**Repository configuration (HTTP)**
+
+Edit repository-local .hg/hgrc and save there the remote repository path and
+the username, but do not save the password. For example::
+
+	[paths]
+	myremote = https://my.server.com/hgrepo/someproject
+
+	[auth]
+	myremote.schemes = http https
+	myremote.prefix = my.server.com/hgrepo
+	myremote.username = mekk
+
+Simpler form with url-embedded name can also be used::
+
+	[paths]
+	bitbucket = https://User@bitbucket.org/User/project_name/
+
+.. note::
+	If both username and password are given in .hg/hgrc, extension will
+	use them without using the password database. If username is not
+	given, extension will prompt for credentials every time, also
+	without saving the password. So, in both cases, it is effectively
+	reverting to the default behaviour.
+
+Consult `[auth] <http://www.selenic.com/mercurial/hgrc.5.html#auth>`_
+section documentation for more details.
+
+**Repository configuration (SMTP)**
+
+Edit either repository-local .hg/hgrc, or ~/.hgrc (the latter is usually
+preferable) and set there all standard email and smtp properties, including
+smtp username, but without smtp password. For example::
+
+	[email]
+	method = smtp
+	from = Joe Doe <Joe.Doe@remote.com>
+
+	[smtp]
+	host = smtp.gmail.com
+	port = 587
+	username = JoeDoe@gmail.com
+	tls = true
+
+Just as in case of HTTP, you must set username, but must not set password here
+to use the extension, in other cases it will revert to the default behaviour.
+
+**Usage**
+
+Configure the repository as above, then just pull and push (or email) You
+should be asked for the password only once (per every username +
+remote_repository_url combination). 
+
+.. vim: noet ts=4
+
+pbranch
+=======
+
+Patch Branches (`pbranch <http://mercurial.selenic.com/wiki/PatchBranchExtension>`_) 
+je postup pro vytváření oprávkových řad pro předávání do hlavního repozitáře. Je založen na tematických větvích (pro každou oprávku jedna) a je proto velmi vhodný pro dlouhodobý vývoj a údržbu, zejména při kolektivní spolupráci.
+
+`Podrobný návod <http://arrenbrecht.ch/mercurial/pbranch/>`_ je na webu.
+
+Přidává se řada příkazů, které lze zobrazit příkazem :command:`hg help pbranch`::
+
+ pbackout       - backs out the current patch branch (undoes all its changes)
+ pdiff          - prints the final diff for the current or given patch branch
+ peditmessage   - edit the patch message
+ pemail         - send patches by email
+ pexport        - exports patches
+ pextdiff       - combines pdiff and extdiff
+ pgraph         - print an ASCII art rendering of the patch dependency graph
+ pmerge         - merge pending heads from dependencies into patch branches
+ pmessage       - print the patch message(s)
+ pnew           - start a new patch branch
+ pstatus        - print status of current (or given) patch branch
+ reapply        - reverts the working copy of all files touched by REV to REV
+ 
+TortoiseHg nabídne novou kartu se zobrazením grafu závislosti oprávek.
+
+ .. figure:: figures/pbranch.png
+	:alt: Pbranch task tab
+
+	Pbranch task tab
+
+**Instalace**
+
+Protože tato extenze není v TortoiseHg implicitně nainstalována, musíte si ji stáhnout z `<http://bitbucket.org/parren/hg-pbranch>`_. Ujistěte se, že stahujete správnou verzi s ohledem na verzi Mercurialu, spojeného s TortoiseHg (viz stránku wiki zdrojového situ). 
+Stažený plugin otestujete zadáním následujícího příkazu::
+
+	hg --config "extensions.pbranch=C:\path\to\pbranch.py" pstatus
+
+Můžete jej přidat do konfiguračního souboru Mercurial.ini nebo repozitářového souboru .hgrc následovně::
+
+	[extensions]
+	pbranch = C:\path\to\pbranch.py
+ 
+Pokud tak učiníte, můžete vypouštět opci --config.
+ 
+.. vim: noet ts=4

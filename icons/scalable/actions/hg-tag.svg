@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="48"
+   height="48"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.47 r22583"
+   sodipodi:docname="tag.svg">
+  <title
+     id="title2824">Tag</title>
+  <defs
+     id="defs4">
+    <inkscape:perspective
+       sodipodi:type="inkscape:persp3d"
+       inkscape:vp_x="0 : 526.18109 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_z="744.09448 : 526.18109 : 1"
+       inkscape:persp3d-origin="372.04724 : 350.78739 : 1"
+       id="perspective10" />
+    <inkscape:perspective
+       id="perspective3599"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <inkscape:perspective
+       id="perspective3782"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <filter
+       id="filter3346"
+       inkscape:label="Drop shadow"
+       width="1.5"
+       height="1.5"
+       x="-.25"
+       y="-.25">
+      <feGaussianBlur
+         id="feGaussianBlur3348"
+         in="SourceAlpha"
+         stdDeviation="0.60000000000000009"
+         result="blur" />
+      <feColorMatrix
+         id="feColorMatrix3350"
+         result="bluralpha"
+         type="matrix"
+         values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 0.400000 0 " />
+      <feOffset
+         id="feOffset3352"
+         in="bluralpha"
+         dx="0.800000"
+         dy="0.800000"
+         result="offsetBlur" />
+      <feMerge
+         id="feMerge3354">
+        <feMergeNode
+           id="feMergeNode3356"
+           in="offsetBlur" />
+        <feMergeNode
+           id="feMergeNode3358"
+           in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="8"
+     inkscape:cx="17.668613"
+     inkscape:cy="25.771301"
+     inkscape:document-units="px"
+     inkscape:current-layer="g3756"
+     showgrid="false"
+     inkscape:window-width="1175"
+     inkscape:window-height="916"
+     inkscape:window-x="26"
+     inkscape:window-y="17"
+     inkscape:window-maximized="0"
+     inkscape:snap-bbox="false"
+     inkscape:snap-nodes="true" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title>Tag</dc:title>
+        <dc:date>2010-05-29</dc:date>
+        <dc:creator>
+          <cc:Agent>
+            <dc:title>Yuki Kodama</dc:title>
+          </cc:Agent>
+        </dc:creator>
+        <dc:publisher>
+          <cc:Agent>
+            <dc:title>TortoiseHg Project</dc:title>
+          </cc:Agent>
+        </dc:publisher>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,-1004.3622)">
+    <g
+       id="g3756"
+       transform="translate(3.4309674,1.4211543)">
+      <path
+         style="fill:#ffffff;fill-opacity:1;stroke:#555753;stroke-width:1;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;filter:url(#filter3346)"
+         d="M 27.8125 4.1875 L 4.96875 27.03125 C 3.9166818 28.08335 3.9166818 29.79175 4.96875 30.84375 L 17.15625 43.03125 C 18.208318 44.08335 19.916682 44.08335 20.96875 43.03125 L 43.8125 20.1875 L 43.78125 4.21875 L 27.8125 4.1875 z M 35.03125 9.03125 C 36.038301 9.03125 37.044146 9.4191456 37.8125 10.1875 C 39.349209 11.724209 39.349209 14.213291 37.8125 15.75 C 36.275791 17.286709 33.786709 17.286709 32.25 15.75 C 30.713291 14.213291 30.713291 11.724209 32.25 10.1875 C 33.018354 9.4191456 34.024199 9.03125 35.03125 9.03125 z "
+         transform="translate(-3.4309674,1002.941)"
+         id="rect2816" />
+      <rect
+         transform="matrix(0.70072523,-0.71343125,0.70378934,0.71040873,0,0)"
+         y="728.96643"
+         x="-721.13141"
+         height="10.701557"
+         width="19.302921"
+         id="rect3738"
+         style="fill:#fce94f;fill-opacity:1;stroke:#c3a000;stroke-width:1.00004673;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+    </g>
+  </g>
+</svg>

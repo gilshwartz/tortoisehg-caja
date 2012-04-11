@@ -1,0 +1,112 @@
+********
+はじめに
+********
+
+.. module:: preface
+	:synopsis: このマニュアルについて
+
+対象読者
+========
+
+本書は Mercurial を利用してファイルやデータを管理したいけど、
+コマンドラインから操作するのはやや不便だと感じる、
+ある程度コンピュータに慣れ親しんだ方のために書かれました。
+TortoiseHg は Windows のシェル拡張として提供されるため、
+ユーザは普段使っている Windows エクスプローラから利用することができます。
+
+本書の最新版は `公式サイト <http://tortoisehg.org>`_
+からダウンロード可能です。
+
+本書の読み方
+============
+
+この章では本書の構成、開発や議論の中心となっているコミュニティ、
+利用および再配布のソフトウェアライセンスなど、
+TortoiseHg プロジェクトについて少し説明をしておきます。
+
+:doc:`intro` では TortoiseHg とは何か、何ができるのか、
+どこからどうやってインストールすればいいのかなど、
+基本的な事柄について説明します。
+
+:doc:`quick` は TortoiseHg に初めて触れる人のための短いチュートリアルです。
+
+:doc:`daily` はこのマニュアルの本編で、
+TortoiseHg でよく利用するダイアログやコンポーネントについて解説します。
+
+:doc:`settings` では TortoiseHg の設定ダイアログついて詳しく説明しています。
+
+:doc:`recovery` はプロジェクトで行うリカバリ操作について書かれています。
+
+:doc:`nonhg` では TortoiseHg を他のバージョン管理システムのクライアントとして
+使用する方法について述べています。
+
+:doc:`faq` には TortoiseHg 自体に関する質問や、
+多くの人がぶつかる問題の解決方法などがまとめてあります。
+
+:doc:`debugging` は TortoiseHg のバグを見つけたときに、
+どのようにしてデバッグをすればいいのかについて書かれています。
+
+ライセンス
+==========
+
+TortoiseHg は `GPLv2 <http://www.gnu.org/licenses/gpl-2.0.html>`_
+の下でリリースされています。
+好きなコンピュータに好きなだけインストールすることができますし、
+GPLv2 ライセンスに従う限り再配布も可能です。
+
+コミュニティ
+============
+
+メーリングリスト:
+
+* `利用者 ML <https://lists.sourceforge.net/lists/listinfo/tortoisehg-discuss>`_ - アナウンス、使い方などの質問、機能の議論など。
+* `開発者 ML <https://lists.sourceforge.net/lists/listinfo/tortoisehg-develop>`_ - パッチ投稿、バグ報告、開発関連の議論など。
+* `バグ通知 ML <https://lists.sourceforge.net/lists/listinfo/tortoisehg-issues>`_ - バグ管理システムからの自動通知メール。
+
+Bitbucket には `公式 Wiki <http://bitbucket.org/tortoisehg/stable/wiki/Home>`_ もあります。
+日本語 Wiki は `こちら <http://bitbucket.org/kuy/thg-ja/wiki/Home>`_ になります。
+
+謝辞
+====
+
+TortoiseHg プロジェクトに貢献し、本当に便利なツールを作り上げたすべての開発者、
+翻訳者、利用者コミュニティ、特に貴重なバグレポートおよび機能要望をしていただいた
+ユーザの方々に感謝の意を表します。
+
+TortoiseHg の Windows 向けインストーラには `TortoiseSVN <http://tortoisesvn.net>`_
+プロジェクトによる TortoiseOverlays ハンドラが含まれています。
+
+表記規則
+========
+
+本マニュアルでは以下の表記規則に従っています:
+
+:kbd:`Ctrl-A`
+	押すべきキーボードのキーまたはキーの組み合せを示しています。
+
+:guilabel:`コミット`
+	ラベル、ボタンなど GUI に表示される文字列を示しています。
+
+:menuselection:`TortoiseHg... --> About`
+	メニュー選択およびその組み合せ、またタブ選択、GUI のラベルを示します。例えば
+	:menuselection:`TortoiseHg... --> ユーザ設定 --> コミット --> ユーザ名`
+	は メニューから :menuselection:`TortoiseHg... --> ユーザ設定` とたどり、
+	開いたダイアログの :guilabel:`コミット` というページに切り替えて、その中にある
+	:guilabel:`ユーザ名` というラベルの付いた場所で何かをする、という意味になります。
+
+:file:`.hg/hgrc`
+	ファイル名やディレクトリ名を示します。
+
+:command:`hgtk log`
+	コマンドプロンプトなどへの入力を示します。
+
+``myproxy:8000``
+	GUI のテキストボックスへの入力を示します。
+
+.. note::
+	注釈です。
+
+.. warning::
+	重要な注釈です。注意してください。
+
+.. vim: noet ts=4

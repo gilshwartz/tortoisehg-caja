@@ -1,0 +1,27 @@
+Seznam opomíjených položek
+==========================
+
+.. module:: ignore.dialog
+    :synopsis: Dialog used to maintain the ignore filter
+
+Dialog :guilabel:`Seznam ignorovaných souborů` se používá pro editaci seznamu ignorovaných položek, který je uložen v souboru  :file:`.hgignore` v pracovním adresáři projektu. Dialog lze spustit z kontextové nabídky :guilabel:`TortoiseHg > Upravit filtr Ignoruj` neznámého souboru. Přepínač :guilabel:`Glob` umožňuje přepínat mezi glob a regexp vzory.
+ 
+.. figure:: figures/ignore.jpg
+	:alt: Ignore filter dialog
+
+	Okno dialogu Ignorované soubory
+
+Spuštění z příkazového řádku
+-----------------------------
+
+::
+
+	thg hgignore [FILE]
+
+	aliases: ignore, filter
+
+	ignore filter editor
+
+	use "thg -v help hgignore" to show global options
+
+.. vim: noet ts=4

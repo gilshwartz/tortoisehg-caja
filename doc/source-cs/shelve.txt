@@ -1,0 +1,86 @@
+Almárka
+=======
+
+.. module:: shelve.dialog
+    :synopsis: Dialog used to perform shelve/unshelve operations
+
+Nástroj **shelve** dovede přesouvat změny mezi pracovním adresářem a oprávkami v almárce (shelf patches). Byla-li povolena extenze MQ, umí také přesouvat změny **do** i **z** neaplikovaných oprávek.
+
+Nástroj shelve spustíme ve Verpánku výběrem :guilabel:`Repository > Shelve...`, (by a toolbar button on working file viewers) nebo příkazem :command:`thg shelve`
+
+.. note::
+	Vřele doporučujeme nastavit konfiguraci EOL oprávky na "auto", pokud používáte nástroj shelve pro textové soubory s DOS EOLn.
+
+.. figure:: figures/shelve.png
+	:alt: Shelve dialog
+
+	Dialogové okno Shelve
+	
+Vlastnosti
+----------
+
+Nástroj shelve má tři nástrojové lišty. Levou a pravou pro dva panely vedle sebe a centrální lištu pro příkazy 'Refresh' a vytvoření nové almárky (New Shelf). Levá lišta je zrcadlovým obrazem pravé, obě nabízejí stejné funkce v obráceném pořadí.
+
+Levá lišta obsahuje tyto akce:
+
+	:guilabel:`Smazat vybrané porce (chunks)` 
+		Odstranit nebo zrušit všechny vybrané (přepnuté) porce v aktuálně vybraném souboru.
+	:guilabel:`Přesunout všechny soubory vpravo`
+		Přesunout všechny změny ve všech souborech do oprávky, vybrané v pravém panelu.
+	:guilabel:`Přesunout vybraný soubor vpravo`
+		Přesunout všechny změny ve vybraném souboru do oprávky, vybrané v pravém panelu.
+	:guilabel:`Editovat vybraný soubor`
+		Při procházení pracovním adresářem toto tlačítko umožní editaci vybraného souboru. Případně editaci aktuálně zobrazeného oprávkového souboru.
+	:guilabel:`Přesunout vybrané porce vpravo`
+		Přesunout všechny vybrané (přepnuté) porce do oprávky, vybrané v pravém panelu.
+
+Střední lišta má dvě akce:
+		
+	:guilabel:`Refresh`
+		Obnoví rozbalovací seznamy oprávek a zobrazení pracovní kopie.
+	:guilabel:`New Shelf`
+		Vytvoří nový almárkový soubor. Musíte zadat název i když je k disposici rozumná implicitní hodnota.
+
+Pravá nástrojová lišta umožní přesun změn z oprávek, vybraných na levé straně do oprávek, vybraných na pravé straně, nebo přesun pracovní kopie, byla-li vybrána na pravé straně.
+		
+
+Panely oprávek
+--------------
+
+Levý a pravý panel oprávek jsou identické, kromě toho, že změny pracovní kopie jsou přístupné jenom v levém panelu. Vybíratelné porce jsou zobrazeny pouze tehdy, obsahuje-li soubor text a je-li v modifikovaném stavu. Přidané nebo odstraněné soubory mohou být odloženy (shelved) ale jejich části nelze individuálně vybrat.
+
+Tlačítko :guilabel:`Clear` vyprázdní aktuálně vybranou cestu nebo vrátí (revert) celou pracovní kopii. Tlačítko :guilabel:`Delete` smaže aktuálně vybranou oprávku almárky.
+
+.. note::
+	Tlačítko :guilabel:`Delete` není sensitivní, je-li vybrána oprávka MQ. Oprávky MQ se smažou prostřednictvím 'qdelete' s použitím kontextového menu Verpánku nebo widgetu Patch Queue. 
+
+Při dvojím poklepu na souboru v seznamu dostanete kontextové menu s příkazy:
+
+	:guilabel:`Visual Diff`
+		Otevřít vybraný soubor ve vašem nastaveném nástroji pro zobrazení diffů. Povoleno jen pro soubory pracovní kopie.
+	:guilabel:`Edit Local`
+		Otevřít verzi pracovní kopie vybraného souboru.		
+	:guilabel:`Revert to Revision`
+		Vrátit všechny změny vybraného souboru. Povoleno jen pro soubory pracovní kopie.
+		
+
+Trashcan
+--------
+
+Nástroj shelve zachází s vašimi zdrojovými a oprávkovými soubory velmi konzervativně. Předtím, než modifikuje kterýkoliv soubor, provede zálohování do :file:`.hg/Trashcan`. Tato nádoba na odpadky může být vyprázdněna s použitím nástroje Verpánku :guilabel:`Repository > Purge`.
+
+
+Spuštění z příkazového řádku
+----------------------------
+::
+
+	thg shelve
+
+	aliases: unshelve
+
+	shelve tool
+
+	use "thg -v help shelve" to show global options
+
+
+.. vim: noet ts=4

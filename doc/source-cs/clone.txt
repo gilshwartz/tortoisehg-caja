@@ -1,0 +1,54 @@
+Klonování repozitáře
+====================
+
+.. module:: clone.dialog
+    :synopsis: Dialog used to clone a repository
+
+Pro klonování repozitáře musíme spustit dialog "clone".
+V kontextové nabídce průzkumníka Windows vybereme :menuselection:`TortoiseHg -> Klonovat...` nebo zadáme :command:`thg clone`.
+
+.. figure:: figures/clone.png
+	:alt: Clone dialog
+
+	Dialogové okno Clone
+	
+:guilabel:`Zdroj`
+	Cesta k repozitáři (nebo URL), který má být klonován. Pro výběr lokálního adresáře použijeme tlačítko :guilabel:`Vyhledat...`. 
+:guilabel:`Destinace`
+	Cesta k cílovému adresáři, v němž bude vytvořena složka se stejným názvem jako zdrojový repozitář.
+
+Pod rozšířenou nabídkou expandéru :guilabel:`Možnosti` nalezneme:
+
+:guilabel:`Klonovat k revizi`
+	Můžeme omezit rozsah klonování až po zadanou revizi. Nebudou importovány ani tagy, vytvořené po této revizi.
+:guilabel:`Neaktualizovat nový pracovní adresář`
+	Je-li zatrženo, bude nový pracovní adresář prázdný až na složku **.hg**. Tato volba je užitečná při vytváření centrálního nebo záložního repozitáře, kde se bude provádět pouze `push` a `pull`.
+:guilabel:`Použít protokol pull ke kopírování metadat`
+	Nachází-li se zdroj i destinace ve stejném souborovém systému, snaží se Mercurial použít pevné odkazy (hardlinks). Některé souborové systémy, jako např. ASF, používají pevné odkazy nesprávně ale nehlásí chybu. Tuto volbu použijeme, chceme-li se vyhnout pevným odkazům .
+:guilabel:`Použít nekomprimovaný přenos`
+	Pro použití nekomprimovaného transferu (rychlé v LAN).
+:guilabel:`Zahrnout frontu oprávek`
+	Pro klonování repozitáře oprávek MQ spolu s hlavním repozitářem.	
+:guilabel:`Použít proxy server`
+	Pro použití proxy serveru, nastaveného v :menuselection:`TortoiseHg... > Globální nastavení > Proxy`.
+	Volba je použitelná jen je-li proxy server nastaven.
+:guilabel:`Vzdálený příkaz`
+	Nutno určit příkaz Mercurialu, který má být spuštěn na vzdálené straně.
+
+
+Spuštění z příkazového řádku
+----------------------------
+
+::
+
+	thg clone
+	
+	alias: cl
+
+Skladba příkazu je ::
+
+	thg clone [SOURCE] [DEST]
+
+kde [SOURCE] a [DEST] jsou cesty ke zdrojovému repozitáři a k cílové složce nového repozitáře.
+
+.. vim: noet ts=4

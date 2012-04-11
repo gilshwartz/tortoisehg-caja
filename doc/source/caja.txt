@@ -1,0 +1,26 @@
+MATE desktop integration
+=========================
+
+.. module:: caja
+	:synopsis: MATE desktop integration
+
+TortoiseHg also provides shell integration with the MATE desktop via a
+caja-python plugin.  If you have installed TortoiseHg from a
+distribution package, the odds are that this extension is already
+configured.  If not, please consult our Wiki for instructions on how to
+enable this feature.
+
+While the caja extension does not have its own GUI for managing the
+overlays and context menus, it does support command promotion into the
+top menu.  It requires you to edit your :file:`~/.hgrc` file and add
+lines like these::
+
+	[tortoisehg]
+	promoteditems = commit, log, synch
+
+.. figure:: figures/caja.png
+	:alt: Caja screenshot
+
+	MATE/Caja screenshot
+
+.. vim: noet ts=4

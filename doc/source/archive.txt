@@ -1,0 +1,62 @@
+Archiving
+=========
+
+.. module:: archive.dialog
+	:synopsis: Dialog used to make an archive of a repository
+
+You can choose from quite a lot of formats to make an archive of a repository.
+There are the usual compressed formats. But it's also possible to make a plain
+folder of files in another place than the Working Directory (it's like a clone,
+but without the .hg folder). Can be useful for doing builds for example (think
+'svn export'). One can make an archive with only the files of the selected rev.
+Some people seem to use this to send changes to external people that do not have
+access to the repository.
+
+From the changelog context menu in the Workbench select
+:menuselection:`Archive...` for the choosen changeset, or,
+within the folder, type :command:`thg archive`.
+
+.. figure:: figures/archive.png
+	:alt: Archive dialog
+
+	Repository Archive Dialog
+
+:guilabel:`Revision`
+	To select the revision you wish to archive or export.
+:guilabel:`Only files modified/created in this revision`
+	To limit the number of files in the archive.
+:guilabel:`Destination path`
+	The filename or directory where the archive will be created. It is filled
+	with the name of the current repository, suffixed with the revision number
+	of the selected revision, and has the appropriate extension of the selected
+	archive type.
+:guilabel:`Archive types`
+	Here you can choose the type of archive to create, ranging from a plain
+	folder with files to a variety of standard archive type.
+:guilabel:`Hg command`
+	This field displays the command that will be executed by the dialog.
+:guilabel:`Always show output`
+	To have an logging output pane with the results of the command while it runs.
+
+Archiving a repository means create an archive file or subdirectory with the
+contents of the selected revision.
+
+From command line
+-----------------
+
+The archive tool can be started from command line ::
+
+	thg archive
+
+The syntax is ::
+
+	thg archive -r [REV] -t [TYPE] [DEST]
+
+where [REV] is the revision to archive, [TYPE] is the type of archive to create,
+and [DEST] is the name of the file or filder to create.
+
+See `hg.1.html#archive <http://www.selenic.com/mercurial/hg.1.html#archive>`_ 
+for details, or type :command:`hg help archive` at the command line or in the
+Output Log of the Workbench.
+
+.. vim: noet ts=4

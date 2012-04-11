@@ -1,0 +1,53 @@
+Vytvoření nového repozitáře
+===========================
+
+.. module:: init.dialog
+    :synopsis: Dialog used to create a repository
+
+Pro vytvoření nového repozitáře v existujícím adresáři (projektu) použijeme dialog **Init**. V kontextové nabídce průzkumníka Windows vybereme
+:menuselection:`TortoiseHg... -> Vytvořit repozitář`. 
+
+.. figure:: figures/init.png
+	:alt: Init dialog
+
+	Vytvoření nového repozitáře
+
+:guilabel:`Destinace`
+	Zadání adresáře v němž bude repozitář vytvořen. Textové pole je 
+	implicitně zaplněno názvem aktuálního adresáře, 
+	takže jej nemusíme měnit, pokud jsme okno otevřeli ze správného místa.
+
+:guilabel:`Přidat specifické soubory (.hgignore, ...)`
+	Při potvrzené volbě vytvoří TortoiseHg v pracovním adresáři prázdný soubor :file:`.hgignore` pro seznam ignorovaných souborů.
+	.
+:guilabel:`Učinit repo kompatibilní s Mercurial <1.7`
+	Při potvrzené volbě vytvoří TortoiseHg starší formát 
+	repozitáře.
+	Pokud pro to nemáme vážné důvody (a víme dobře co 
+	činíme), pak tuto volbu ignorujeme.
+	
+:guilabel:`Show in Workbench after init`
+	Po úspěšném vytvoření je repozitář zařazen do seznamu RepoRegistry a otevřen na nové kartě Verpánku. 
+	
+:guilabel:`Hg command`
+	Toto pole zobrazuje příkaz, který bude po potvrzení dialogu proveden.	
+
+Vytvoření nového repozitáře znamená vytvoření podadresáře :file:`.hg` v adresáři projektu. V tomto podadresáři uchovává Mercurial všechny své verzované informace.
+
+.. warning::
+	Je nebezpečné ručně editovat soubory ve složce :file:`.hg`, neboť může dojít k poškození repozitáře. Výjimkou je konfigurační soubor :file:`.hg/hgrc`.
+
+Spuštění z příkazového řádku
+----------------------------
+
+::
+
+	thg init
+
+Skladba příkazu je::
+
+	thg init [DEST]
+
+kde [DEST] je cesta k pracovnímu adresáři, v němž má být repozitář vytvořen.
+
+.. vim: noet ts=4

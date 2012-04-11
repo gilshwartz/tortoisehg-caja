@@ -1,0 +1,32 @@
+Ignore Filter
+=============
+
+.. module:: ignore.dialog
+	:synopsis: Dialog used to maintain the ignore filter
+
+The ignore dialog is used to maintain your Mercurial repository's ignore
+filter, which can be found in an :file:`.hgignore` file in the
+repository root.  The dialog can be launched from the shell context
+menu, or from the status or commit tools via the context menu of an
+unknown file.  The :guilabel:`Glob` combo allows to switch between glob
+or regexp patterns.
+
+.. figure:: figures/ignore.jpg
+	:alt: Ignore filter dialog
+
+	Ignore Filter Dialog
+
+From command line
+-----------------
+
+The ignore tool can be started from command line::
+
+	thg hgignore [FILE]
+
+	aliases: ignore, filter
+
+	ignore filter editor
+
+	use "thg -v help hgignore" to show global options
+
+.. vim: noet ts=4

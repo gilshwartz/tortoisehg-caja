@@ -1,0 +1,170 @@
+************
+よくある質問
+************
+
+*TortoiseHg って何？*
+
+	Mercurial 分散構成管理システムのための Windows シェル拡張です。Subversion
+	における TortoiseSVN や、CVS における TortoiseCVS のような
+	クライアントアプリケーションです。TortoiseHg は他のプラットフォーム向けに
+	コマンドラインから起動するための hgtk スクリプトも含んでいます。
+
+*Windows 向けの TortoiseHg インストーラには何が含まれていますか？*
+
+	`Mercurial <http://mercurial.selenic.com/wiki/>`_,
+	`kdiff3 <http://kdiff3.sourceforge.net/>`_,
+	`TortoisePlink <http://www.chiark.greenend.org.uk/%7Esgtatham/putty/>`_,
+	に加えて5つの拡張機能: hgfold、hgcr-gui、perfarce、hgeol、mercurial-keyring
+	を同梱しています。また hgsubversion 拡張機能およびリポジトリ変換拡張機能のために
+	python-svn、hg-git 拡張機能のために dulwich も含めています。
+	詳細は :file:`extension-versions.txt` をご覧ください。
+
+*Windows 上の Mercurial はインデックスサービスやアンチウイルスソフトウェアと競合しませんか？*
+
+	競合する可能性があります。
+	`TortoiseSVN <http://www.selenic.com/pipermail/mercurial/2010-January/029680.html>`_
+	と同様、リポジトリとその作業コピーのディレクトリではインデックスサービスを無効にし、
+	アンチウイルスソフトウェアのスキャン対象外に指定してください。
+
+*エクスプローラの右クリックメニューは翻訳されないのですか？*
+
+	右クリックメニューの翻訳ファイルは TortoiseHg のインストールディレクトリ
+	:file:`C:\\Program Files\\TortoiseHg\\i18n\\cmenu` にあります。
+	使用したい言語の Windows レジストリファイルをダブルクリックして、
+	表示される確認ダイアログの指示に従ってインストールしてください。
+
+*TortoiseHg ダイアログのツールバー表示を設定できますか？*
+
+	TortoiseHg のダイアログは PyGTK のアプリケーションなので、
+	:file:`C:\\Program Files\\TortoiseHg\\gtk\\etc\\gtk-2.0\\gtkrc`
+	にある :file:`gtkrc` ファイルを変更することで設定可能です： ::
+
+		gtk-toolbar-icon-size = GTK_ICON_SIZE_LARGE_TOOLBAR
+		# Pick an icon size from:
+		# GTK_ICON_SIZE_MENU
+		# GTK_ICON_SIZE_SMALL_TOOLBAR
+		# GTK_ICON_SIZE_LARGE_TOOLBAR   (default)
+		# GTK_ICON_SIZE_BUTTON
+		# GTK_ICON_SIZE_DND
+		# GTK_ICON_SIZE_DIALOG
+		gtk-toolbar-style = GTK_TOOLBAR_BOTH
+		# Pick a toolbar style from:
+		# GTK_TOOLBAR_ICONS
+		# GTK_TOOLBAR_TEXT
+		# GTK_TOOLBAR_BOTH              (default)
+		# GTK_TOOLBAR_BOTH_HORIZ
+
+	これらの設定は TortoiseHg 全体に適用されます。
+
+*マージや任意のリビジョンへの更新はどうやるの？*
+
+	チェンジログツールからマージや特定リビジョンへの更新が行えます。
+	エクスプローラの右クリックメニューの :guilabel:`ログの表示`
+	から起動してください。
+
+*TortoiseHg の shelve 拡張機能をコマンドラインから使うにはどうすればいいですか？*
+
+	:file:`Mercurial.ini` ファイルで以下のように拡張機能を有効化してください： ::
+
+		[extensions]
+		tortoisehg.util.hgshelve=
+
+*SSH サーバに接続できない (TortoisePlink.exe - "...cannot execute specified..." というエラーメッセージ)*
+
+	`SSH 接続 <http://bitbucket.org/kuy/thg-ja/wiki/ssh>`_ ページを参照してください。
+
+*～差分表示ツールを使うにはどうすればいいの？*
+
+	バージョン 1.0 から TortoiseHg はよく使われている GUI 差分表示ツールを自動的に検出し、
+	それらを設定画面で選択可能な状態にしてくれます。
+
+*シェル拡張を無効にする方法は？ (アイコンオーバーレイと右クリックメニュー)*
+
+	TortoiseHg インストーラを使って、シェル拡張機能を削除してください。
+
+*TortoiseHg はどこに設定を保存しているの？*
+
+	TortoiseHg は2種類の設定システムを利用しています。
+
+	1. Mercurial の設定システムで、3つのレイヤがあります
+	   1. グローバル設定： :file:`%ProgramFiles%\\TortoiseHg` にある :file:`Mercurial.ini` ファイル
+	   2. ユーザ設定： :file:`%UserProfile%` にある :file:`Mercurial.ini` ファイル
+	   3. リポジトリ設定： :file:`{repo-root}\.hg` にある :file:`hgrc` ファイル
+	2. ダイアログの位置や状態などを保存している :file:`%APPDATA%\\Tortoisehg`
+
+	以下は Mercurial の設定システムに保存される設定項目です： ::
+
+		[tortoisehg]
+		vdiff = vdiff
+		editor = gvim
+		tabwidth = 4
+		longsummary = True
+		graphlimit = 500
+		authorcolor = True
+		authorcolor.steve = blue
+
+*フォントの変更はできますか？*
+
+	一部可能です。 TortoiseHg の各種ダイアログ (コミット、変更点の表示、
+	シェルフ) のベースとなっている gtools はフォント設定が可能です： ::
+
+		[gtools]
+		# font used in changeset viewer and commit log text
+		fontcomment = courier 10
+		# font used for diffs in status and commit tools
+		fontdiff = courier 10
+		# font used in file lists in status and commit tools
+		fontlist = courier 9
+		# font used in command output window
+		fontlog = courier 10
+
+*GTK のテーマを変更するにはどうすればいいの？*
+
+	テーマをダウンロードしてそれを :file:`gtk\\share\\themes` にコピーし、
+	:file:`gtk\\etc\\gtk-2.0\\gtkrc` ファイルで変更してください。
+
+*Windows の TortoiseHg はどこの Python モジュールを参照しているの？*
+
+	TortoiseHg は Python の実行に必要な環境を DLL の形で同梱しています。
+	標準ライブラリはすべて :file:`C:\\Program Files\\TortoiseHg` の
+	:file:`library.zip` ファイルに格納されています。
+
+	そのため、非標準の Python モジュールに依存した Mercurial 拡張機能
+	を使用するとそのモジュールが見つからないため読み込みに失敗します。
+	例えば ReviewBoard 拡張機能は Python の標準ライブラリに含まれていない
+	simplejson モジュールをインポートします。
+
+	そのような拡張機能を動作させるにはちょっとした変更が必要です。
+	拡張機能のソースコードを開いて非標準のモジュールインポートの前に
+	そのモジュールのインストール場所を追記します： ::
+
+		import sys
+		sys.path.append(r'C:\path\to\module')
+
+	この方法はモジュールが .egg ファイルとして配布されている場合はうまくいきません。
+	指定するパスは .py または .pyc ファイルを含んでいる必要があります。
+
+	もしいくつもの拡張機能またはフックスクリプトを使用していて、同じ Python
+	パッケージを共有したい場合は明示的に sys.path を変更する拡張機能を作ることができます。
+	最初に読み込まれるような単純な名前 (つまりアルファベット順で) にしてください。
+	例えば： ::
+
+		[extensions]
+		00setSysPath = C:\path\to\setsyspath.py
+
+*ダイアログのぎこちないフォント描画を直すにはどうすればいいの？*
+
+	バージョン 0.8 以降では複数の GTK+ テーマを同梱せず、デフォルトのテーマとして
+	MS-Windows のみを同梱しています。その結果、MS-Windows テーマが原因で
+	フォント描画がおかしくなる場合があります。これを直すには以下の設定を
+	TortoiseHg の :file:`gtkrc` ファイルに追加してください： ::
+
+		style "msw-default"
+		{
+		    font_name = "MS UI Gothic 9"
+		}
+
+	:file:`gtkrc` ファイルは TortoiseHg のインストールディレクトリにあります。
+	:file:`C:\\Program Files\\TortoiseHg\\gtk\\etc\\gtk-2.0\\gtkrc`
+
+.. vim: noet ts=4

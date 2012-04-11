@@ -1,0 +1,115 @@
+Shelve
+======
+
+.. module:: shelve.dialog
+	:synopsis: Dialog used to move changes
+
+The shelve tool can move changes between the working directory and shelf
+patches.   If the MQ extension has been enabled, it can also move
+changes into and out of unapplied patches.
+
+The shelve tool can be launched by the Workbench :guilabel:`Repository -->
+Shelve` menu option, by a toolbar button on working file viewers, or
+by :command:`thg shelve`.
+
+.. note::
+	We highly recommend setting the patch eol configuration to auto if
+	you use the shelve tool with DOS eoln text files.
+
+.. figure:: figures/shelve.png
+	:alt: Shelve dialog
+
+	Shelve dialog
+
+Features
+--------
+
+The shelve tool has three toolbars.  A right and left toolbar for the
+two side by side panels, and a central toolbar for refresh and creating
+a new shelf patch.  The right and left toolbars are mirrors of each
+other, offering the same functionality in alternate directions.
+
+The left toolbar has these actions:
+
+	:guilabel:`Delete selected chunks`
+		Remove, or revert, all selected (toggled) chunks in the
+		currently selected file.
+	:guilabel:`Move all files right`
+		Move all changes in all files to the patch selected in the
+		right pane.
+	:guilabel:`Move selected file right`
+		Move all changes in the currently selected file to the patch
+		selected in the right pane.
+	:guilabel:`Edit selected file`
+		If the working directory is being browsed, this button edits the
+		currently selected file.  Else it edits the currently viewed
+		patch file.
+	:guilabel:`Move selected chunks right`
+		Move all selected (toggled) chunks to the patch selected in the
+		right pane.
+
+The central toolbar has two actions:
+
+	:guilabel:`Refresh`
+		Refreshes the patch drop down lists and the working copy view
+	:guilabel:`New Shelf`
+		Creates a new shelf file.  You must enter a name, though a
+		reasonable default is provided.
+
+The right toolbar will move changes from the patch selected on the
+left side to the patch selected on the right side, or the working
+copy if it has been selected on the right.
+
+
+Patch Panes
+-----------
+
+The right and the left patch panes are identical save for the working
+copy changes are only available on the left.  Selectable chunks are only
+displayed if the file is text and is in a modified state.  Added or
+removed files can be shelved but parts of the file cannot be
+individually selected.
+
+The :guilabel:`Clear` button will empty the currently selected patch or
+revert the entire working copy.  The :guilabel:`Delete` button will
+delete the currently selected shelf patch.
+
+.. note::
+	The :guilabel:`Delete` button is not sensitive when an MQ patch is
+	selected.  MQ patches must be deleted via qdelete using the
+	Workbench context menu or the Patch Queue widget.
+
+When right clicking on a file in the file list, you will get a context
+menu of commands.
+
+	:guilabel:`Visual Diff`
+		Open the selected file in your default visual diff tool.  Only
+		enabled for working copy files.
+	:guilabel:`Edit Local`
+		Open the working copy version of the selected file.
+	:guilabel:`Revert to Revision`
+		Revert all changes to the selected file.  Only enabled for
+		working copy files.
+
+Trashcan
+--------
+
+The shelve tool is very conservative with your source and patch files.
+Before it modifies any file it makes a backup under
+:file:`.hg/Trashcan`.  This trashcan can be emptied by running the purge
+dialog from the Workbench :guilabel:`Repository --> Purge` menu option.
+
+From command line
+-----------------
+
+The shelve tool can be started from command line::
+
+	thg shelve
+
+	aliases: unshelve
+
+	shelve tool
+
+	use "thg -v help shelve" to show global options
+
+.. vim: noet ts=4

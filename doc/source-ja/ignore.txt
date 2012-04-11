@@ -1,0 +1,31 @@
+無視フィルタ
+============
+
+.. module:: ignore.dialog
+	:synopsis: 無視フィルタの保守に使うダイアログ
+
+無視フィルタダイアログはリポジトリのルートにある :file:`.hgignore` ファイルの
+ような Mercurial の無視ファイルフィルタの編集に使われます。
+エクスプローラの右クリックメニューや、ステータス・コミットツールのファイル一覧に
+表示された不明ファイルの右クリックメニューから起動できます。
+
+.. figure:: figures/ignore.png
+	:alt: 無視フィルタダイアログ
+
+	無視フィルタダイアログ
+
+
+コマンドラインからの実行
+------------------------
+
+無視フィルタツールはコマンドラインから起動することもできます： ::
+
+	hgtk hgignore [FILE]
+
+	aliases: ignore, filter
+
+	ignore filter editor
+
+	use "hgtk -v help hgignore" to show global options
+
+.. vim: noet ts=4

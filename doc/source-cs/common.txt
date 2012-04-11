@@ -1,0 +1,80 @@
+Obecné vlastnosti
+=================
+
+.. module:: common.dialog
+    :synopsis: Common features to all the dialog
+
+Tyto vlastnosti jsou společné mnohým nástrojům TortoiseHg, takže je zde jednou popíšeme.
+
+
+Vizuální diffy
+--------------
+
+.. figure:: figures/visual-diff.jpg
+   :alt: Visual Diff Window
+
+Okno pro zobrazení rozdílů 
+
+V TortoiseHg 1.0 byl vizuální (externí) diffová infrastrukture zcela přepracován. Nový systém používá popisy nástrojů v :file:`mergetools.rc` k detekci nejběžnějších diffových nástrojů ve vašem počítači (včetně KDiff3, který je dodáván s našim instalatérem) aby z nich vybral ten nejvhodnější.
+
+Pokud si uživatel vybral slučovací nástroj (:menuselection:`TortoiseHg > Three-way Merge Tool`), je výběrový proces vynechán. Uživatel si ale stejně může vybrat separátní nástroj (:menuselection:`TortoiseHg > Visual Diff Tool`) pro zobrazení diffů. 
+
+Konfigurační soubor pro slučovací nástroje obsahuje pro každý nástroj optimální příkazové řádky, takže další konfigurace uživatelem není potřebná. Stačí si vybrat žádaný nástroj nebo přijmout implicitní nastavení.
+
+Systém vizuálních diffů použije každou existující konfiguraci extdiff, kterou najde. Protože ale extdiff ještě donedávna nepodporoval 'three way' diffové argumenty a stále ještě nepodporuje štítkové (label) argumenty, bude pro vás patrně nejlepší, když zakážete nebo smažete všechny konfigurace extdiff, které máte.
+
+Vizuální diffový systém použije přímo vybraný diffový nástroj, pokud prováděná akce nepožaduje použití dialogového okna (TortoiseHg) pro vizuální diff. Jde o tyto situace:
+
+1. Výběr porovnávaných souborů vyžaduje více nástrojů
+2. Vybraný nástroj štěpí (forks) oddělené procesy na pozadí
+3. Vybraný nástroj nepodporuje požadované diffy adresářů
+4. Vybraný nástroj nepodporuje 'three way' porovnávání
+5. Změny souborů zahrnují přejmenování nebo kopie
+
+Je-li použito dialogové okno pro vizuální diff, jsou dočasné soubory smazány až po ukončení dialogu. Okno by tedy mělo zůstat otevřené, dokud nezavřete všechny své instance diffových nástrojů.
+Je-li váš diffový nástroj spuštěn přímo, dočasné soubory se smažou při zavření nástroje. 
+
+Je-li váš diffový nástroj spuštěn přímo pro porovnání souboru pracovní kopie, bude se srovnávat přímo s pracovním souborem, takže jej můžete editovat zevnitř diffového nástroje. Porovnáváte-li více souborů, pořídí si systém vizuálního diffu snímek souborů pracovní kopie a zaznamená jejich původní velikosti a časové údaje (timestamps). Při zavření diffového nástroje porovná systém velikosti a časy a překopíruje upravené soubory zpět do původních pracovních kopií. Tímto způsobem můžete vždy upravovat soubory vaší pracovní kopie ze svého nástroje pro vizuální diff i při porovnávání adresářů.
+
+Je-li dialogové okno pro vizuální diff použito k porovnání souborů pracovní kopie, provádí se diff vždy přímo proti souborům pracovní kopie, neboť se vždy pracuje s jedním souborem v daném okamžiku.
+
+Přidávání nástrojů
+~~~~~~~~~~~~~~~~~~
+
+Máme-li nainstalovaný diffový nástroj, který není podporován aplikací TortoiseHg, můžeme pro něj vytvořit konfiguraci v souboru :file:`Merurial.ini`. Viz `dokumentace Hg <http://www.selenic.com/mercurial/hgrc.5.html#merge-tools>`_. Poté přidáme extra klíče, které pro vizuální diff TortoiseHg používá::
+
+	diffargs:  the arguments to use for two-way file comparisons
+	diff3args: the arguments to use for three-way file comparisons
+	dirdiff:   this tool supports two-way directory comparisons
+	dir3diff:  this tool supports three-way directory comparisons
+	
+Při sestavování argumentů pro příkazovový řádek můžeme použít následující proměnné::
+
+	$parent1:  the file or directory from the first parent revision
+	$parent2:  the file or directory from the second parent revision
+	$child:    the file or directory from the revision being compared
+	$ancestor: the file or directory from the ancestor of a merge
+	$parent:   a synonym for $parent1
+
+	$plabel1:  a symbolic name for the first parent revision
+	$plabel2:  a symbolic name for the second parent revision
+	$clabel:   a symbolic name for the revision being compared
+	$alabel:   a symbolic name for the ancestor revision
+	
+$parent2 a $ancestor mají ovšem smysl pouze tehdy, jsou-li použity jako argumenty třídílného diffu pro zobrazení sloučených changesetů. Nemůže-li váš diffový nástroj použít rozumným způsobem revizi předka, je bezpečnější vypustit jej z příkazového řádku pro diff3args.
+
+.. note::
+	Ve Windows může parametr `executable` použít proměnné prostředí s použitím syntaxe ${ProgramFiles}
+	
+Pokud tuto konfiguraci neprovedeme, implicitní hodnota **diffargs** je '$parent $child'. Implicitní hodnota **diffargs3** je "", což naznačuje, že vizuální diffový nástroj nemůže provádět třídílná srovnání.
+
+Vytvoříte-li novou konfiguraci nástroje pro vizuální diff nebo vylepšíte stávající, pošlete prosím mail našemu vývojovému oddělení pro možné zahrnutí do příštího vydání programu.
+
+Diffy slov
+~~~~~~~~~~
+
+Instalační program TortoiseHg pro Windows nyní obsahuje skripty aplikace TortoiseSVN pro porovnávání (a někdy sloučení) dokumentů v mnoha binárních formátech. Tyto jsou nastaveny v souboru :file:`mergepatterns.rc` jako ovladače pro obvyklé extenze souborů každého binárního formátu, takže není zapotřebí zásahu uživatele.
+
+Pro podporu výběru nástrojů, vycházejícího z přípony souboru, přidal TortoiseHg podporu pro sekci **[diff-patterns]**, která je ekvivalentní k sekci Mercurialu `merge-patterns <http://www.selenic.com/mercurial/hgrc.5.html#merge-patterns>`_.
+
+.. vim: noet ts=4

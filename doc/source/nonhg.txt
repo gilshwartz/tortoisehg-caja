@@ -1,0 +1,181 @@
+**************************
+Use with other VCS systems
+**************************
+
+.. module:: nonhg
+	:synopsis: Describe using TortoiseHg as a front-end to other VCS
+
+This chapter describes the three most popular Mercurial extensions for
+interoperating with *foreign* VCS systems.  See also `Repository
+Conversion <http://mercurial.selenic.com/wiki/RepositoryConversion>`_
+
+.. _perfarce-perforce:
+
+Perfarce (Perforce)
+===================
+
+* `Perfarce <http://www.kingswood-consulting.co.uk/hg/perfarce/>`_ home page.
+* `Mercurial for Perforce users <http://mercurial.selenic.com/wiki/PerforceConcepts>`_
+
+This extension modifies the remote repository handling so that repository
+paths that resemble::
+
+	p4://p4server[:port]/clientname
+
+cause operations on the named p4 client specification on the p4 server.
+The client specification must already exist on the server before using
+this extension. Making changes to the client specification Views causes
+problems when synchronizing the repositories, and should be avoided.
+
+Five built-in Mercurial commands are overridden.
+
+outgoing::
+
+	If the destination repository name starts with p4:// then this
+	reports files affected by the revision(s) that are in the local
+	repository but not in the p4 depot.
+
+push::
+
+	If the destination repository name starts with p4:// then this
+	exports changes from the local repository to the p4 depot. If no
+	revision is specified then all changes since the last p4 changelist
+	are pushed. In either case, all revisions to be pushed are foled
+	into a single p4 changelist.  Optionally the resulting changelist is
+	submitted to the p4 server, controlled by the --submit option to
+	push, or by setting **perfarce.submit** to True.  If the option
+	**perfarce.keep** is False then after a successful submit the files
+	in the p4 workarea will be deleted.
+
+pull::
+
+	If the source repository name starts with p4:// then this imports
+	changes from the p4 depot, automatically creating merges of
+	changelists submitted by hg push.  If the config option
+	**perfarce.keep** is False then the import does not leave files in
+	the p4 workarea, otherwise the p4 workarea will be updated with the
+	new files.
+
+incoming::
+
+	If the source repository name starts with p4:// then this
+	reports changes in the p4 depot that are not yet in the local
+	repository.
+
+clone::
+
+	If the source repository name starts with p4:// then this
+	creates the destination repository and pulls all changes from
+	the p4 depot into it.
+
+The **perfarce.tags** configuration option determines whether perfarce
+tries to import Perforce labels as Mercurial tags.
+
+*TortoiseHg Integration*
+
+When the perfarce extension is enabled, it adds a :guilabel:`start revision`
+configurable option to the clone tool, and a :guilabel:`P4` toolbar
+button to the sync tool.
+
+The toolbar button performs the p4pending operation.  It detects pending
+Perforce changelists that have been "push"ed to your Perforce client but
+have not been submitted, or have not been pulled back.  This opens the
+pending changelist dialog so that you can view these pending changelists
+and either submit or revert them.  If Perforce fails the submit because
+your files are out of date, you must revert the changelist, pull from
+Perforce, merge, then push again.
+
+*Installation*
+
+Perfarce comes bundled with TortoiseHg Windows installers, so you
+enable perfarce by simply adding it to your Mercurial.ini or a
+repository's hgrc like this::
+
+	[extensions]
+	perfarce=
+
+.. note::
+	The perfarce extension has been known to not work together with
+	hgsubversion, so if you plan to use both extensions they should be
+	enabled locally on the repositories that require them.
+ 
+hgsubversion (SVN)
+==================
+
+* `hgsubversion <http://bitbucket.org/durin42/hgsubversion/wiki/Home>`_ home page
+* `hgsubversion Extension <http://mercurial.selenic.com/wiki/HgSubversion>`_ wiki page
+* `Working with Subversion Repositories <http://mercurial.selenic.com/wiki/WorkingWithSubversion>`_
+
+hgsubversion, as it's name implies, allows you to use Mercurial as a
+client to a Subversion server.  It can also be used to do straight
+conversions of Subversion repositories into Mercurial.
+
+*Installation*
+
+TortoiseHg Windows installers come with the python-svn bindings that
+hgsubversion requires, so one only needs to clone the hgsubversion
+repository to your local computer::
+
+	hg clone http://bitbucket.org/durin42/hgsubversion/ C:\hgsvn
+
+Then enable the extension in your Mercurial.ini file, specifying the
+hgsubversion folder inside the cloned repository::
+
+	[extensions]
+	hgsubversion = C:\hgsvn\hgsubversion
+
+You can verify that worked by typing :command:`hg help hgsubversion`
+
+See the hgsubversion wiki for details of use.  We recommend an
+hgsubversion version of at least 1.2.1 with Mercurial 1.8.
+
+.. warning::
+	When cloning a Subversion server, it is highly recommended
+	to clone only the first few revisions then pull the rest.  The
+	failure behavior of the clone command is to delete the incomplete
+	clone, while pull is much more forgiving.
+
+*TortoiseHg Integration*
+
+Imported Subversion changesets will display the original Subversion checkin
+number in the Changeset Info widget in the Revision Details task tab of the
+Workbench.
+
+hg-git (git)
+============ 
+
+* `hg-git <http://hg-git.github.com/>`_ home page
+* `hg-git Extension <http://mercurial.selenic.com/wiki/HgGit>`_ wiki page
+* `Mercurial for Git users <http://mercurial.selenic.com/wiki/GitConcepts>`_
+
+hg-git, as its name implies, allows you to use Mercurial as a
+client to a git server.  It can also be used to do straight conversions
+of Git repositories into Mercurial.
+
+*Installation*
+
+TortoiseHg Windows installers come with the python-git bindings (named
+dulwich) that hg-git requires, so one only needs to clone the
+hg-git repository to your local computer::
+
+	hg clone http://bitbucket.org/durin42/hg-git/ C:\hg-git
+
+Then enable hggit in your Mercurial.ini file::
+
+	[extensions]
+	hggit = C:\hg-git\hggit
+
+You can verify that worked by typing :command:`hg help hggit`
+
+Current versions of TortoiseHg include dulwich version 0.7.0.  We
+recommend to use hg-git version 0.2.6 with this version of dulwich
+and Mercurial 1.8.
+
+See the hggit documentation for details of use.
+
+Beware the 'incoming' command appears broken when speaking with git
+repositories, and 'outgoing' does not show much useful info. So you are
+restricted to simple push and pull commands, which is common with
+Mercurial extensions that speak to external revision control tools.
+
+.. vim: noet ts=4

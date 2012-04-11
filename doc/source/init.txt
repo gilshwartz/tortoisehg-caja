@@ -1,0 +1,55 @@
+Create a new repository
+=======================
+
+.. module:: init.dialog
+	:synopsis: Dialog used to create a repository
+
+To create a new repository into an existing directory (project) you
+have to run the init dialog. From the explorer context menu select
+:menuselection:`TortoiseHg... --> Create Repository Here` over the directory, or, within
+the folder, type :command:`thg init`. 
+
+.. figure:: figures/init.png
+	:alt: Init dialog
+
+	Repository Init Dialog
+
+:guilabel:`Destination`
+	Is the directory where the repository will be created. It is
+	always filled with the current directory, so if you launch the
+	dialog from the right directory there is no reason to change it.
+:guilabel:`Add special files (.hgignore, ...)`
+	If selected TortoiseHg creates an empty :file:`.hgignore` file
+	in the working directory.
+:guilabel:`Make repo compatible with Mercurial <1.7`
+	If selected TortoiseHg creates an older format Mercurial repository.
+	Do not check unless you have a strong reason to do, and you know
+	what you are doing.
+:guilabel:`Show in Workbench after init`
+    When the repository was successfully created, it is added to the RepoRegistry,
+    and opened in a new tab the Workbench.
+:guilabel:`Hg command`
+    This field displays the command that will be executed by the dialog.
+
+Creating a new repository means create a subdirectory called :file:`.hg`.
+In this subdirectory Mercurial keeps all its versioning information.
+
+.. warning::
+	It is dangerous to manually edit the files in :file:`.hg` directory,
+	repository corruption can occur.  :file:`.hg/hgrc` is perhaps the
+	only exception to this rule.
+
+From command line
+-----------------
+
+The init tool can be started from command line ::
+
+	thg init
+
+The syntax is ::
+
+	thg init [DEST]
+
+where [DEST] is the path to destination folder.
+
+.. vim: noet ts=4

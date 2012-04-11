@@ -1,0 +1,48 @@
+Serve
+=====
+
+.. module:: serve.dialog
+	:synopsis: Dialog used to start/stop the web server
+
+.. figure:: figures/serve.png
+	:alt: Web server dialog
+
+The serve tool is a wrapper for Mercurial's built-in web server. Once
+launched, a computer can connect to the http port and browse your
+repositories, perform clone, pull, or even push operations if enabled.
+
+Toolbar buttons:
+
+	:guilabel:`Start`
+		start the web server
+	:guilabel:`Stop`
+		stop the web server
+	:guilabel:`Configure`
+		Configure repository web style, description, and access policies
+
+When the settings dialog is launched via the :guilabel:`Configure`
+button, it is run in the context of the current repository.  Please
+visit the Mercurial wiki for detailed descriptions of the various
+web configurations.
+
+In TortoiseHg 2.0, the serve tool natively supports collections of local
+repositories.  Just drag them onto the web serve dialog while it is not
+running, or add them by hand using the editing buttons.  The repository
+collections can be saved and reloaded.
+
+From command line
+-----------------
+
+The server tool can be started from command line ::
+
+	thg serve [OPTION]...
+
+	start stand-alone webserver
+
+	options:
+
+		--webdir-conf  name of the webdir config file
+
+	use "thg -v help serve" to show global options
+
+.. vim: noet ts=4

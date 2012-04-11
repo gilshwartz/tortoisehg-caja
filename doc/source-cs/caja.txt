@@ -1,0 +1,19 @@
+MATE desktop integration
+=========================
+
+.. module:: caja
+	:synopsis: MATE desktop integration
+
+TortoiseHg umožňuje integraci konzoly s pracovní plochou MATE prostřednictvím pluginu caja-python. Pokud jste instaloval TortoiseHg z instalačního paketu, pak nejspíš máte tuto extenzi již nastavenou. Pokud ne, pročtěte si pokyny na našich stránkách Wiki.
+
+Protože extenze nautilu nemá své vlastní GUI pro správu překryvných ikon a kontextových menu, podporuje povýšení příkazů do nejvyššího menu. Je zapotřebí upravit soubor :file:`~/hgrc` a přidat řádky, jako jsou tyto::
+
+	[tortoisehg]
+	promoteditems = commit, log, synch
+
+.. figure:: figures/caja.png
+	:alt: Caja screenshot
+
+	MATE/Caja screenshot
+
+.. vim: noet ts=4
