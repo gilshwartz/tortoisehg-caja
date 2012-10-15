@@ -6,13 +6,15 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
+import inspect
+
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
 from mercurial import hg, ui, error
 
 from tortoisehg.util import hglib, paths
-from tortoisehg.hgqt.i18n import _
+from tortoisehg.hgqt.i18n import _, ngettext
 from tortoisehg.hgqt import cmdui, cslist, qtlib, thgrepo
 
 class StripDialog(QDialog):
@@ -159,9 +161,13 @@ class StripDialog(QDialog):
     def updatecslist(self, uselimit=True):
         """Update the cs list and return the success status as a bool"""
         rev = self.get_rev()
-        if not rev:
+        if rev is None:
             return False
-        striprevs = list(self.repo.changelog.descendants(rev))
+        cl = self.repo.changelog
+        if inspect.getargspec(cl.descendants)[1]:  # hg<2.3: *revs
+            striprevs = list(cl.descendants(rev))
+        else:
+            striprevs = list(cl.descendants([rev]))
         striprevs.append(rev)
         striprevs.sort()
         self.cslist.clear()
@@ -171,7 +177,10 @@ class StripDialog(QDialog):
     def preview(self):
         if self.updatecslist():
             striprevs = self.cslist.curitems
-            cstext = _("<b>%d changesets</b> will be stripped") % len(striprevs)
+            cstext = ngettext(
+                "<b>%d changeset</b> will be stripped",
+                "<b>%d changesets</b> will be stripped",
+                len(striprevs)) % len(striprevs)
             self.status.setText(cstext)
             self.strip_btn.setEnabled(True)
         else:

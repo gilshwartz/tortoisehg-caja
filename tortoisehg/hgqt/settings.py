@@ -7,14 +7,20 @@
 
 import os
 
-from mercurial import ui, util, error
+from mercurial import ui, util, error, extensions, scmutil, phases
 
-from tortoisehg.util import hglib, settings, paths, wconfig, i18n, bugtraq
+from tortoisehg.util import hglib, settings, paths, wconfig, i18n
 from tortoisehg.hgqt.i18n import _
-from tortoisehg.hgqt import qtlib, qscilib, thgrepo
+from tortoisehg.hgqt import qtlib, qscilib, thgrepo, customtools
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
+
+if os.name == 'nt':
+    from tortoisehg.util import bugtraq
+    _hasbugtraq = True
+else:
+    _hasbugtraq = False
 
 # Technical Debt
 #   stacked widget or pages need to be scrollable
@@ -23,6 +29,12 @@ from PyQt4.QtGui import *
 
 _unspecstr = _('<unspecified>')
 ENTRY_WIDTH = 300
+
+def hasExtension(extname):
+    for name, module in extensions.extensions():
+        if name == extname:
+            return True
+    return False
 
 class SettingsCombo(QComboBox):
     def __init__(self, parent=None, **opts):
@@ -140,12 +152,11 @@ class BoolRBGroup(QWidget):
     def isDirty(self):
         return self.value() != self.curvalue
 
-class PasswordEntry(QLineEdit):
+class LineEditBox(QLineEdit):
     def __init__(self, parent=None, **opts):
         QLineEdit.__init__(self, parent, toolTip=opts['tooltip'])
         self.opts = opts
         self.curvalue = None
-        self.setEchoMode(QLineEdit.Password)
         self.setMinimumWidth(ENTRY_WIDTH)
 
     ## common APIs for all edit widgets
@@ -162,6 +173,49 @@ class PasswordEntry(QLineEdit):
 
     def isDirty(self):
         return self.value() != self.curvalue
+
+class PasswordEntry(LineEditBox):
+    def __init__(self, parent=None, **opts):
+        QLineEdit.__init__(self, parent, toolTip=opts['tooltip'])
+        self.opts = opts
+        self.curvalue = None
+        self.setEchoMode(QLineEdit.Password)
+        self.setMinimumWidth(ENTRY_WIDTH)
+
+class TextEntry(QTextEdit):
+    def __init__(self, parent=None, **opts):
+        QTextEdit.__init__(self, parent, toolTip=opts['tooltip'])
+        self.opts = opts
+        self.curvalue = None
+        self.setMinimumWidth(ENTRY_WIDTH)
+
+    ## common APIs for all edit widgets
+    def setValue(self, curvalue):
+        self.curvalue = curvalue
+        if curvalue:
+            self.setPlainText(hglib.tounicode(curvalue))
+        else:
+            self.setPlainText('')
+
+    def value(self):
+        # It is not possible to set a multi-line value with an empty line
+        utext = self.removeEmptyLines(self.toPlainText())
+        return utext and hglib.fromunicode(utext) or None
+
+    def isDirty(self):
+        return self.value() != self.curvalue
+
+    def removeEmptyLines(self, text):
+        if not text:
+            return text
+        rawlines = hglib.fromunicode(text).splitlines()
+        lines = []
+        for line in rawlines:
+            if not line.strip():
+                continue
+            lines.append(line)
+        return os.linesep.join(lines)
+
 
 class FontEntry(QWidget):
     def __init__(self, parent=None, **opts):
@@ -254,6 +308,25 @@ class SettingsCheckBox(QCheckBox):
     def isDirty(self):
         return self.value() != self.curvalue
 
+# When redesigning the structure of SettingsForm, consider to replace Spacer
+# by QGroupBox.
+class Spacer(QWidget):
+    """Dummy widget for group separator"""
+
+    def __init__(self, parent=None, **opts):
+        super(Spacer, self).__init__(parent)
+        if opts.get('cpath'):
+            raise ValueError('do not set cpath for spacer')
+        self.opts = opts
+
+    def setValue(self, curvalue):
+        raise NotImplementedError
+
+    def value(self):
+        raise NotImplementedError
+
+    def isDirty(self):
+        return False
 
 class BugTraqConfigureEntry(QPushButton):
     def __init__(self, parent=None, **opts):
@@ -315,6 +388,46 @@ class BugTraqConfigureEntry(QPushButton):
         return self.value() != self.curvalue
 
 
+class PathBrowser(QWidget):
+    def __init__(self, parent=None, **opts):
+        QWidget.__init__(self, parent, toolTip=opts['tooltip'])
+        self.opts = opts
+
+        self.lineEdit = QLineEdit()
+        completer = QCompleter(self)
+        completer.setModel(QDirModel(completer))
+        self.lineEdit.setCompleter(completer)
+
+        self.browseButton = QPushButton(_('&Browse...'))
+        self.browseButton.clicked.connect(self.browse)
+
+        layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.lineEdit)
+        layout.addWidget(self.browseButton)
+        self.setLayout(layout)
+
+    def browse(self):
+        dir = QFileDialog.getExistingDirectory(self, directory=self.lineEdit.text(),
+                                               options=QFileDialog.ShowDirsOnly)
+        if dir:
+            self.lineEdit.setText(dir)
+
+    ## common APIs for all edit widgets
+    def setValue(self, curvalue):
+        self.curvalue = curvalue
+        if curvalue:
+            self.lineEdit.setText(hglib.tounicode(curvalue))
+        else:
+            self.lineEdit.setText('')
+
+    def value(self):
+        utext = self.lineEdit.text()
+        return utext and hglib.fromunicode(utext) or None
+
+    def isDirty(self):
+        return self.value() != self.curvalue
+
 def genEditCombo(opts, defaults=[]):
     opts['canedit'] = True
     opts['defaults'] = defaults
@@ -326,9 +439,16 @@ def genIntEditCombo(opts):
     opts['validator'] = QIntValidator()
     return SettingsCombo(**opts)
 
+def genLineEditBox(opts):
+    'Generate a single line text entry box'
+    return LineEditBox(**opts)
+
 def genPasswordEntry(opts):
     'Generate a password entry box'
     return PasswordEntry(**opts)
+def genTextEntry(opts):
+    'Generate a multi-line text input entry box'
+    return TextEntry(**opts)
 
 def genDefaultCombo(opts, defaults=[]):
     'user must select from a list'
@@ -349,8 +469,14 @@ def genDeferredCombo(opts, func):
 def genFontEdit(opts):
     return FontEntry(**opts)
 
+def genSpacer(opts):
+    return Spacer(**opts)
+
 def genBugTraqEdit(opts):
     return BugTraqConfigureEntry(**opts)
+
+def genPathBrowser(opts):
+    return PathBrowser(**opts)
 
 def findIssueTrackerPlugins():
     plugins = bugtraq.get_issue_plugins_with_names()
@@ -358,6 +484,8 @@ def findIssueTrackerPlugins():
     return names
 
 def issuePluginVisible():
+    if not _hasbugtraq:
+        return False
     try:
         # quick test to see if we're able to load the bugtraq module
         test = bugtraq.BugTraq('')
@@ -410,7 +538,7 @@ INFO = (
         _('Graphical merge program for resolving merge conflicts.  If left '
         'unspecified, Mercurial will use the first applicable tool it finds '
         'on your system or use its internal merge tool that leaves conflict '
-        'markers in place.  Chose internal:merge to force conflict markers ,'
+        'markers in place.  Choose internal:merge to force conflict markers, '
         'internal:prompt to always select local or other, or internal:dump '
         'to leave files in the working directory for manual merging')),
     _fi(_('Visual Diff Tool'), 'tortoisehg.vdiff',
@@ -441,7 +569,7 @@ INFO = (
     _fi(_('Tab Width'), 'tortoisehg.tabwidth', genIntEditCombo,
         _('Specify the number of spaces that tabs expand to in various '
           'TortoiseHg windows. '
-          'Default: 0, Not expanded')),
+          'Default: 8')),
     _fi(_('Force Repo Tab'), 'tortoisehg.forcerepotab', genBoolRBGroup,
         _('Always show repo tabs, even for a single repo. Default: False')),
     _fi(_('Monitor Repo Changes'), 'tortoisehg.monitorrepo',
@@ -469,6 +597,11 @@ INFO = (
     )),
 
 ({'name': 'log', 'label': _('Workbench'), 'icon': 'menulog'}, (
+    _fi(_('Single Workbench Window'), 'tortoisehg.workbench.single', genBoolRBGroup,
+        _('Select whether you want to have a single workbench window. '
+        'If you disable this setting you will get a new workbench window everytime that you use the "Hg Workbench"'
+        'command on the explorer context menu. Default: True'),
+        restartneeded=True, globalonly=True),
     _fi(_('Default widget'), 'tortoisehg.defaultwidget', (genDefaultCombo,
         ['revdetails', 'commit', 'mq', 'sync', 'manifest', 'search']),
         _('Select the initial widget that will be shown when opening a '
@@ -480,6 +613,11 @@ INFO = (
         'repository.  You can select the "current" (i.e. the working directory '
         'parent), the current "tip" or the working directory ("workingdir"). '
         'Default: current')),
+    _fi(_('Open new tabs next\nto the current tab'),
+        'tortoisehg.opentabsaftercurrent', genBoolRBGroup,
+        _('Should new tabs be open next to the current tab? '
+        'If False new tabs will be open after the last tab. '
+        'Default: True')),
     _fi(_('Author Coloring'), 'tortoisehg.authorcolor', genBoolRBGroup,
         _('Color changesets by author name.  If not enabled, '
           'the changes are colored green for merge, red for '
@@ -490,6 +628,13 @@ INFO = (
         _('Show tabs along the side of the bottom half of each repo '
           'widget allowing one to switch task tabs without using the toolbar. '
           'Default: off')),
+    _fi(_('Task Toolbar Order'), 'tortoisehg.workbench.task-toolbar', genEditCombo,
+        _('Specify which task buttons you want to show on the task toolbar '
+          'and in which order.<br>Type a list of the task button names. '
+          'Add separators by putting "|" between task button names.<br>'
+          'Valid names are: log commit mq sync manifest grep and pbranch.<br>'
+          'Default: log commit mq sync manifest grep pbranch'),
+        restartneeded=True, globalonly=True),
     _fi(_('Long Summary'), 'tortoisehg.longsummary', genBoolRBGroup,
         _('If true, concatenate multiple lines of changeset summary '
           'until they reach 80 characters. '
@@ -519,8 +664,29 @@ INFO = (
         _('Operation which is performed directly after a successful pull. '
           'update equates to pull --update, fetch equates to the fetch '
           'extension, rebase equates to pull --rebase.  Default: none')),
+    _fi(_('Default Push'), 'tortoisehg.defaultpush', (genDefaultCombo,
+        ['all', 'branch', 'revision']),
+        _('Select the revisions that will be pushed by default, '
+        'whenever you click the Push button.'
+        '<ul><li><b>all</b>: The default. Push all changes in <i>all branches</i>.'
+        '<li><b>branch</b>: Push all changes in the <i>current branch</i>.'
+        '<li><b>revision</b>: Push the changes in the current branch '
+        '<i><u>up to</u> the current revision</i>.</ul><p>'
+        'Default: all')),
+    _fi(_('Activate Bookmarks'), 'tortoisehg.activatebookmarks', (genDefaultCombo,
+        ['auto', 'prompt', 'never']),
+        _('Select when TortoiseHg will show a prompt to activate a bookmark '
+        'when updating to a revision that has one or more bookmarks.'
+        '<ul><li><b>auto</b>: Try to automatically activate bookmarks. When '
+        'updating to a revision that has a single bookmark it will be activated '
+        'automatically. Show a prompt if there is more than one bookmark on the '
+        'revision that is being updated to.'
+        '<li><b>prompt</b>: The default. Show a prompt when updating to a '
+        'revision that has one or more bookmarks.'
+        '<li><b>never</b>: Never show any prompt to activate any bookmarks.'
+        '</ul><p>'
+        'Default: prompt')),
     )),
-
 ({'name': 'commit', 'label': _('Commit', 'config item'), 'icon': 'menucommit'}, (
     _fi(_('Username'), 'ui.username', genEditCombo,
         _('Name associated with commits.  The common format is:<br>'
@@ -549,6 +715,40 @@ INFO = (
          'environment variables are set to a non-English language. '
          'This setting is used by the Merge, Tag and Backout dialogs. '
          'Default: False')),
+    _fi(_('New Commit Phase'), 'phases.new-commit', (genDefaultCombo,
+        phases.phasenames),
+        _('The phase of new commits. Default: draft')),
+    _fi(_('Secret MQ Patches'), 'mq.secret', genBoolRBGroup,
+       _('Make MQ patches secret (instead of draft). '
+         'Default: False')),
+    _fi(_('Monitor working<br>directory changes'),
+        'tortoisehg.refreshwdstatus',
+        (genDefaultCombo,
+        ['auto', 'always', 'alwayslocal']),
+        _('Select when the working directory status list will be refreshed:<br>'
+        '- <b>auto</b>: [<i>default</i>] let TortoiseHg decide when to refresh the working '
+        'directory status list.<br>'
+        'TortoiseHg will refresh the status list whenever it performs an action '
+        'that may potentially modify the working directory. <i>This may miss '
+        'any changes that happen outside of TortoiseHg\'s control;</i><br>'
+        '- <b>always</b>: in addition to the automatic updates above, also '
+        'refresh the status list whenever the user clicks on the "working dir '
+        'revision" or on the "Commit icon" on the workbench task bar;<br>'
+        '- <b>alwayslocal</b>: same as "<b>always</b>" but restricts forced '
+        'refreshes to <i>local repos</i>.<br>'
+        'Default: auto')),
+    _fi(_('Confirm adding unknown files'), 'tortoisehg.confirmaddfiles', genBoolRBGroup,
+        _('Determines if TortoiseHg should show a confirmation dialog '
+        'before adding new files in a commit. '
+        'If True, a confirmation dialog will be showed. '
+        'If False, selected new files will be included in the '
+        'commit with no confirmation dialog.  Default: True')),
+    _fi(_('Confirm deleting files'), 'tortoisehg.confirmdeletefiles', genBoolRBGroup,
+        _('Determines if TortoiseHg should show a confirmation dialog '
+        'before removing files in a commit. '
+        'If True, a confirmation dialog will be showed. '
+        'If False, selected deleted files will be included in the '
+        'commit with no confirmation dialog.  Default: True')),
     )),
 
 ({'name': 'web', 'label': _('Web Server'), 'icon': 'proxy'}, (
@@ -647,7 +847,7 @@ INFO = (
           'mail server.')),
     )),
 
-({'name': 'diff', 'label': _('Diff'),
+({'name': 'diff', 'label': _('Diff and Annotate'),
   'icon': QStyle.SP_FileDialogContentsView}, (
     _fi(_('Patch EOL'), 'patch.eol', (genDefaultCombo,
         ['auto', 'strict', 'crlf', 'lf']),
@@ -671,13 +871,23 @@ INFO = (
         _('Show which function each change is in. '
           'Default: False')),
     _fi(_('Ignore White Space'), 'diff.ignorews', genBoolRBGroup,
-        _('Ignore white space when comparing lines. '
+        _('Ignore white space when comparing lines in diff views. '
           'Default: False')),
     _fi(_('Ignore WS Amount'), 'diff.ignorewsamount', genBoolRBGroup,
-        _('Ignore changes in the amount of white space. '
+        _('Ignore changes in the amount of white space in diff views. '
           'Default: False')),
     _fi(_('Ignore Blank Lines'), 'diff.ignoreblanklines', genBoolRBGroup,
-        _('Ignore changes whose lines are all blank. '
+        _('Ignore changes whose lines are all blank in diff views. '
+          'Default: False')),
+    _fi(_('<b>Annotate:</b>'), None, genSpacer, ''),
+    _fi(_('Ignore White Space'), 'annotate.ignorews', genBoolRBGroup,
+        _('Ignore white space when comparing lines in the annotate view. '
+          'Default: False')),
+    _fi(_('Ignore WS Amount'), 'annotate.ignorewsamount', genBoolRBGroup,
+        _('Ignore changes in the amount of white space in the annotate view. '
+          'Default: False')),
+    _fi(_('Ignore Blank Lines'), 'annotate.ignoreblanklines', genBoolRBGroup,
+        _('Ignore changes whose lines are all blank in the annotate view. '
           'Default: False')),
     )),
 
@@ -702,6 +912,9 @@ INFO = (
 ({'name': 'extensions', 'label': _('Extensions'), 'icon': 'hg-extensions'}, (
     )),
 
+({'name': 'tools', 'label': _('Tools'), 'icon': 'tools-spanner-hammer'}, (
+    )),
+
 ({'name': 'issue', 'label': _('Issue Tracking'), 'icon': 'edit-file'}, (
     _fi(_('Issue Regex'), 'tortoisehg.issue.regex', genEditCombo,
         _('Defines the regex to match when picking up issue numbers.')),
@@ -713,12 +926,25 @@ INFO = (
           'while {1} refers to the first group and so on. If no {n} tokens'
           'are found in issue.link, the entire matched string is appended '
           'instead.')),
+    _fi(_('Inline Tags'), 'tortoisehg.issue.inlinetags', genBoolRBGroup,
+        _('Show tags at start of commit message.')),
+    _fi(_('Mandatory Issue Reference'), 'tortoisehg.issue.linkmandatory', genBoolRBGroup,
+        _('When committing, require that a reference to an issue be specified.  '
+          'If enabled, the regex configured in \'Issue Regex\' must find a match '
+          'in the commit message.')),
     _fi(_('Issue Tracker Plugin'), 'tortoisehg.issue.bugtraqplugin',
         (genDeferredCombo, findIssueTrackerPlugins),
         _('Configures a COM IBugTraqProvider or IBugTrackProvider2 issue '
           'tracking plugin.'), visible=issuePluginVisible),
     _fi(_('Configure Issue Tracker'), 'tortoisehg.issue.bugtraqparameters', genBugTraqEdit,
         _('Configure the selected COM Bug Tracker plugin.'),
+        master='tortoisehg.issue.bugtraqplugin', visible=issuePluginVisible),
+    _fi(_('Issue Tracker Trigger'), 'tortoisehg.issue.bugtraqtrigger', (genDefaultCombo,
+        ['never', 'commit']),
+        _('Determines when the issue tracker state will be updated by TortoiseHg. Valid settings values are:'
+        '<ul><li><b>never</b>: Do not update the Issue Tracker state automatically.'
+        '<li><b>commit</b>: Update the Issue Tracker state after a successful commit.</ul><p>'
+        'Default: never'),
         master='tortoisehg.issue.bugtraqplugin', visible=issuePluginVisible),
     )),
 
@@ -738,6 +964,60 @@ INFO = (
         _('A comma separated list of target people')),
     )),
 
+({'name': 'kbfiles', 'label': _('Kiln Bfiles'), 'icon': 'kiln', 'extension': 'kbfiles'}, (
+    _fi(_('Patterns'), 'kilnbfiles.patterns', genEditCombo,
+        _('Files with names meeting the specified patterns will be automatically '
+          'added as bfiles')),
+    _fi(_('Size'), 'kilnbfiles.size', genEditCombo,
+        _('Files of at least the specified size (in megabytes) will be added as bfiles')),
+    _fi(_('System Cache'), 'kilnbfiles.systemcache', genPathBrowser,
+        _('Path to the directory where a system-wide cache of bfiles will be stored')),
+    )),
+
+({'name': 'largefiles', 'label': _('Largefiles'), 'icon': 'kiln', 'extension': 'largefiles'}, (
+    _fi(_('Patterns'), 'largefiles.patterns', genEditCombo,
+        _('Files with names meeting the specified patterns will be automatically '
+          'added as largefiles')),
+    _fi(_('Minimum Size'), 'largefiles.minsize', genEditCombo,
+        _('Files of at least the specified size (in megabytes) will be added as largefiles')),
+    _fi(_('User Cache'), 'largefiles.usercache', genPathBrowser,
+        _('Path to the directory where a user\'s cache of largefiles will be stored')),
+    )),
+
+({'name': 'projrc', 'label': _('Projrc'), 'icon': 'settings_projrc', 'extension': 'projrc'}, (
+    _fi(_('Require confirmation'), 'projrc.confirm', (genDefaultCombo, ['always', 'first', 'never']),
+        _('When to ask the user to confirm the update of the local "projrc" configuration file '
+        'when the remote projrc file changes. Possible values are:'
+        '<ul><li><b>always</b>: [<i>default</i>] '
+        'Always show a confirmation prompt before updating the local .hg/projrc file.'
+        '<li><b>first</b>: Show a confirmation dialog when the repository is cloned '
+        'or when a remote projrc file is found for the first time.'
+        '<li><b>never</b>: Update the local .hg/projrc file automatically, '
+        'without requiring any user confirmation.</ul>')),
+    _fi(_('Servers'), 'projrc.servers', genEditCombo,
+        _('List of Servers from which "projrc" configuration files must be pulled. '
+        'Set it to "*" to pull from all servers. Set it to "default" to pull from the default sync path.'
+        'Default is pull from NO servers.')),
+    _fi(_('Include'), 'projrc.include', genEditCombo,
+        _('List of settings that will be pulled from the project configuration file. Default is include NO settings.')),
+    _fi(_('Exclude'), 'projrc.exclude', genEditCombo,
+        _('List of settings that will NOT be pulled from the project configuration file. '
+        'Default is exclude none of the included settings.')),
+    _fi(_('Update on incoming'), 'projrc.updateonincoming', (genDefaultCombo, ['never', 'prompt', 'auto']),
+        _('Let the user update the projrc on incoming:'
+        '<ul><li><b>never</b>: [<i>default</i>] '
+        'Show whether the remote projrc file has changed, '
+        'but do not update (nor ask to update) the local projrc file.'
+        '<li><b>prompt</b>: Look for changes to the projrc file. '
+        'If there are changes _always_ show a confirmation prompt, '
+        'asking the user if it wants to update its local projrc file.'
+        '<li><b>auto</b>: Look for changes to the projrc file. '
+        'Use the value of the "projrc.confirm" configuration key to '
+        'determine whether to show a confirmation dialog or not '
+        'before updating the local projrc file.</ul><p>'
+        'Default: never')),
+
+    )),
 )
 
 CONF_GLOBAL = 0
@@ -748,7 +1028,8 @@ class SettingsDialog(QDialog):
     def __init__(self, configrepo=False, focus=None, parent=None, root=None):
         QDialog.__init__(self, parent)
         self.setWindowTitle(_('TortoiseHg Settings'))
-        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint |
+            Qt.WindowMaximizeButtonHint)
         self.setWindowIcon(qtlib.geticon('settings_repo'))
 
         if not hasattr(wconfig.config(), 'write'):
@@ -775,7 +1056,7 @@ class SettingsDialog(QDialog):
 
         self.conftabs = QTabWidget()
         layout.addWidget(self.conftabs)
-        utab = SettingsForm(rcpath=hglib.user_rcpath(), focus=focus)
+        utab = SettingsForm(rcpath=scmutil.userrcpath(), focus=focus)
         self.conftabs.addTab(utab, qtlib.geticon('settings_user'),
                              _("%s's global settings") % username())
         utab.restartRequested.connect(self._pushRestartRequest)
@@ -795,6 +1076,14 @@ class SettingsDialog(QDialog):
                                   _('no repo at ') + uroot, parent=self)
 
         if repo:
+            if 'projrc' in repo.extensions():
+                projrcpath = os.sep.join([repo.root, '.hg', 'projrc'])
+                if os.path.exists(projrcpath):
+                    rtab = SettingsForm(rcpath=projrcpath, focus=focus, readonly=True)
+                    self.conftabs.addTab(rtab, qtlib.geticon('settings_projrc'),
+                                         _('%s project settings (.hg/projrc)') % os.path.basename(repo.displayname))
+                    rtab.restartRequested.connect(self._pushRestartRequest)
+
             reporcpath = os.sep.join([repo.root, '.hg', 'hgrc'])
             rtab = SettingsForm(rcpath=reporcpath, focus=focus)
             self.conftabs.addTab(rtab, qtlib.geticon('settings_repo'),
@@ -863,8 +1152,11 @@ class SettingsForm(QWidget):
 
     restartRequested = pyqtSignal(unicode)
 
-    def __init__(self, rcpath, focus=None, parent=None):
+    def __init__(self, rcpath, focus=None, parent=None, readonly=False):
         super(SettingsForm, self).__init__(parent)
+
+        # If forcereadonly is false, the settings form will be readonly if the corresponding ini file is readonly
+        self.forcereadonly = readonly
 
         if isinstance(rcpath, (list, tuple)):
             self.rcpath = rcpath
@@ -905,6 +1197,7 @@ class SettingsForm(QWidget):
         self.pages = {}
         self.stack = stack
         self.pageList = pageList
+        self.pageListIndexToStack = {}
 
         desctext = QTextBrowser()
         desctext.setOpenExternalLinks(True)
@@ -915,6 +1208,8 @@ class SettingsForm(QWidget):
 
         # add page items to treeview
         for meta, info in INFO:
+            if 'extension' in meta and not hasExtension(meta['extension']):
+                continue
             if isinstance(meta['icon'], str):
                 icon = qtlib.geticon(meta['icon'])
             else:
@@ -927,21 +1222,27 @@ class SettingsForm(QWidget):
         self.refresh()
         self.focusField(focus or 'ui.merge')
 
+    @pyqtSlot(int)
     def activatePage(self, index):
-        item = self.pageList.currentItem()
+        stackindex = self.pageListIndexToStack.get(index, -1)
+        if stackindex >= 0:
+            self.stack.setCurrentIndex(stackindex)
+            return
+
+        item = self.pageList.item(index)
         for data in INFO:
             if item.text() == data[0]['label']:
                 meta, info = data
                 break
 
+        stackindex = self.stack.count()
         pagename = meta['name']
-        if self.pages.has_key(pagename):
-            page = self.pages[pagename]
-        else:
-            page = self.createPage(pagename, info)
-            self.refreshPage(page)
-        frame = page[2][0].parentWidget()
-        self.stack.setCurrentWidget(frame)
+        page = self.createPage(pagename, info)
+        self.refreshPage(page)
+        # better to call stack.addWidget() here, not by fillFrame()
+        assert self.stack.count() > stackindex, 'page must be added to stack'
+        self.pageListIndexToStack[index] = stackindex
+        self.stack.setCurrentIndex(stackindex)
 
     def editClicked(self):
         'Open internal editor in stacked widget'
@@ -954,13 +1255,14 @@ class SettingsForm(QWidget):
                 self.applyChanges()
             elif ret == 2:
                 return
-        if qscilib.fileEditor(self.fn, foldable=True) == QDialog.Accepted:
+        if (qscilib.fileEditor(hglib.tounicode(self.fn), foldable=True)
+            == QDialog.Accepted):
             self.refresh()
 
     def refresh(self, *args):
         # refresh config values
         self.ini = self.loadIniFile(self.rcpath)
-        self.readonly = not (hasattr(self.ini, 'write')
+        self.readonly = self.forcereadonly or not (hasattr(self.ini, 'write')
                                 and os.access(self.fn, os.W_OK))
         self.stack.setDisabled(self.readonly)
         self.fnedit.setText(hglib.tounicode(self.fn))
@@ -994,8 +1296,12 @@ class SettingsForm(QWidget):
                 # make sure widgets are shown properly,
                 # even when no extensions mentioned in the config file
                 self.validateextensions()
+        elif name == 'tools':
+            self.toolsFrame.refresh()
         else:
             for row, e in enumerate(info):
+                if not e.cpath:
+                    continue  # a dummy field
                 curvalue = self.readCPath(e.cpath)
                 widgets[row].setValue(curvalue)
 
@@ -1047,7 +1353,7 @@ class SettingsForm(QWidget):
                 w = func(opts)
             w.installEventFilter(self)
             if e.globalonly:
-                w.setEnabled(self.rcpath == hglib.user_rcpath())
+                w.setEnabled(self.rcpath == scmutil.userrcpath())
             lbl = QLabel(e.label)
             lbl.installEventFilter(self)
             lbl.setToolTip(e.tooltip)
@@ -1087,6 +1393,11 @@ class SettingsForm(QWidget):
             widgets.append(w)
         return extsinfo, widgets
 
+    def fillToolsFrame(self):
+        self.toolsFrame = frame = customtools.ToolsFrame(self.ini, parent=self)
+        self.stack.addWidget(frame)
+        return (), [frame]
+
     def eventFilter(self, obj, event):
         if event.type() in (QEvent.Enter, QEvent.FocusIn):
             self.desctext.setHtml(obj.toolTip())
@@ -1104,6 +1415,9 @@ class SettingsForm(QWidget):
         if name == 'extensions':
             extsinfo, widgets = self.fillExtensionsFrame()
             self.pages[name] = name, extsinfo, widgets
+        elif name == 'tools':
+            toolsinfo, widgets = self.fillToolsFrame()
+            self.pages[name] = name, toolsinfo, widgets
         else:
             widgets = self.fillFrame(info)
             self.pages[name] = name, info, widgets
@@ -1161,8 +1475,12 @@ class SettingsForm(QWidget):
         for name, info, widgets in self.pages.values():
             if name == 'extensions':
                 self.applyChangesForExtensions()
+            elif name == 'tools':
+                self.applyChangesForTools()
             else:
                 for row, e in enumerate(info):
+                    if not e.cpath:
+                        continue  # a dummy field
                     newvalue = widgets[row].value()
                     changed = self.recordNewValue(e.cpath, newvalue)
                     if changed and e.restartneeded:
@@ -1236,6 +1554,9 @@ class SettingsForm(QWidget):
                 invalmsg = invalmsg.decode('utf-8')
             chk.setToolTip(invalmsg or hglib.tounicode(allexts[name]))
 
+    def applyChangesForTools(self):
+        if self.toolsFrame.applyChanges(self.ini):
+            self.restartRequested.emit(_('Tools'))
 
 def run(ui, *pats, **opts):
     return SettingsDialog(opts.get('alias') == 'repoconfig',

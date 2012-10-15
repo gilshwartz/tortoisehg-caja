@@ -654,6 +654,7 @@ class PatchBranchModel(QAbstractTableModel):
     TODO: Should be extended to list all branches
     """
     _columns = ['Graph', 'Name', 'Status', 'Title', 'Message',]
+    _headers = (_('Graph'), _('Name'), _('Status'), _('Title'), _('Message'))
 
     def __init__(self, model, wd_branch="", parent=None):
         QAbstractTableModel.__init__(self, parent)
@@ -705,7 +706,7 @@ class PatchBranchModel(QAbstractTableModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal:
             if role == Qt.DisplayRole:
-                return QVariant(self._columns[section])
+                return QVariant(self._headers[section])
             if role == Qt.TextAlignmentRole:
                 return QVariant(Qt.AlignLeft)
         return nullvariant

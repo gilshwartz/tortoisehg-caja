@@ -33,7 +33,8 @@ class QRenameDialog(QDialog):
 
         self.setLayout(QVBoxLayout())
 
-        lbl = QLabel(_('Rename patch <b>%s</b> to:') % (self.oldpatchname))
+        lbl = QLabel(_('Rename patch <b>%s</b> to:') %
+                     hglib.tounicode(self.oldpatchname))
         self.layout().addWidget(lbl)
 
         self.le = QLineEdit(hglib.tounicode(self.oldpatchname))

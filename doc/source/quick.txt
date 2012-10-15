@@ -99,6 +99,7 @@ diff/merge tool that is supported by our mergetools.rc or configure your
 own tool.
 
 .. note::
+
 	If you installed TortoiseHg from source, you need to add our
 	:file:`contrib/mergetools.ini` file to your HGRC path in some way.  One
 	approach is to *%include* it from your :file:`~/.hgrc` file.
@@ -119,7 +120,7 @@ Getting Acquainted
 ==================
 
 Mercurial supports many different
-`collaboration models <http://tortoisehg.bitbucket.org/hgbook/1.7/collaborating-with-other-people.html>`_.
+`collaboration models <https://tortoisehg.bitbucket.org/hgbook/1.7/collaborating-with-other-people.html>`_.
 This chapter describes just one of those models: a single central repository.
 The central repository model does not scale as well as other models, but
 it is the most familiar to those coming from other revision tools and

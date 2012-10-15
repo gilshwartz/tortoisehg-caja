@@ -74,9 +74,7 @@
 
 すべての同期操作はユーザからの入力を促すダイアログによる認証を必要とします。
 TortoiseHg は *ssh:* 接続とその認証のために TortoisePlink ツール (TortoiseSVN からの提供)
-を使用します。SSH サーバへの接続に問題がある場合は FAQ_ を参考にしてみてください。
-
-.. _FAQ: http://bitbucket.org/tortoisehg/stable/wiki/FAQ#tortoisehg-faq
+を使用します。SSH サーバへの接続に問題がある場合は :doc:`faq` を参考にしてみてください。
 
 折り畳める :guilabel:`詳細設定` パネルにはプル・プッシュ操作に関連した設定が
 いくつか用意されています：

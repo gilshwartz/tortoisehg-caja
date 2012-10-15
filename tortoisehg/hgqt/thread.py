@@ -10,6 +10,7 @@ import os
 import Queue
 import time
 import urllib2
+import socket
 import errno
 
 from PyQt4.QtCore import *
@@ -47,17 +48,13 @@ class UiSignal(QObject):
         label = hglib.tounicode(opts.get('label', 'ui.error'))
         self.writeSignal.emit(msg, label)
 
-    def prompt(self, msg, choices, default):
+    def prompt(self, msg, default):
         try:
-            r = self._waitresponse(msg, False, choices, None)
+            r = self._waitresponse(msg, False, None, None)
             if r is None:
                 raise EOFError
             if not r:
                 return default
-            if choices:
-                # return char for Mercurial 1.3
-                choice = choices[r]
-                return choice[choice.index('&')+1].lower()
             return r
         except EOFError:
             raise util.Abort(local._('response expected'))
@@ -117,9 +114,9 @@ class QtUi(uimod.ui):
     def flush(self):
         pass
 
-    def prompt(self, msg, choices=None, default='y'):
+    def prompt(self, msg, default='y'):
         if not self.interactive(): return default
-        return self.sig.prompt(msg, choices, default)
+        return self.sig.prompt(msg, default)
 
     def promptchoice(self, msg, choices, default=0):
         if not self.interactive(): return default
@@ -238,13 +235,12 @@ class CmdThread(QThread):
         else:
             mode = password and QLineEdit.Password \
                              or QLineEdit.Normal
-            dlg = QInputDialog(self.parent(), Qt.Sheet)
-            dlg.setWindowModality(Qt.WindowModal)
-            dlg.setWindowTitle(_('TortoiseHg Prompt'))
-            dlg.setLabelText(prompt.title())
-            dlg.setTextEchoMode(mode)
-            if dlg.exec_():
-                text = hglib.fromunicode(dlg.textValue())
+            text, ok = qtlib.getTextInput(self.parent(),
+                         _('TortoiseHg Prompt'),
+                         prompt.title(),
+                         mode=mode)
+            if ok:
+                text = hglib.fromunicode(text)
             else:
                 text = None
             self.responseq.put(text)
@@ -328,6 +324,8 @@ class CmdThread(QThread):
                 ui.warn("\n%r\n" % util.ellipsis(inst.args[1]))
         except error.RevlogError, inst:
             ui.warn(local._("abort: %s!\n") % inst)
+        except socket.error, inst:
+            ui.warn(local._("abort: %s!\n") % str(inst))
         except IOError, inst:
             if hasattr(inst, "code"):
                 ui.warn(local._("abort: %s\n") % inst)

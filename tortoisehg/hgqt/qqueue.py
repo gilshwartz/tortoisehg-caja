@@ -254,10 +254,7 @@ class QQueueDialog(QDialog):
         title = _('TortoiseHg Prompt')
         # this is the only way I found to make that dialog wide enough :(
         label = _('New patch queue name') + (u' ' * 30)
-        # WindowContextHelpButton still there :( after this ?
-        dlg = QInputDialog(self, Qt.WindowFlags()
-                              & ~Qt.WindowContextHelpButtonHint)
-        qname, ok = dlg.getText(self, title, label)
+        qname, ok = qtlib.getTextInput(self, title, label)
         qname = hglib.fromunicode(qname)
         if qname and ok:
             opts = ['--create', qname]
@@ -272,10 +269,7 @@ class QQueueDialog(QDialog):
         title = _('TortoiseHg Prompt')
         # this is the only way I found to make that dialog wide enough :(
         label = (_("Rename patch queue '%s' to") % uq) + (u' ' * 30)
-        # WindowContextHelpButton still there :( after this ?
-        dlg = QInputDialog(self, Qt.WindowFlags()
-                              & ~Qt.WindowContextHelpButtonHint)
-        newqname, ok = dlg.getText(self, title, label)
+        newqname, ok = qtlib.getTextInput(self, title, label)
         if newqname:
             newqname = hglib.fromunicode(newqname)
         if newqname and ok:

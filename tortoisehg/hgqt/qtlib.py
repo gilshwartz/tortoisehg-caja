@@ -15,7 +15,7 @@ import tempfile
 import re
 import weakref
 
-from mercurial import extensions, error, util
+from mercurial import commands, extensions, error, util
 
 from tortoisehg.util import hglib, paths
 from tortoisehg.hgqt.i18n import _
@@ -58,19 +58,47 @@ def gettempdir():
 def openhelpcontents(url):
     'Open online help, use local CHM file if available'
     if not url.startswith('http'):
-        fullurl = 'http://tortoisehg.org/manual/2.1/' + url
+        fullurl = 'http://tortoisehg.org/manual/2.4/' + url
         # Use local CHM file if it can be found
         if os.name == 'nt' and paths.bin_path:
             chm = os.path.join(paths.bin_path, 'doc', 'TortoiseHg.chm')
             if os.path.exists(chm):
                 fullurl = (r'mk:@MSITStore:%s::/' % chm) + url
-                QDesktopServices.openUrl(QUrl.fromLocalFile(fullurl))
+                openlocalurl(fullurl)
                 return
         QDesktopServices.openUrl(QUrl(fullurl))
 
-def editfiles(repo, files, lineno=None, search=None, parent=None):
+def openlocalurl(path):
+    '''open the given path with the default application
+
+    takes str, unicode or QString as argument
+    returns True if open was successfull
+    '''
+
+    if isinstance(path, str):
+        path = QString(hglib.tounicode(path))
+    elif isinstance(path, unicode):
+        path = QString(path)
+    if os.name == 'nt' and path.startsWith('\\\\'):
+        # network share, special handling because of qt bug 13359
+        # see http://bugreports.qt.nokia.com/browse/QTBUG-13359
+        qurl = QUrl()
+        qurl.setUrl(QDir.toNativeSeparators(path))
+    else:
+        qurl = QUrl.fromLocalFile(path)
+    return QDesktopServices.openUrl(qurl)
+
+def openfiles(repo, files, parent=None):
+    for filename in files:
+        openlocalurl(repo.wjoin(filename))
+
+def editfiles(repo, files, lineno=None, search=None, parent=None, editor=None):
     if len(files) == 1:
-        path = repo.wjoin(files[0])
+        filename = files[0].strip()
+        if not filename:
+            return
+        files = [filename]
+        path = repo.wjoin(filename)
         cwd = os.path.dirname(path)
         files = [os.path.basename(path)]
     else:
@@ -78,6 +106,8 @@ def editfiles(repo, files, lineno=None, search=None, parent=None):
     files = [util.shellquote(util.localpath(f)) for f in files]
     editor = repo.ui.config('tortoisehg', 'editor')
     assert len(files) == 1 or lineno == None
+    if not editor:
+        editor = repo.ui.config('tortoisehg', 'editor')
     if editor:
         try:
             regexp = re.compile('\[([^\]]*)\]')
@@ -123,8 +153,9 @@ def editfiles(repo, files, lineno=None, search=None, parent=None):
         return
 
     cmdline = util.quotecommand(cmdline)
+    shell = not (len(cwd) >= 2 and cwd[0:2] == r'\\')
     try:
-        subprocess.Popen(cmdline, shell=True, creationflags=openflags,
+        subprocess.Popen(cmdline, shell=shell, creationflags=openflags,
                          stderr=None, stdout=None, stdin=None, cwd=cwd)
     except (OSError, EnvironmentError), e:
         QMessageBox.warning(parent,
@@ -132,6 +163,31 @@ def editfiles(repo, files, lineno=None, search=None, parent=None):
                 u'%s : %s' % (hglib.tounicode(cmdline),
                               hglib.tounicode(str(e))))
     return False
+
+def savefiles(repo, files, rev, parent=None):
+    for curfile in files:
+        wfile = util.localpath(curfile)
+        wfile, ext = os.path.splitext(os.path.basename(wfile))
+        if wfile:
+            filename = "%s@%d%s" % (wfile, rev, ext)
+        else:
+            filename = "%s@%d" % (ext, rev)
+        result = QFileDialog.getSaveFileName(
+            parent=parent, caption=_("Save file to"),
+            directory=hglib.tounicode(filename))
+        if not result:
+            continue
+        cwd = os.getcwd()
+        try:
+            os.chdir(repo.root)
+            try:
+                commands.cat(repo.ui, repo, curfile, rev=rev,
+                             output=hglib.fromunicode(result))
+            except (util.Abort, IOError), e:
+                QMessageBox.critical(self, _('Unable to save file'),
+                                     hglib.tounicode(str(e)))
+        finally:
+            os.chdir(cwd)
 
 _user_shell = None
 def openshell(root, reponame):
@@ -145,9 +201,12 @@ def openshell(root, reponame):
         try:
             shellcmd = _user_shell % {'reponame': reponame}
             os.chdir(root)
-            QProcess.startDetached(shellcmd)
+            started = QProcess.startDetached(shellcmd)
         finally:
             os.chdir(cwd)
+        if not started:
+            ErrorMsgBox(_('Failed to open path in terminal'),
+                        _('Unable to start the following command:'), shellcmd)
     else:
         InfoMsgBox(_('No shell configured'),
                    _('A terminal shell must be configured'))
@@ -384,12 +443,17 @@ _iconcache = {}
 
 def _findicon(name):
     # TODO: icons should be placed at single location before release
-    for pfx in (':/icons', os.path.join(paths.get_icon_path(), 'svg'),
-                paths.get_icon_path()):
-        for ext in ('svg', 'png', 'ico'):
-            path = '%s/%s.%s' % (pfx, name, ext)
-            if QFile.exists(path):
-                return QIcon(path)
+    if os.path.isabs(name):
+        path = name
+        if QFile.exists(path):
+            return QIcon(path)
+    else:
+        for pfx in (':/icons', os.path.join(paths.get_icon_path(), 'svg'),
+                    paths.get_icon_path()):
+            for ext in ('svg', 'png', 'ico'):
+                path = '%s/%s.%s' % (pfx, name, ext)
+                if QFile.exists(path):
+                    return QIcon(path)
 
     return None
 
@@ -560,6 +624,50 @@ class CustomPrompt(QMessageBox):
             if event.text() == k:
                 btn.clicked.emit(False)
         super(CustomPrompt, self).keyPressEvent(event)
+
+class ChoicePrompt(QDialog):
+    def __init__(self, title, message, parent, choices, default=None,
+                 esc=None, files=None):
+        QDialog.__init__(self, parent)
+
+        self.setWindowIcon(geticon('thg_logo'))
+        self.setWindowTitle(hglib.tounicode(title))
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+
+        self.box = QHBoxLayout()
+        self.vbox = QVBoxLayout()
+        self.vbox.setSpacing(8)
+
+        self.message_lbl = QLabel()
+        self.message_lbl.setText(message)
+        self.vbox.addWidget(self.message_lbl)
+
+        self.choice_combo = combo = QComboBox()
+        self.choices = choices
+        combo.addItems([hglib.tounicode(item) for item in choices])
+        if default:
+            try:
+                combo.setCurrentIndex(choices.index(default))
+            except:
+                # Ignore a missing default value
+                pass
+        self.vbox.addWidget(combo)
+        self.box.addLayout(self.vbox)
+        vbox = QVBoxLayout()
+        self.ok = QPushButton('&OK')
+        self.ok.clicked.connect(self.accept)
+        vbox.addWidget(self.ok)
+        self.cancel = QPushButton('&Cancel')
+        self.cancel.clicked.connect(self.reject)
+        vbox.addWidget(self.cancel)
+        vbox.addStretch()
+        self.box.addLayout(vbox)
+        self.setLayout(self.box)
+
+    def run(self):
+        if self.exec_():
+            return self.choices[self.choice_combo.currentIndex()]
+        return None
 
 def setup_font_substitutions():
     QFont.insertSubstitutions('monospace', ['monaco', 'courier new'])
@@ -796,7 +904,9 @@ class StatusInfoBar(InfoBar):
     def __init__(self, message, parent=None):
         super(StatusInfoBar, self).__init__(parent)
         self._msglabel = QLabel(message, self, wordWrap=True,
-                                textInteractionFlags=Qt.TextSelectableByMouse)
+                                textInteractionFlags=Qt.TextSelectableByMouse \
+                                | Qt.LinksAccessibleByMouse)
+        self._msglabel.linkActivated.connect(self.linkActivated)
         self.addWidget(self._msglabel, stretch=1)
 
 class CommandErrorInfoBar(InfoBar):
@@ -807,7 +917,9 @@ class CommandErrorInfoBar(InfoBar):
         super(CommandErrorInfoBar, self).__init__(parent)
 
         self._msglabel = QLabel(message, self, wordWrap=True,
-                                textInteractionFlags=Qt.TextSelectableByMouse)
+                                textInteractionFlags=Qt.TextSelectableByMouse \
+                                | Qt.LinksAccessibleByMouse)
+        self._msglabel.linkActivated.connect(self.linkActivated)
         self.addWidget(self._msglabel, stretch=1)
 
         self._loglabel = QLabel('<a href="log:">%s</a>' % _('Show Log'))
@@ -826,7 +938,9 @@ class ConfirmInfoBar(InfoBar):
         # no wordWrap=True and stretch=1, which inserts unwanted space
         # between _msglabel and _buttons.
         self._msglabel = QLabel(message, self,
-                                textInteractionFlags=Qt.TextSelectableByMouse)
+                                textInteractionFlags=Qt.TextSelectableByMouse \
+                                | Qt.LinksAccessibleByMouse)
+        self._msglabel.linkActivated.connect(self.linkActivated)
         self.addWidget(self._msglabel)
 
         self._buttons = QDialogButtonBox(self)
@@ -994,3 +1108,30 @@ def getCurrentUsername(widget, repo, opts=None):
     except error.Abort:
         return None
 
+def getTextInput(parent, title, label, mode=QLineEdit.Normal, text='',
+  flags=Qt.WindowFlags()):
+    # the flags argument is supported under Qt 4.6, but probably with
+    # a different name (see issue 252), so we simply call everything
+    # positionally
+    return QInputDialog.getText(parent, title, label, mode, text,
+      Qt.CustomizeWindowHint | Qt.WindowTitleHint |
+      Qt.WindowCloseButtonHint | flags)
+
+def keysequence(o):
+    """Create QKeySequence from string or QKeySequence"""
+    if isinstance(o, (QKeySequence, QKeySequence.StandardKey)):
+        return o
+    try:
+        return getattr(QKeySequence, str(o))  # standard key
+    except AttributeError:
+        return QKeySequence(o)
+
+def modifiedkeysequence(o, modifier):
+    """Create QKeySequence of modifier key prepended"""
+    origseq = QKeySequence(keysequence(o))
+    return QKeySequence('%s+%s' % (modifier, origseq.toString()))
+
+def newshortcutsforstdkey(key, *args, **kwargs):
+    """Create [QShortcut,...] for all key bindings of the given StandardKey"""
+    return [QShortcut(keyseq, *args, **kwargs)
+            for keyseq in QKeySequence.keyBindings(key)]

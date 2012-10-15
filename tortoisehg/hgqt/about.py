@@ -53,7 +53,7 @@ class AboutDialog(QDialog):
         self.copyright_lbl = QLabel()
         self.copyright_lbl.setAlignment(Qt.AlignCenter)
         self.copyright_lbl.setText('\n'
-                + _('Copyright 2008-2011 Steve Borho and others'))
+                + _('Copyright 2008-2012 Steve Borho and others'))
         self.vbox.addWidget(self.copyright_lbl)
         self.courtesy_lbl = QLabel()
         self.courtesy_lbl.setAlignment(Qt.AlignCenter)

@@ -27,7 +27,6 @@ class MessageEntry(qscilib.Scintilla):
         self.setCaretLineBackgroundColor(QColor("#e6fff0"))
         self.setCaretLineVisible(True)
         self.setAutoIndent(True)
-        self.setAutoCompletionThreshold(2)
         self.setAutoCompletionSource(QsciScintilla.AcsAPIs)
         self.setAutoCompletionFillupsEnabled(True)
         self.setLexer(QsciLexerMakefile(self))
@@ -50,7 +49,11 @@ class MessageEntry(qscilib.Scintilla):
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.menuRequested)
 
-
+    def setText(self, text):
+        result = super(MessageEntry, self).setText(text)
+        self.setDefaultEolMode()
+        return result
+        
     def menuRequested(self, point):
         line = self.lineAt(point)
         point = self.viewport().mapToGlobal(point)

@@ -10,9 +10,9 @@ Defining a patch
 These links are recommended reading for understanding the history and nature
 of patches and how they can be used with Mercurial.
 
-* `The patch management problem <http://tortoisehg.bitbucket.org/hgbook/1.7/managing-change-with-mercurial-queues.html#sec:mq:patch-mgmt>`_
-* `Understanding patches <http://tortoisehg.bitbucket.org/hgbook/1.7/managing-change-with-mercurial-queues.html#sec:mq:patch>`_
-* `More about patches <http://tortoisehg.bitbucket.org/hgbook/1.7/managing-change-with-mercurial-queues.html#sec:mq:adv-patch>`_
+* `The patch management problem <https://tortoisehg.bitbucket.org/hgbook/1.7/managing-change-with-mercurial-queues.html#sec:mq:patch-mgmt>`_
+* `Understanding patches <https://tortoisehg.bitbucket.org/hgbook/1.7/managing-change-with-mercurial-queues.html#sec:mq:patch>`_
+* `More about patches <https://tortoisehg.bitbucket.org/hgbook/1.7/managing-change-with-mercurial-queues.html#sec:mq:adv-patch>`_
 
 Pitfalls
 ========

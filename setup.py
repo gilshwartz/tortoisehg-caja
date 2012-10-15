@@ -79,8 +79,6 @@ class update_pot(Command):
             'contrib/win32',
             'tortoisehg',
             'tortoisehg/hgqt',
-            'tortoisehg/hgtk',
-            'tortoisehg/hgtk/logview',
             'tortoisehg/util',
             'tortoisehg/thgutil/iniparse',
             ]
@@ -386,7 +384,7 @@ def setup_windows(version):
              'description':'TortoiseHg GUI tools for Mercurial SCM',
              'copyright':thgcopyright,
              'product_version':version},
-            {'script':'contrib/hg', 
+            {'script':'contrib/hg',
              'icon_resources':[(0,'icons/hg.ico')],
              'description':'Mercurial Distributed SCM',
              'copyright':hgcopyright,
@@ -417,23 +415,23 @@ def setup_posix():
     _extra = {}
     _scripts = ['thg']
     _packages = ['tortoisehg', 'tortoisehg.hgqt', 'tortoisehg.util']
-    _data_files = [(os.path.join('share/pixmaps/mate/tortoisehg', root),
+    _data_files = [(os.path.join('share/pixmaps/tortoisehg', root),
         [os.path.join(root, file_) for file_ in files])
         for root, dirs, files in os.walk('icons')]
     _data_files += [(os.path.join('share', root),
         [os.path.join(root, file_) for file_ in files])
         for root, dirs, files in os.walk('locale')]
-    _data_files += [('lib/caja/extensions-2.0/python',
+    _data_files += [('/usr/share/caja-python/extensions/',
                      ['contrib/caja-thg.py'])]
 
     # Create a config.py.  Distributions will need to supply their own
     cfgfile = os.path.join('tortoisehg', 'util', 'config.py')
     if not os.path.exists(cfgfile) and not os.path.exists('.hg/requires'):
         f = open(cfgfile, "w")
-        f.write('bin_path     = "/usr/bin/mate"\n')
-        f.write('license_path = "/usr/share/doc/mate/tortoisehg/Copying.txt.gz"\n')
-        f.write('locale_path  = "/usr/share/locale/mate"\n')
-        f.write('icon_path    = "/usr/share/pixmaps/mate/tortoisehg/icons"\n')
+        f.write('bin_path     = "/usr/bin"\n')
+        f.write('license_path = "/usr/share/doc/tortoisehg/Copying.txt.gz"\n')
+        f.write('locale_path  = "/usr/share/locale"\n')
+        f.write('icon_path    = "/usr/share/pixmaps/tortoisehg/icons"\n')
         f.write('nofork       = True\n')
         f.close()
 

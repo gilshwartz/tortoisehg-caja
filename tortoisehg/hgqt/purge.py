@@ -9,7 +9,7 @@ import os
 import stat
 import shutil
 
-from mercurial import hg, ui
+from mercurial import hg, scmutil, ui
 
 from tortoisehg.util import hglib
 from tortoisehg.hgqt.i18n import _, ngettext
@@ -97,14 +97,17 @@ class PurgeDialog(QDialog):
 
             def run(self):
                 try:
-                    wctx = repo[None]
-                    wctx.status(ignored=True, unknown=True)
+                    repo.bfstatus = True
+                    repo.lfstatus = True
+                    stat = repo.status(ignored=True, unknown=True)
+                    repo.bfstatus = False
+                    repo.lfstatus = False
                     trashcan = repo.join('Trashcan')
                     if os.path.isdir(trashcan):
                         trash = os.listdir(trashcan)
                     else:
                         trash = []
-                    self.files = wctx.unknown(), wctx.ignored(), trash
+                    self.files = stat[4], stat[5], trash
                 except Exception, e:
                     self.error = str(e)
 
@@ -163,11 +166,13 @@ class PurgeDialog(QDialog):
 
         def completed():
             self.th.wait()
-            if self.th.failures:
-                qtlib.InfoMsgBox(_('Deletion failures'),
-                    _('Unable to delete %d files or folders') %
-                                 len(self.th.failures), parent=self)
-            if self.th.failures is not None:
+            F = self.th.failures
+            if F:
+                qtlib.InfoMsgBox(_('Deletion failures'), ngettext(
+                    'Unable to delete %d file or folder',
+                    'Unable to delete %d files or folders', len(F)) % len(F),
+                    parent=self)
+            if F is not None:
                 self.reject()
 
         opts = dict(unknown=unknown, ignored=ignored, trash=trash,
@@ -211,10 +216,14 @@ class PurgeThread(QThread):
                 failures.append(trashcan)
 
         self.showMessage.emit('')
-        match = hglib.matchall(repo)
+        match = scmutil.matchall(repo)
         match.dir = directories.append
+        repo.bfstatus = True
+        repo.lfstatus = True
         status = repo.status(match=match, ignored=opts['ignored'],
                              unknown=opts['unknown'], clean=False)
+        repo.bfstatus = False
+        repo.lfstatus = False
         files = status[4] + status[5]
 
         def remove(remove_func, name):

@@ -95,7 +95,7 @@ class Settings(object):
         f = util.atomictempfile(appname, 'wb', None)
         f.write(s)
         try:
-            f.rename()
+            f.close()
         except OSError:
             pass # silently ignore these errors
 

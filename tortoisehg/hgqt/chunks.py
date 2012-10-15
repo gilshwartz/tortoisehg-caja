@@ -88,9 +88,9 @@ class ChunksWidget(QWidget):
         for name, desc, icon, key, tip, cb in [
             ('diff', _('Visual Diff'), 'visualdiff', 'Ctrl+D',
               _('View file changes in external diff tool'), self.vdiff),
-            ('edit', _('Edit Local'), 'edit-file', 'Shift+Ctrl+E',
+            ('edit', _('Edit Local'), 'edit-file', 'Shift+Ctrl+L',
               _('Edit current file in working copy'), self.editCurrentFile),
-            ('revert', _('Revert to Revision'), 'hg-revert', 'Alt+Ctrl+T',
+            ('revert', _('Revert to Revision'), 'hg-revert', 'Shift+Ctrl+R',
               _('Revert file(s) to contents at this revision'),
               self.revertfile),
             ]:
@@ -152,11 +152,14 @@ class ChunksWidget(QWidget):
             mtime = self.mtime
         else:
             return
-        if os.path.exists(path):
-            newmtime = os.path.getmtime(path)
-            if mtime != newmtime:
-                self.mtime = newmtime
-                self.refresh()
+        try:
+            if os.path.exists(path):
+                newmtime = os.path.getmtime(path)
+                if mtime != newmtime:
+                    self.mtime = newmtime
+                    self.refresh()
+        except EnvironmentError:
+            pass
 
     def runPatcher(self, fp, wfile, updatestate):
         ui = self.repo.ui.copy()
@@ -185,6 +188,8 @@ class ChunksWidget(QWidget):
                                           eolmode=eolmode)
                 if updatestate:
                     cmdutil.updatedir(repo.ui, repo, pfiles)
+            except ValueError:
+                ret = -1
             if ret < 0:
                 ok = False
                 self.showMessage.emit(_('Patch failed to apply'))
@@ -259,7 +264,7 @@ class ChunksWidget(QWidget):
                         for chunk in ctx._files[wfile]:
                             chunk.write(buf)
                 fp.write(buf.getvalue())
-                fp.rename()
+                fp.close()
             finally:
                 del fp
             ctx.invalidate()
@@ -338,7 +343,7 @@ class ChunksWidget(QWidget):
                 for file in ctx._fileorder:
                     for chunk in ctx._files[file]:
                         chunk.write(fp)
-                fp.rename()
+                fp.close()
                 ctx.invalidate()
                 self.fileModified.emit()
                 return True
@@ -377,7 +382,7 @@ class ChunksWidget(QWidget):
                         continue
                     for chunk in ctx._files[file]:
                         chunk.write(fp)
-                fp.rename()
+                fp.close()
             finally:
                 del fp
             ctx.invalidate()

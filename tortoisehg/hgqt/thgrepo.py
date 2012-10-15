@@ -12,6 +12,7 @@ import os
 import sys
 import shutil
 import tempfile
+import re
 
 from PyQt4.QtCore import *
 
@@ -24,6 +25,8 @@ from tortoisehg.util import hglib, paths
 from tortoisehg.util.patchctx import patchctx
 
 _repocache = {}
+_kbfregex = re.compile(r'^\.kbf/')
+_lfregex = re.compile(r'^\.hglf/')
 
 if 'THGDEBUG' in os.environ:
     def dbgoutput(*args):
@@ -60,6 +63,9 @@ def repository(_ui=None, path='', create=False, bundle=None):
         raise error.RepoError('%s is not a valid repository' % path)
     return _repocache[path]
 
+class _LockStillHeld(Exception):
+    'Raised to abort status check due to lock existence'
+
 class ThgRepoWrapper(QObject):
 
     configChanged = pyqtSignal()
@@ -87,6 +93,7 @@ class ThgRepoWrapper(QObject):
         else:
             self.watcher = QFileSystemWatcher(self)
             self.watcher.addPath(hglib.tounicode(repo.path))
+            self.watcher.addPath(hglib.tounicode(repo.path + '/store'))
             self.watcher.directoryChanged.connect(self.onDirChange)
             self.watcher.fileChanged.connect(self.onFileChange)
             self.addMissingPaths()
@@ -133,11 +140,14 @@ class ThgRepoWrapper(QObject):
         if self.locked():
             dbgoutput('locked, aborting')
             return
-        if self._checkdirstate():
-            dbgoutput('dirstate changed, exiting')
-            return
-        self._checkrepotime()
-        self._checkuimtime()
+        try:
+            if self._checkdirstate():
+                dbgoutput('dirstate changed, exiting')
+                return
+            self._checkrepotime()
+            self._checkuimtime()
+        except _LockStillHeld:
+            dbgoutput('lock still held - ignoring for now')
 
     def locked(self):
         if os.path.lexists(self.repo.join('wlock')):
@@ -166,10 +176,12 @@ class ThgRepoWrapper(QObject):
 
     def _getwatchedfiles(self):
         watchedfiles = [self.repo.sjoin('00changelog.i')]
+        watchedfiles.append(self.repo.sjoin('phaseroots'))
         watchedfiles.append(self.repo.join('localtags'))
         watchedfiles.append(self.repo.join('bookmarks'))
         watchedfiles.append(self.repo.join('bookmarks.current'))
         if hasattr(self.repo, 'mq'):
+            watchedfiles.append(self.repo.mq.path)
             watchedfiles.append(self.repo.mq.join('series'))
             watchedfiles.append(self.repo.mq.join('guards'))
             watchedfiles.append(self.repo.join('patches.queue'))
@@ -190,8 +202,7 @@ class ThgRepoWrapper(QObject):
         if self._repomtime < self._getrepomtime():
             dbgoutput('detected repository change')
             if self.locked():
-                dbgoutput('lock still held - ignoring for now')
-                return
+                raise _LockStillHeld
             self.recordState()
             self.repo.thginvalidate()
             self.repositoryChanged.emit()
@@ -204,24 +215,34 @@ class ThgRepoWrapper(QObject):
             return False
         if mtime <= self._dirstatemtime:
             return False
+        changed = self._checkparentchanges() or self._checkbranch()
         self._dirstatemtime = mtime
+        return changed
+
+    def _checkparentchanges(self):
         nodes = self._getrawparents()
         if nodes != self._parentnodes:
             dbgoutput('dirstate change found')
             if self.locked():
-                dbgoutput('lock still held - ignoring for now')
-                return True
+                raise _LockStillHeld
             self.recordState()
             self.repo.thginvalidate()
             self.repositoryChanged.emit()
             return True
+        return False
+
+    def _checkbranch(self):
         try:
             mtime = os.path.getmtime(self.repo.join('branch'))
         except EnvironmentError:
             return False
         if mtime <= self._branchmtime:
             return False
+        changed = self._checkbranchcontent()
         self._branchmtime = mtime
+        return changed
+
+    def _checkbranchcontent(self):
         try:
             newbranch = self.repo.opener('branch').read()
         except EnvironmentError:
@@ -229,8 +250,7 @@ class ThgRepoWrapper(QObject):
         if newbranch != self._rawbranch:
             dbgoutput('branch time change')
             if self.locked():
-                dbgoutput('lock still held - ignoring for now')
-                return True
+                raise _LockStillHeld
             self._rawbranch = newbranch
             self.repo.thginvalidate()
             self.workingBranchChanged.emit()
@@ -262,8 +282,8 @@ _thgrepoprops = '''_thgmqpatchnames thgmqunappliedpatches
 def _extendrepo(repo):
     class thgrepository(repo.__class__):
 
-        def changectx(self, changeid):
-            '''Extends Mercurial's standard changectx() method to
+        def __getitem__(self, changeid):
+            '''Extends Mercurial's standard __getitem__() method to
             a) return a thgchangectx with additional methods
             b) return a patchctx if changeid is the name of an MQ
             unapplied patch
@@ -282,7 +302,7 @@ def _extendrepo(repo):
                     os.path.isabs(changeid) and os.path.isfile(changeid):
                 return genPatchContext(repo, changeid)
 
-            changectx = super(thgrepository, self).changectx(changeid)
+            changectx = super(thgrepository, self).__getitem__(changeid)
             changectx.__class__ = _extendchangectx(changectx)
             return changectx
 
@@ -472,7 +492,10 @@ def _extendrepo(repo):
             self.shelfdir = sdir = self.join('shelves')
             if os.path.isdir(sdir):
                 def getModificationTime(x):
-                    return os.path.getmtime(os.path.join(sdir, x))
+                    try:
+                        return os.path.getmtime(os.path.join(sdir, x))
+                    except EnvironmentError:
+                        return 0
                 shelves = sorted(os.listdir(sdir),
                     key=getModificationTime, reverse=True)
                 return [s for s in shelves if \
@@ -535,11 +558,57 @@ def _extendrepo(repo):
             dest = tempfile.mktemp(ext+'.bak', root+'_', trashcan)
             shutil.copyfile(path, dest)
 
+        def isStandin(self, path):
+            if 'largefiles' in self.extensions():
+                if _lfregex.match(path):
+                    return True
+            if 'largefiles' in self.extensions() or 'kbfiles' in self.extensions():
+                if _kbfregex.match(path):
+                    return True
+            return False
+
+        def removeStandin(self, path):
+            if 'largefiles' in self.extensions():
+                path = _lfregex.sub('', path)
+            if 'largefiles' in self.extensions() or 'kbfiles' in self.extensions():
+                path = _kbfregex.sub('', path)
+            return path
+        
+        def bfStandin(self, path):
+            return '.kbf/' + path
+
+        def lfStandin(self, path):
+            return '.hglf/' + path
+        
     return thgrepository
 
+_maxchangectxclscache = 10
+_changectxclscache = {}  # parentcls: extendedcls
 
 def _extendchangectx(changectx):
-    class thgchangectx(changectx.__class__):
+    # cache extended changectx class, since we may create bunch of instances
+    parentcls = changectx.__class__
+    try:
+        return _changectxclscache[parentcls]
+    except KeyError:
+        pass
+
+    # in case each changectx instance is wrapped by some extension, there's
+    # limit on cache size. it may be possible to use weakref.WeakKeyDictionary
+    # on Python 2.5 or later.
+    if len(_changectxclscache) >= _maxchangectxclscache:
+        _changectxclscache.clear()
+    _changectxclscache[parentcls] = cls = _createchangectxcls(parentcls)
+    return cls
+
+def _createchangectxcls(parentcls):
+    class thgchangectx(parentcls):
+        def sub(self, path):
+            srepo = super(thgchangectx, self).sub(path)
+            if isinstance(srepo, subrepo.hgsubrepo):
+                srepo._repo.__class__ = _extendrepo(srepo._repo)
+            return srepo
+
         def thgtags(self):
             '''Returns all unhidden tags for self'''
             htlist = self._repo._thghiddentags
@@ -601,10 +670,29 @@ def _extendchangectx(changectx):
                     summary += u' \u2026' # ellipsis ...
 
             return summary
+        
+        def hasStandin(self, file):
+            if 'largefiles' in self._repo.extensions():
+                if self._repo.lfStandin(file) in self.manifest():
+                    return True
+            elif 'largefiles' in self._repo.extensions() or 'kbfiles' in self._repo.extensions():
+                if self._repo.bfStandin(file) in self.manifest():
+                    return True
+            return False
+
+        def isStandin(self, path):
+            return self._repo.isStandin(path)
+        
+        def removeStandin(self, path):
+            return self._repo.removeStandin(path)
+        
+        def findStandin(self, file):
+            if 'largefiles' in self._repo.extensions():
+                if self._repo.lfStandin(file) in self.manifest():
+                    return self._repo.lfStandin(file)
+            return self._repo.bfStandin(file)
 
     return thgchangectx
-
-
 
 _pctxcache = {}
 def genPatchContext(repo, patchpath, rev=None):
@@ -650,3 +738,9 @@ def relatedRepositories(repoid):
         raise
     else:
         f.close()
+
+def isBfStandin(path):
+    return _kbfregex.match(path)
+
+def isLfStandin(path):
+    return _lfregex.match(path)

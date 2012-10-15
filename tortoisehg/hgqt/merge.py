@@ -35,11 +35,16 @@ class MergeDialog(QWizard):
         self.setOption(QWizard.IndependentPages, True)
 
         # set pages
-        self.addPage(SummaryPage(repo, self))
+        summarypage = SummaryPage(repo, self)
+        self.addPage(summarypage)
         self.addPage(MergePage(repo, self))
         self.addPage(CommitPage(repo, self))
         self.addPage(ResultPage(repo, self))
         self.currentIdChanged.connect(self.pageChanged)
+
+        # move focus to "Next" button so that "Cancel" doesn't eat Enter key
+        summarypage.refreshFinished.connect(
+            self.button(QWizard.NextButton).setFocus)
 
         self.resize(QSize(700, 489).expandedTo(self.minimumSizeHint()))
 
@@ -104,6 +109,7 @@ class BasePage(QWizardPage):
         return True
 
 class SummaryPage(BasePage):
+    refreshFinished = pyqtSignal()
 
     def __init__(self, repo, parent):
         super(SummaryPage, self).__init__(repo, parent)
@@ -136,12 +142,12 @@ class SummaryPage(BasePage):
         self.layout().addWidget(other_sep)
         try:
             otherCsInfo = create(self.wizard().otherrev)
+            self.layout().addWidget(otherCsInfo)
+            self.otherCsInfo = otherCsInfo
         except error.RepoLookupError:
             qtlib.InfoMsgBox(_('Unable to merge'),
                              _('Merge revision not specified or not found'))
             QTimer.singleShot(0, self.wizard().close)
-        self.layout().addWidget(otherCsInfo)
-        self.otherCsInfo = otherCsInfo
 
         ## current revision
         local_sep = qtlib.LabeledSeparator(_('Merge to (working directory)'))
@@ -289,6 +295,7 @@ class SummaryPage(BasePage):
             self.groups.set_visible(False, 'merged')
             self.wd_status.set_status(_('Clean', 'working dir state'), True)
         self.completeChanged.emit()
+        self.refreshFinished.emit()
 
     @pyqtSlot(QString)
     def onLinkActivated(self, cmd):
@@ -511,6 +518,8 @@ class CommitPage(BasePage):
         self.cmd.setShowOutput(False)
         self.layout().addWidget(self.cmd)
 
+        self.delayednext = False
+
         def tryperform():
             if self.isComplete():
                 self.wizard().next()
@@ -558,13 +567,15 @@ class CommitPage(BasePage):
         return len(self.repo.parents()) == 2 and len(self.msgEntry.text()) > 0
 
     def validatePage(self):
+
+        if self.cmd.core.running():
+            return False
+
         if len(self.repo.parents()) == 1:
             # commit succeeded, repositoryChanged() called wizard().next()
             if self.skiplast.isChecked():
                 self.wizard().close()
             return True
-        if self.cmd.core.running():
-            return False
 
         user = qtlib.getCurrentUsername(self, self.repo)
         if not user:
@@ -589,10 +600,17 @@ class CommitPage(BasePage):
     def repositoryChanged(self):
         'repository has detected a change to changelog or parents'
         if len(self.repo.parents()) == 1:
-            self.wizard().next()
+            if self.cmd.core.running():
+                # call self.wizard().next() after the current command finishes
+                self.delayednext = True
+            else:
+                self.wizard().next()
 
     def onCommandFinished(self, ret):
         self.repo.decrementBusyCount()
+        if self.delayednext:
+            self.delayednext = False
+            self.wizard().next()
         self.completeChanged.emit()
 
 
@@ -633,8 +651,11 @@ class CheckThread(QThread):
                 unresolved = True
                 break
         wctx = self.repo[None]
-        dirty = bool(wctx.dirty()) or unresolved
-        self.results = (dirty, len(wctx.parents()))
+        try:
+            dirty = bool(wctx.dirty()) or unresolved
+            self.results = (dirty, len(wctx.parents()))
+        except EnvironmentError:
+            self.results = (True, len(wctx.parents()))
 
     def cancel(self):
         self.canceled = True

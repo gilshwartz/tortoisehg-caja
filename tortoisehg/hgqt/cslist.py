@@ -32,7 +32,7 @@ class ChangesetList(QWidget):
         self.lstyle = csinfo.labelstyle(contents=contents, width=350,
                                         selectable=True)
         contents = ('item', 'summary', 'user', 'dateage', 'rawbranch',
-                    'tags', 'transplant', 'p4', 'svn')
+                    'tags', 'graft', 'transplant', 'p4', 'svn', 'converted')
         self.pstyle = csinfo.panelstyle(contents=contents, width=350,
                                         selectable=True)
 
@@ -176,4 +176,3 @@ class ChangesetList(QWidget):
             self.insertcs(lastitem)
         self.updatestatus()
         return True
-

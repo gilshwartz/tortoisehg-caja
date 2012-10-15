@@ -19,7 +19,7 @@ from tortoisehg.hgqt.i18n import _
 from tortoisehg.hgqt import qtlib, thgrepo
 
 PANEL_DEFAULT = ('rev', 'summary', 'user', 'dateage', 'branch', 'close',
-                 'tags', 'transplant', 'p4', 'svn')
+                 'tags', 'graft', 'transplant', 'p4', 'svn', 'converted')
 
 def create(repo, target=None, style=None, custom=None, **kargs):
     return Factory(repo, custom, style, target, **kargs)()
@@ -108,9 +108,10 @@ class SummaryInfo(object):
               'dateage': _('Date:'), 'branch': _('Branch:'),
               'close': _('Close:'),
               'tags': _('Tags:'), 'rawbranch': _('Branch:'),
-              'rawtags': _('Tags:'), 'transplant': _('Transplant:'),
+              'rawtags': _('Tags:'), 'graft': _('Graft:'),
+              'transplant': _('Transplant:'),
               'p4': _('Perforce:'), 'svn': _('Subversion:'),
-              'shortuser': _('User:')}
+              'converted': _('Converted From:'), 'shortuser': _('User:')}
 
     def __init__(self):
         pass
@@ -178,6 +179,13 @@ class SummaryInfo(object):
                 return hglib.getrawctxtags(ctx)
             elif item == 'tags':
                 return hglib.getctxtags(ctx)
+            elif item == 'graft':
+                extra = ctx.extra()
+                try:
+                    return extra['source']
+                except KeyError:
+                    pass
+                return None
             elif item == 'transplant':
                 extra = ctx.extra()
                 try:
@@ -199,6 +207,13 @@ class SummaryInfo(object):
                     if cvt != result:
                         return result
                     return cvt.split('@')[-1]
+                else:
+                    return None
+            elif item == 'converted':
+                extra = ctx.extra()
+                cvt = extra.get('convert_revision', '')
+                if cvt and not cvt.startswith('svn:'):
+                    return cvt
                 else:
                     return None
             elif item == 'ishead':
@@ -247,9 +262,9 @@ class SummaryInfo(object):
                 if revnum is not None and revid is not None:
                     return '%s (%s)' % (revnum, revid)
                 return '%s' % revid
-            elif item in ('revid', 'transplant'):
+            elif item in ('revid', 'graft', 'transplant'):
                 return qtlib.markup(value, **mono)
-            elif item in ('revnum', 'p4', 'close'):
+            elif item in ('revnum', 'p4', 'close', 'converted'):
                 return str(value)
             elif item == 'svn':
                 # svn is always in utf-8 because ctx.extra() isn't converted

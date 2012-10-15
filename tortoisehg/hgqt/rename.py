@@ -11,7 +11,7 @@ import os, sys
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-from mercurial import util, error
+from mercurial import util, error, scmutil
 
 from tortoisehg.hgqt.i18n import _
 from tortoisehg.hgqt import cmdui, qtlib, thgrepo, manifestmodel
@@ -47,8 +47,8 @@ class RenameDialog(QDialog):
                       'from folder<p>%s</p>' % cwd))
             return ('', '')
         try:
-            fname = hglib.canonpath(self.root, cwd, pats[0])
-            target = hglib.canonpath(self.root, cwd, pats[1])
+            fname = scmutil.canonpath(self.root, cwd, pats[0])
+            target = scmutil.canonpath(self.root, cwd, pats[1])
         except:
             pass
         os.chdir(self.root)
@@ -81,10 +81,10 @@ class RenameDialog(QDialog):
 
         # some extras
         self.dummy_lbl = QLabel('')
-        self.hgcmd_lbl = QLabel(_('Hg command:'))
-        self.hgcmd_lbl.setAlignment(Qt.AlignRight|Qt.AlignVCenter)
-        self.hgcmd_txt = QLineEdit()
-        self.hgcmd_txt.setReadOnly(True)
+        self.hmcmd_lbl = QLabel(_('Hg command:'))
+        self.hmcmd_lbl.setAlignment(Qt.AlignRight|Qt.AlignVCenter)
+        self.hmcmd_txt = QLineEdit()
+        self.hmcmd_txt.setReadOnly(True)
         self.show_command(self.compose_command(self.get_src(), self.get_dest()))
         self.keep_open_chk = QCheckBox(_('Always show output'))
 
@@ -133,8 +133,8 @@ class RenameDialog(QDialog):
         self.grid.addWidget(self.dest_btn, 1, 2)
         self.grid.addWidget(self.copy_chk, 2, 1)
         self.grid.addWidget(self.dummy_lbl, 3, 1)
-        self.grid.addWidget(self.hgcmd_lbl, 4, 0)
-        self.grid.addWidget(self.hgcmd_txt, 4, 1)
+        self.grid.addWidget(self.hmcmd_lbl, 4, 0)
+        self.grid.addWidget(self.hmcmd_txt, 4, 1)
         self.grid.addWidget(self.keep_open_chk, 5, 1)
         self.hbox = QHBoxLayout()
         self.hbox.addWidget(self.detail_btn)
@@ -183,42 +183,42 @@ class RenameDialog(QDialog):
 
     def src_btn_clicked(self):
         """Select the source file of folder"""
-        self.get_file_or_folder('src')
+        FD = QFileDialog
+        curr = self.get_src()
+        if os.path.isfile(curr):
+            caption = _('Select Source File')
+            path = FD.getOpenFileName(parent=self, caption=caption,
+                                      options=FD.ReadOnly)
+        else:
+            caption = _('Select Source Folder')
+            path = FD.getExistingDirectory(parent=self, caption=caption,
+                                           options=FD.ShowDirsOnly | FD.ReadOnly)
+        relpath = self.to_relative_path(path)
+        if not relpath:
+            return
+        self.src_txt.setText(relpath)
 
     def dest_btn_clicked(self):
         """Select the destination file of folder"""
-        self.get_file_or_folder('dest')
-
-    def get_file_or_folder(self, mode):
-        if mode == 'src':
-            curr = self.get_src()
-            if os.path.isfile(curr):
-                caption = _('Select Source File')
-            else:
-                caption = _('Select Source Folder')
-        else:
-            curr = self.get_dest()
-            if os.path.isfile(curr):
-                caption = _('Select Destination File')
-            else:
-                caption = _('Select Destination Folder')
         FD = QFileDialog
-        if os.path.isfile(curr):
-            path = FD.getOpenFileName(parent=self, caption=caption,
-                    options=FD.ReadOnly)
+        if os.path.isfile(self.get_src()):
+            caption = _('Select Destination File')
         else:
-            path = FD.getExistingDirectory(parent=self, caption=caption,
-                    options=FD.ShowDirsOnly | FD.ReadOnly)
-        if path:
-            path = util.normpath(unicode(path))
-            pathprefix = util.normpath(hglib.tounicode(self.root)) + '/'
-            if not path.startswith(pathprefix):
-                return
-            relpath = path[len(pathprefix):]
-            if mode == 'src':
-                self.src_txt.setText(relpath)
-            else:
-                self.dest_txt.setText(relpath)
+            caption = _('Select Destination Folder')
+        path = FD.getSaveFileName(parent=self, caption=caption)
+        relpath = self.to_relative_path(path)
+        if not relpath:
+            return
+        self.dest_txt.setText(relpath)
+
+    def to_relative_path(self, fullpath):  # unicode or QString
+        if not fullpath:
+            return
+        fullpath = util.normpath(unicode(fullpath))
+        pathprefix = util.normpath(hglib.tounicode(self.root)) + '/'
+        if not os.path.normcase(fullpath).startswith(os.path.normcase(pathprefix)):
+            return
+        return fullpath[len(pathprefix):]
 
     def copy_chk_toggled(self):
         self.setRenameCopy()
@@ -244,7 +244,7 @@ class RenameDialog(QDialog):
         return cmdline
 
     def show_command(self, cmdline):
-        self.hgcmd_txt.setText(hglib.tounicode('hg ' + ' '.join(cmdline)))
+        self.hmcmd_txt.setText(hglib.tounicode('hg ' + ' '.join(cmdline)))
 
     def rename(self):
         """execute the rename"""

@@ -122,8 +122,8 @@ Subrepozitáře
 TortoiseHg 1.0 zavedl rudimentární podporu pro subrepozitáře a to pouze v nástroji commit a status. Považuje-li Mercurial subrepozitář za "nečistý", objeví se v seznamu souborů nástroje Commit s označením stavu *S* a je potom komitován spolu s jinými změnami, přičemž se aktualizuje soubor .hgsubstate v kořenovém adresáři repozitáře.
 
 
-Nastavitelné parametry záložky Commit
--------------------------------------
+Nastavitelné parametry
+----------------------
 
 Na záložce Commit konfiguračního okna TortoiseHg Settings lze nastavit tyto parametry:
 

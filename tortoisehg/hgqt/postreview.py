@@ -16,7 +16,7 @@
 # GNU General Public License version 2, incorporated herein by reference.
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-from mercurial import error, extensions, cmdutil
+from mercurial import error, extensions, scmutil
 from tortoisehg.util import hglib, paths
 from tortoisehg.hgqt.i18n import _
 from tortoisehg.hgqt import cmdui, qtlib, thgrepo
@@ -106,10 +106,10 @@ class PostReviewDialog(QDialog):
 
     @pyqtSlot()
     def passwordPrompt(self):
-        pwd, ok = QInputDialog.getText(self,
-                                       _('Review Board'),
-                                       _('Password:'),
-                                       mode=QLineEdit.Password)
+        pwd, ok = qtlib.getTextInput(self,
+                                     _('Review Board'),
+                                     _('Password:'),
+                                     mode=QLineEdit.Password)
         if ok and pwd:
             self.password = pwd
             return True
@@ -195,12 +195,11 @@ class PostReviewDialog(QDialog):
 
     def initChangesets(self, revs, selected_revs=None):
         def purerevs(revs):
-            return hglib.revrange(self.repo,
-                                  iter(str(e) for e in revs))
+            return scmutil.revrange(self.repo, iter(str(e) for e in revs))
         if selected_revs:
-             selectedrevs = purerevs(selected_revs)
+            selectedrevs = purerevs(selected_revs)
         else:
-             selectedrevs = purerevs(revs)
+            selectedrevs = purerevs(revs)
 
         self._changesets = _ChangesetsModel(self.repo,
                                             # TODO: [':'] is inefficient
@@ -356,10 +355,10 @@ class PostReviewDialog(QDialog):
         if (saved or published):
             if saved:
                 url = output.split('saved: ').pop().strip()
-                msg = _('Review draft posted to %s\n' % url)
+                msg = _('Review draft posted to %s\n') % url
             else:
                 url = output.split('published: ').pop().strip()
-                msg = _('Review published to %s\n' % url)
+                msg = _('Review published to %s\n') % url
 
             QDesktopServices.openUrl(QUrl(url))
 

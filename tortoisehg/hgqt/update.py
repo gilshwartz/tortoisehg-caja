@@ -58,7 +58,7 @@ class UpdateDialog(QDialog):
         combo.setCurrentIndex(0)
 
         for name in repo.namedbranches:
-            combo.addItem(name)
+            combo.addItem(hglib.tounicode(name))
 
         tags = list(self.repo.tags()) + repo._bookmarks.keys()
         tags.sort(reverse=True)
@@ -173,7 +173,9 @@ class UpdateDialog(QDialog):
             self.rev_combo.lineEdit().selectAll()  # need to change rev
 
         # expand options if a hidden one is checked
-        self.show_options(self.hiddenSettingIsChecked())
+        hiddenOptionsChecked = self.hiddenSettingIsChecked()
+        self.show_options(hiddenOptionsChecked)
+        expander.set_expanded(hiddenOptionsChecked)
 
     ### Private Methods ###
     def hiddenSettingIsChecked(self):
@@ -194,12 +196,14 @@ class UpdateDialog(QDialog):
         if merge:
             self.p2_info.update(self.ctxs[1])
         new_rev = hglib.fromunicode(self.rev_combo.currentText())
-        if new_rev.lower() == 'null':
+        if new_rev == 'null':
+            self.target_info.setText(_('remove working directory'))
             self.update_btn.setEnabled(True)
             return
         try:
             new_ctx = self.repo[new_rev]
-            if not merge and new_ctx.rev() == self.ctxs[0].rev():
+            if not merge and new_ctx.rev() == self.ctxs[0].rev() \
+                    and not new_ctx.bookmarks():
                 self.target_info.setText(_('(same as parent)'))
                 clean = self.discard_chk.isChecked()
                 self.update_btn.setEnabled(clean)
@@ -218,6 +222,60 @@ class UpdateDialog(QDialog):
         cmdline += ['--config', 'ui.merge=internal:' +
                     (self.autoresolve_chk.isChecked() and 'merge' or 'fail')]
         rev = hglib.fromunicode(self.rev_combo.currentText())
+
+        activatebookmarkmode = self.repo.ui.config(
+            'tortoisehg', 'activatebookmarks', 'auto')
+        if activatebookmarkmode != 'never':
+            bookmarks = self.repo[rev].bookmarks()
+            if bookmarks and rev not in bookmarks:
+                # The revision that we are updating into has bookmarks,
+                # but the user did not refer to the revision by one of them
+                # (probably used a revision number or hash)
+                # Ask the user if it wants to update to one of these bookmarks
+                # instead
+                selectedbookmark = None
+                if len(bookmarks) == 1:
+                    if activatebookmarkmode == 'auto':
+                        activatebookmark = True
+                    else:
+                        activatebookmark = qtlib.QuestionMsgBox(
+                            _('Activate bookmark?'),
+                            _('The selected revision (%s) has a bookmark on it '
+                            'called "<i>%s</i>".<p>Do you want to activate it?'
+                            '<br></b><i>You can disable this prompt by configuring '
+                            'Settings/Workbench/Activate Bookmarks</i>') \
+                            % (str(rev), bookmarks[0]))
+                    if activatebookmark:
+                        selectedbookmark = bookmarks[0]
+                else:
+                    # Even in auto mode, when there is more than one bookmark
+                    # we must ask the user which one must be activated
+                    selectedbookmark = qtlib.ChoicePrompt(
+                        _('Activate bookmark?'),
+                        _('The selected revision (<i>%s</i>) has <i>%d</i> '
+                        'bookmarks on it.<p>Select the bookmark that you want '
+                        'to activate and click <i>OK</i>.<p>Click <i>Cancel</i> '
+                        'if you don\'t want to activate any of them.<p>'
+                        '<p><i>You can disable this prompt by configuring '
+                        'Settings/Workbench/Activate Bookmarks</i><p>') \
+                        % (str(rev), len(bookmarks)),
+                        self, bookmarks, self.repo._bookmarkcurrent).run()
+                if selectedbookmark:
+                    rev = selectedbookmark
+                elif self.repo[rev] == self.repo[self.repo._bookmarkcurrent]:
+                    deactivatebookmark = qtlib.QuestionMsgBox(
+                        _('Deactivate current bookmark?'),
+                        _('Do you really want to deactivate the <i>%s</i> '
+                        'bookmark?') % self.repo._bookmarkcurrent)
+                    if deactivatebookmark:
+                        cmdline = ['bookmark', '--repository', self.repo.root]
+                        if self.verbose_chk.isChecked():
+                            cmdline += ['--verbose']
+                        cmdline += ['-i', self.repo._bookmarkcurrent]
+                        self.repo.incrementBusyCount()
+                        self.cmd.run(cmdline)
+                    return
+
         cmdline.append('--rev')
         cmdline.append(rev)
 
@@ -231,12 +289,15 @@ class UpdateDialog(QDialog):
                 return
             def isclean():
                 '''whether WD is changed'''
-                wc = self.repo[None]
-                if wc.modified() or wc.added() or wc.removed():
-                    return False
-                for s in wc.substate:
-                    if wc.sub(s).dirty():
+                try:
+                    wc = self.repo[None]
+                    if wc.modified() or wc.added() or wc.removed():
                         return False
+                    for s in wc.substate:
+                        if wc.sub(s).dirty():
+                            return False
+                except EnvironmentError:
+                    return False
                 return True
             def ismergedchange():
                 '''whether the local changes are merged (have 2 parents)'''
@@ -278,6 +339,7 @@ class UpdateDialog(QDialog):
                     msg += '\n'
                     msg += desc
                     buttons[name] = dlg.addButton(label, QMessageBox.ActionRole)
+                dlg.setDefaultButton(QMessageBox.Cancel)
                 dlg.setText(msg)
                 dlg.exec_()
                 return buttons, dlg.clickedButton(), opts

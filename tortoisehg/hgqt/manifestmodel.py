@@ -8,7 +8,7 @@
 # Foundation; either version 2 of the License, or (at your option) any later
 # version.
 
-import os, itertools
+import os, itertools, fnmatch
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -27,13 +27,20 @@ class ManifestModel(QAbstractItemModel):
     StatusRole = Qt.UserRole + 1
     """Role for file change status"""
 
-    def __init__(self, repo, rev=None, statusfilter='MASC', parent=None):
+    _fileiconprovider = QFileIconProvider()
+    _icons = {}
+
+    def __init__(self, repo, rev=None, namefilter=None, statusfilter='MASC',
+                 parent=None):
         QAbstractItemModel.__init__(self, parent)
 
+        self._diricon = QApplication.style().standardIcon(QStyle.SP_DirIcon)
+        self._fileicon = QApplication.style().standardIcon(QStyle.SP_FileIcon)
         self._repo = repo
         self._rev = rev
         self._subinfo = {}
 
+        self._namefilter = namefilter
         assert util.all(c in 'MARSC' for c in statusfilter)
         self._statusfilter = statusfilter
 
@@ -87,11 +94,29 @@ class ManifestModel(QAbstractItemModel):
             return None
 
     def fileIcon(self, index):
-        ic = QApplication.style().standardIcon(
-            self.isDir(index) and QStyle.SP_DirIcon or QStyle.SP_FileIcon)
         if not index.isValid():
-            return ic
+            if self.isDir(index):
+                return self._diricon
+            else:
+                return self._fileicon
         e = index.internalPointer()
+        ic = e.icon
+        if not ic:
+            if self.isDir(index):
+                ic = self._diricon
+            else:
+                ext = os.path.splitext(e.path)[1]
+                if not ext:
+                    ic = self._fileicon
+                else:
+                    ic = self._icons.get(ext, None)
+                    if not ic:
+                        ic = self._fileiconprovider.icon(QFileInfo(self._wjoin(e.path)))
+                        if not ic.availableSizes():
+                            ic = self._fileicon
+                        self._icons[ext] = ic
+            e.seticon(ic)
+
         if not e.status:
             return ic
         st = status.statusTypes[e.status]
@@ -104,10 +129,9 @@ class ManifestModel(QAbstractItemModel):
                   'svn': 'thg-svn-subrepo',
                 }
                 stype = self.subrepoType(index)
-                if stype:
+                if stype in _subrepoType2IcoMap:
                     ic = qtlib.geticon(_subrepoType2IcoMap[stype])
-            ic = qtlib.getoverlaidicon(ic,
-                icOverlay)  # XXX
+            ic = qtlib.getoverlaidicon(ic, icOverlay)
         return ic
 
     def fileStatus(self, index):
@@ -199,6 +223,20 @@ class ManifestModel(QAbstractItemModel):
     def columnCount(self, parent=QModelIndex()):
         return 1
 
+    @pyqtSlot(unicode)
+    def setNameFilter(self, pattern):
+        """Filter file name by partial match of glob pattern"""
+        pattern = pattern and unicode(pattern) or None
+        if self._namefilter == pattern:
+            return
+        self._namefilter = pattern
+        self._rebuildrootentry()
+
+    @property
+    def nameFilter(self):
+        """Return the current name filter if available; otherwise None"""
+        return self._namefilter
+
     @pyqtSlot(str)
     def setStatusFilter(self, status):
         """Filter file tree by change status 'MARSC'"""
@@ -207,23 +245,40 @@ class ManifestModel(QAbstractItemModel):
         if self._statusfilter == status:
             return  # for performance reason
         self._statusfilter = status
-        self._buildrootentry()
+        self._rebuildrootentry()
 
     @property
     def statusFilter(self):
         """Return the current status filter"""
         return self._statusfilter
 
+    def _wjoin(self, path):
+        return os.path.join(hglib.tounicode(self._repo.root), unicode(path))
+
     @property
     def _rootentry(self):
         try:
             return self.__rootentry
         except (AttributeError, TypeError):
-            self._buildrootentry()
+            self.__rootentry = self._newrootentry()
             return self.__rootentry
 
-    def _buildrootentry(self):
+    def _rebuildrootentry(self):
         """Rebuild the tree of files and directories"""
+        roote = self._newrootentry()
+
+        self.layoutAboutToBeChanged.emit()
+        try:
+            oldindexmap = [(i, self.filePath(i))
+                           for i in self.persistentIndexList()]
+            self.__rootentry = roote
+            for oi, path in oldindexmap:
+                self.changePersistentIndex(oi, self.indexFromPath(path))
+        finally:
+            self.layoutChanged.emit()
+
+    def _newrootentry(self):
+        """Create the tree of files and directories and return its root"""
 
         def pathinstatus(path, status, uncleanpaths):
             """Test path is included by the status filter"""
@@ -234,7 +289,7 @@ class ManifestModel(QAbstractItemModel):
                 return True
             return False
 
-        def getctxtreeinfo(ctx, repo):
+        def getctxtreeinfo(ctx):
             """
             Get the context information that is relevant to populating the tree
             """
@@ -247,10 +302,15 @@ class ManifestModel(QAbstractItemModel):
 
         def addfilestotree(treeroot, files, status, uncleanpaths):
             """Add files to the tree according to their state"""
+            if self._namefilter:
+                files = fnmatch.filter(files, '*%s*' % self._namefilter)
             for path in files:
                 if not pathinstatus(path, status, uncleanpaths):
                     continue
 
+                origpath = path
+                path = self._repo.removeStandin(path)
+                
                 e = treeroot
                 for p in hglib.tounicode(path).split('/'):
                     if not p in e:
@@ -258,7 +318,7 @@ class ManifestModel(QAbstractItemModel):
                     e = e[p]
 
                 for st, filesofst in status.iteritems():
-                    if path in filesofst:
+                    if origpath in filesofst:
                         e.setstatus(st)
                         break
                 else:
@@ -316,7 +376,7 @@ class ManifestModel(QAbstractItemModel):
                             e = addrepocontentstotree(e, sctx, toprelpath)
 
             # Add regular files to the tree
-            status, uncleanpaths, files = getctxtreeinfo(ctx, self._repo)
+            status, uncleanpaths, files = getctxtreeinfo(ctx)
 
             addfilestotree(roote, files, status, uncleanpaths)
             return roote
@@ -328,10 +388,7 @@ class ManifestModel(QAbstractItemModel):
 
         addrepocontentstotree(roote, ctx)
         roote.sort()
-
-        self.beginResetModel()
-        self.__rootentry = roote
-        self.endResetModel()
+        return roote
 
 class _Entry(object):
     """Each file or directory"""
@@ -339,6 +396,7 @@ class _Entry(object):
         self._name = name
         self._parent = parent
         self._status = None
+        self._icon = None
         self._child = {}
         self._nameindex = []
 
@@ -356,6 +414,13 @@ class _Entry(object):
     @property
     def name(self):
         return self._name
+
+    @property
+    def icon(self):
+        return self._icon
+
+    def seticon(self, icon):
+        self._icon = icon
 
     @property
     def status(self):

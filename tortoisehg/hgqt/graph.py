@@ -40,7 +40,6 @@ def revision_grapher(repo, **opts):
       - lines; a list of (col, next_col, color) indicating the edges between
         the current row and the next row
       - parent revisions of current revision
-      - author of the current revision
 
     If follow is True, only generated the subtree from the start_rev head.
 
@@ -116,10 +115,6 @@ def revision_grapher(repo, **opts):
 
         # Add parents to next_revs.
         parents = [p for p in getparents(ctx) if not hidden(p)]
-        try:
-            author = ctx.user()
-        except error.Abort:
-            author = ''
         parents_to_add = []
         if len(parents) > 1:
             preferred_color = None
@@ -150,7 +145,7 @@ def revision_grapher(repo, **opts):
                     color = rev_color[parent]
                     lines.append( (i, next_revs.index(parent), color) )
 
-        yield (curr_rev, rev_index, curcolor, lines, parents, author)
+        yield (curr_rev, rev_index, curcolor, lines, parents)
         revs = next_revs
         if curr_rev is None:
             curr_rev = len(repo)
@@ -214,7 +209,7 @@ def filelog_grapher(repo, path):
 
         pcrevs = [pfc.rev() for pfc in fctx.parents()]
         yield (fctx.rev(), index, curcolor, lines, pcrevs,
-               _paths.get(fctx.rev(), path), fctx.user())
+               _paths.get(fctx.rev(), path))
         revs = next_revs
 
         if revs:
@@ -265,7 +260,6 @@ class Graph(object):
         self.nodes = []
         self.nodesdict = {}
         self.max_cols = 0
-        self.authors = set()
 
     def __getitem__(self, idx):
         if isinstance(idx, slice):
@@ -308,8 +302,7 @@ class Graph(object):
         for vnext in self.grapher:
             if vnext is None:
                 continue
-            nrev, xpos, color, lines, parents, author = vnext[:6]
-            self.authors.add(author)
+            nrev, xpos, color, lines, parents = vnext[:5]
             if not type(nrev) == str and nrev >= self.maxlog:
                 continue
             gnode = GraphNode(nrev, xpos, color, lines, parents,

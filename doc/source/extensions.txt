@@ -59,17 +59,6 @@ page.
 This extension is documented in :ref:`perfarce-perforce` section of
 :doc:`nonhg` chapter.
  
-HGEOL
-=====
-
-The hgeol extension is the eventual successor to the win32text
-extension.  It tries to resolve the EOLN compatibility problems in a
-more complete and robust fashion.  Instead of documenting it here, we
-will link to it's online documents which are continually evolving.
-
-* `EOLTranslationPlan <http://mercurial.selenic.com/wiki/EOLTranslationPlan>`_
-* `Source code <http://bitbucket.org/mg/hg-eol/>`_
-
 Mercurial-Keyring
 =================
 
@@ -176,6 +165,140 @@ should be asked for the password only once (per every username +
 remote_repository_url combination). 
 
 .. vim: noet ts=4
+
+projrc
+======
+
+`projrc <http://mercurial.selenic.com/wiki/ProjrcExtension>`_ is an extension
+that makes Mercurial look for and parse .hg/projrc for additional
+configuration settings.The file is transferred on clone and on pull
+(but never on push), after confirmation by the user, from a list of servers
+that '''must''' be configured by the user. For security reasons the user
+'''must''' also select which ''`projrc`''  configuration settings will be
+transferred (i.e. no settings are transferred from any servers by default).
+The user can also configure the extension to automatically accept all changes
+to the .hg/projrc file.
+
+This is useful for centralized setups where you want to distribute
+configuration settings to all repositories with a minimum amount of setup.
+In particular, it can be used to remap subrepository sources, as explained
+on Mercurial's
+`SubrepoRemappingPlan <http://mercurial.selenic.com/wiki/SubrepoRemappingPlan>`_.
+
+**Configuration**
+
+This extension (as most other extensions) is disabled by default. To use
+and configure you must first enable it on the Settings/Extensions panel.
+
+When the extension is enabled you will see a new entry, "Projrc" on the
+settings dialog. This let's you configure the extension by setting the
+following settings:
+
+	:guilabel:`Request confirmation`
+        If True (the default) you'll get a prompt whenever
+        the extension detects changes to the remote server's
+        .hg/projrc file.
+        If false, the extension will automatically accept any change to the
+        remote .hg/projrc file.
+
+    :guilabel:`Servers`
+        This setting is a comma separated list of glob patterns matching
+        the server names of the servers that the projrc file will be pulled from.
+        Unless this setting is set, no .hg/projrc files will be ever
+        transferred from any servers.
+
+    :guilabel:`Include`
+        This key lets you control which sections and which keys will be accepted
+        from the remote projrc files. This is a a comma separated list of glob
+        patterns that match the section or key names that will be included.
+        Keys names must be specified with their section name followed by a '.'
+        followed by the key name (e.g. "''`diff.git`''").
+
+        To allow all sections and all keys you can set this setting to "*"
+        (without the quotes).
+
+    :guilabel:`Exclude`
+        This setting is similar to the "''`Include`''" setting but it has the
+        opposite effect. It sets an "exclude list" of settings that will not
+        be transferred from the common projrc files.
+
+        The exclude list has the same syntax as the include list. If an exclusion
+        list is set but the inclusion list is empty or not set all non excluded
+        keys will be included.
+
+    :guilabel:`Update on incoming`
+        Control whether the .hg/projrc file will be updated on incoming.
+        It can have the following values:
+
+        * never: The default. Show whether the remote projrc file has changed,
+          but do not update (nor ask to update) the local projrc file.
+        * prompt: Look for changes to the projrc file.
+          If there are changes _always_ show a confirmation prompt,
+          asking the user if it wants to update its local projrc file.
+        * auto: Look for changes to the projrc file.
+          Use the value of the "''`projrc.confirm`''" configuration key to
+          determine whether to show a confirmation dialog or not
+          before updating the local projrc file.
+
+        If False (the default) you'll get a prompt whenever
+        the extension detects changes to the remote server's
+        .hg/projrc file.
+        If false, the extension will automatically accept any change to the
+        remote .hg/projrc file.
+
+
+If both an include and an exclude lists are set, and a key matches both
+the include and the exclude list, priority is given to the most explicit
+key match, in the following order:
+
+    * full key, exact matches are considered the most explicit (e.g.
+      "''`ui.merge`''");
+    * pattern (glob) matches are considered next (e.g. 
+      "''`auth.bitbucket.com.*`''"), with the longest matching pattern being the
+      most explicit;
+    * section level matches (e.g. "''`ui`''");
+    * global ("''`*`''") matches.
+
+If a key matches both an include and an exclude (glob) pattern of the same
+length, the key is ''included'' (i.e. inclusion takes precedence over
+exclusion).
+
+**Usage**
+
+Once enabled and properly configured, the extension will look for
+.hg/projrc files whenever you clone or pull from one of the repositories
+specified on its "servers" configuration key.
+
+Whenever the extension detects changes to the remote projrc file (e.g. when
+you do not have a .hg/projrc file yet, or when the contents of said file
+have changed on the server), you'll receive a warning unless you have set the
+"Require confirmation" setting to False (in which case the extension assumes
+that you accept the changes). If you accept the changes your local .hg/projrc
+file will be updated, and its settings will be taken into account by mercurial
+and TortoiseHg.
+
+If a local repository has a .hg/projrc file, you'll see an extra panel
+on the setting dialog. The title of the extra panel is "project settings
+(.hg/projrc)".
+
+The "project settings" panel is a read-only panel that shows the settings that
+are set on the local .hg/projrc file. Although you can update your local
+version of the .hg/projrc file, the panel is read only to indicate that
+you cannot change the remote repository's settings, and that if the remote
+repository settings change your local copy will be updated on the next pull
+(if you allow it).
+
+The "project settings" settings panel is shown between the "global settings" panel
+and the "repository settings" panel, indicating that its settings are applied
+_after_ the global settings but _before_ the local repository settings (i.e
+the settings specified in the repository .hg/hgrc file).
+
+**Additional Information**
+
+For the most up to date information regarding this extension, to see several
+detailed usage examples and to learn how to use it and configure it from the
+command line, please go to the extension's
+`Wiki <http://mercurial.selenic.com/wiki/ProjrcExtension>`_.
 
 pbranch
 =======

@@ -92,7 +92,7 @@ class HgRepoView(QTableView):
 
     def createActions(self):
         menu = QMenu(self)
-        act = QAction(_('Choose log columns...'), self)
+        act = QAction(_('Choose Log Columns...'), self)
         act.triggered.connect(self.setHistoryColumns)
         menu.addAction(act)
         self.headermenu = menu
@@ -273,15 +273,18 @@ class HgRepoView(QTableView):
         try:
             rev = self.repo.changectx(rev).rev()
         except error.RepoError:
-            self.showMessage.emit(_("Can't find revision '%s'") % rev)
+            self.showMessage.emit(_("Can't find revision '%s'")
+                                  % hglib.tounicode(str(rev)))
         except LookupError, e:
-            self.showMessage.emit(hglib.fromunicode(str(e)))
+            self.showMessage.emit(hglib.tounicode(str(e)))
         else:
             idx = self.model().indexFromRev(rev)
             if idx is not None:
                 # avoid unwanted selection change (#1019)
                 if self.currentIndex().row() != idx.row():
-                    self.setCurrentIndex(idx)
+                    flags = (QItemSelectionModel.ClearAndSelect
+                             | QItemSelectionModel.Rows)
+                    self.selectionModel().setCurrentIndex(idx, flags)
                 self.scrollTo(idx)
 
     def saveSettings(self, s = None):
@@ -292,8 +295,11 @@ class HgRepoView(QTableView):
         for c in range(self.model().columnCount(QModelIndex())):
             col_widths.append(self.columnWidth(c))
 
-        key = '%s/column_widths/%s' % (self.cfgname, str(self.repo[0]))
-        s.setValue(key, col_widths)
+        try:
+            key = '%s/column_widths/%s' % (self.cfgname, str(self.repo[0]))
+            s.setValue(key, col_widths)
+        except EnvironmentError:
+            pass
 
     def resizeEvent(self, e):
         # re-size columns the smart way: the column holding Description
@@ -323,9 +329,10 @@ class HgRepoViewStyle(QStyle):
     def drawPrimitive(self, element, option, painter, widget=None):
         if element == QStyle.PE_IndicatorItemViewItemDrop:
             # Drop indicators should be painted using the full viewport width
-            vp = widget.viewport().rect()
-            painter.drawRect(vp.x(), option.rect.y(),
-                             vp.width() - 1, option.rect.height())
+            if option.rect.height() != 0:
+                vp = widget.viewport().rect()
+                painter.drawRect(vp.x(), option.rect.y(),
+                                 vp.width() - 1, 0.5)
         else:
             self._style.drawPrimitive(element, option, painter, widget)
     # Delegate all other methods overridden by QProxyStyle to the base class

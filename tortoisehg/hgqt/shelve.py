@@ -136,7 +136,7 @@ class ShelveDialog(QDialog):
         self.tbarhbox.addWidget(self.rbar)
         self.refreshAction = a = QAction(_('Refresh'), self)
         a.setIcon(qtlib.geticon('view-refresh'))
-        a.setShortcut(QKeySequence.Refresh)
+        a.setShortcuts(QKeySequence.Refresh)
         a.triggered.connect(self.refreshCombos)
         self.rbar.addAction(self.refreshAction)
         self.actionNew = a = QAction(_('New Shelf'), self)
@@ -205,14 +205,14 @@ class ShelveDialog(QDialog):
             self.newShelf(False)
         for file in self.browsea.getSelectedFiles():
             chunks = self.browsea.getChunksForFile(file)
-            if self.browseb.mergeChunks(file, chunks):
+            if chunks and self.browseb.mergeChunks(file, chunks):
                 self.browsea.removeFile(file)
 
     @pyqtSlot()
     def moveFileLeft(self):
         for file in self.browseb.getSelectedFiles():
             chunks = self.browseb.getChunksForFile(file)
-            if self.browsea.mergeChunks(file, chunks):
+            if chunks and self.browsea.mergeChunks(file, chunks):
                 self.browseb.removeFile(file)
 
     @pyqtSlot()
@@ -221,14 +221,14 @@ class ShelveDialog(QDialog):
             self.newShelf(False)
         for file in self.browsea.getFileList():
             chunks = self.browsea.getChunksForFile(file)
-            if self.browseb.mergeChunks(file, chunks):
+            if chunks and self.browseb.mergeChunks(file, chunks):
                 self.browsea.removeFile(file)
 
     @pyqtSlot()
     def moveFilesLeft(self):
         for file in self.browseb.getFileList():
             chunks = self.browseb.getChunksForFile(file)
-            if self.browsea.mergeChunks(file, chunks):
+            if chunks and self.browsea.mergeChunks(file, chunks):
                 self.browseb.removeFile(file)
 
     @pyqtSlot()
@@ -253,14 +253,19 @@ class ShelveDialog(QDialog):
         shelve = time.strftime('%Y-%m-%d_%H-%M-%S') + \
                  '_parent_rev_%d' % self.repo['.'].rev()
         if interactive:
-            dlg = QInputDialog(self, Qt.Sheet)
-            dlg.setWindowModality(Qt.WindowModal)
-            dlg.setWindowTitle(_('TortoiseHg New Shelf Name'))
-            dlg.setLabelText(_('Specify name of new shelf'))
-            dlg.setTextValue(shelve)
-            if not dlg.exec_():
+            name, ok = qtlib.getTextInput(self,
+                         _('TortoiseHg New Shelf Name'),
+                         _('Specify name of new shelf'),
+                         text=shelve)
+            if not ok:
                 return
-            shelve = hglib.fromunicode(dlg.textValue())
+            shelve = hglib.fromunicode(name)
+            invalids = (':', '#', '/', '\\', '<', '>', '|')
+            bads = [c for c in shelve if c in invalids]
+            if bads:
+                qtlib.ErrorMsgBox(_('Bad filename'),
+                                  _('A shelf name cannot contain :#/\\<>|'))
+                return
         try:
             fn = os.path.join('shelves', shelve)
             shelfpath = self.repo.join(fn)

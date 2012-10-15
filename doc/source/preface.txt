@@ -58,7 +58,7 @@ Mailing Lists:
 * `Developers <thg-dev@googlegroups.com>`_ - Patches, bug reports, development discussions.
 * `Issues <https://lists.sourceforge.net/lists/listinfo/tortoisehg-issues>`_ - Notifications from the issue tracker.
 
-And our `wiki <http://bitbucket.org/tortoisehg/thg/wiki/Home>`_ on Bitbucket.
+And our `wiki <https://bitbucket.org/tortoisehg/thg/wiki/Home>`_ on Bitbucket.
 
 Acknowledgements
 ================

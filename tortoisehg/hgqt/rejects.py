@@ -48,7 +48,7 @@ class RejectsDialog(QDialog):
         def showsearchbar():
             searchbar.show()
             searchbar.setFocus(Qt.OtherFocusReason)
-        QShortcut(QKeySequence.Find, self, showsearchbar)
+        qtlib.newshortcutsforstdkey(QKeySequence.Find, self, showsearchbar)
         self.layout().addWidget(searchbar)
 
         hbox = QHBoxLayout()
@@ -177,11 +177,12 @@ class RejectsDialog(QDialog):
         buf = cStringIO.StringIO()
         chunk = self.chunks[row]
         chunk.write(buf)
+        startline = max(chunk.fromline-1, 0)
         self.rejectbrowser.showChunk(buf.getvalue().splitlines(True)[1:])
-        self.editor.setCursorPosition(chunk.fromline-1, 0)
-        self.editor.ensureLineVisible(chunk.fromline-1)
+        self.editor.setCursorPosition(startline, 0)
+        self.editor.ensureLineVisible(startline)
         self.editor.markerDeleteAll(-1)
-        self.editor.markerAdd(chunk.fromline-1, self.baseLineColor)
+        self.editor.markerAdd(startline, self.baseLineColor)
         self.resolved.setEnabled(not chunk.resolved)
         self.unresolved.setEnabled(chunk.resolved)
 

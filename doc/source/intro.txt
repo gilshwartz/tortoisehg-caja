@@ -134,9 +134,10 @@ The most recent Linux packages can be found on our `download
 
 For Mac OS X, no packages are available but you can run thg and all the
 dialogs via the source install method. For details, see
-`Mac OS X <http://bitbucket.org/tortoisehg/thg/wiki/developers/MacOSX>`_.
+`Mac OS X <https://bitbucket.org/tortoisehg/thg/wiki/developers/MacOSX>`_.
 
 .. note::
+
 	If you install TortoiseHg from source, you need to add our
 	:file:`contrib/mergetools.rc` file to your HGRC path in some way.  One
 	approach is to *%include* it from your :file:`~/.hgrc file`.

@@ -7,11 +7,11 @@
 
 import os
 
-from mercurial import hg, util, cmdutil, error, context, merge
+from mercurial import hg, util, error, context, merge, scmutil
 
 from tortoisehg.util import paths, hglib
 from tortoisehg.hgqt.i18n import _
-from tortoisehg.hgqt import qtlib, wctxactions, visdiff, cmdui, fileview
+from tortoisehg.hgqt import qtlib, wctxactions, visdiff, cmdui, fileview, thgrepo
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -48,7 +48,8 @@ class StatusWidget(QWidget):
     showMessage = pyqtSignal(unicode)
     fileDisplayed = pyqtSignal(QString, QString)
 
-    def __init__(self, repo, pats, opts, parent=None, checkable=True):
+    def __init__(self, repo, pats, opts, parent=None, checkable=True,
+                 defcheck='MAR!S'):
         QWidget.__init__(self, parent)
 
         self.opts = dict(modified=True, added=True, removed=True, deleted=True,
@@ -57,6 +58,7 @@ class StatusWidget(QWidget):
         self.repo = repo
         self.pats = pats
         self.checkable = checkable
+        self.defcheck = defcheck
         self.pctx = None
         self.savechecks = True
         self.refthread = None
@@ -131,7 +133,7 @@ class StatusWidget(QWidget):
         self.filelistToolbar.addWidget(self.statusfilter)
         self.filelistToolbar.addSeparator()
         self.filelistToolbar.addWidget(self.refreshBtn)
-        self.actions = wctxactions.WctxActions(self.repo, self)
+        self.actions = wctxactions.WctxActions(self.repo, self, checkable)
         tv = WctxFileTree(self.repo, checkable=checkable)
         vbox.addLayout(hbox)
         vbox.addWidget(tv)
@@ -285,11 +287,15 @@ class StatusWidget(QWidget):
                                     parent=self)
         ms = merge.mergestate(self.repo)
         tm = WctxModel(wctx, ms, self.pctx, self.savechecks, self.opts,
-                       checked, self, checkable=self.checkable)
+                       checked, self, checkable=self.checkable,
+                       defcheck=self.defcheck)
         if self.checkable:
             tm.checkToggled.connect(self.updateCheckCount)
 
+        oldtm = self.tv.model()
         self.tv.setModel(tm)
+        if oldtm:
+            oldtm.deleteLater()
         self.tv.setSortingEnabled(True)
         self.tv.setColumnHidden(COL_PATH, bool(wctx.p2()) or not self.checkable)
         self.tv.setColumnHidden(COL_MERGE_STATE, not tm.anyMerge())
@@ -338,6 +344,8 @@ class StatusWidget(QWidget):
         elif status == 'S':
             self.linkActivated.emit(
                 u'subrepo:' + hglib.tounicode(self.repo.wjoin(path)))
+        elif status in 'C?':
+            qtlib.editfiles(self.repo, [path])
 
     @pyqtSlot(QString)
     def setFilter(self, match):
@@ -433,8 +441,12 @@ class StatusThread(QThread):
                 else:
                     # status and commit only pre-check MAR files
                     precheckfn = lambda x: x < 4
-                m = hglib.match(self.repo[None], self.pats)
+                m = scmutil.match(self.repo[None], self.pats)
+                self.repo.bfstatus = True
+                self.repo.lfstatus = True
                 status = self.repo.status(match=m, **stopts)
+                self.repo.bfstatus = False
+                self.repo.lfstatus = False
                 # Record all matched files as initially checked
                 for i, stat in enumerate(StatusType.preferredOrder):
                     if stat == 'S':
@@ -446,11 +458,19 @@ class StatusThread(QThread):
                 wctx = context.workingctx(self.repo, changes=status)
                 self.patchecked = patchecked
             elif self.pctx:
+                self.repo.bfstatus = True
+                self.repo.lfstatus = True
                 status = self.repo.status(node1=self.pctx.p1().node(), **stopts)
+                self.repo.bfstatus = False
+                self.repo.lfstatus = False
                 wctx = context.workingctx(self.repo, changes=status)
             else:
                 wctx = self.repo[None]
+                self.repo.bfstatus = True
+                self.repo.lfstatus = True
                 wctx.status(**stopts)
+                self.repo.bfstatus = False
+                self.repo.lfstatus = False
             self.wctx = wctx
 
             wctx.dirtySubrepos = []
@@ -536,7 +556,8 @@ class WctxFileTree(QTreeView):
 class WctxModel(QAbstractTableModel):
     checkToggled = pyqtSignal()
 
-    def __init__(self, wctx, ms, pctx, savechecks, opts, checked, parent, checkable=True):
+    def __init__(self, wctx, ms, pctx, savechecks, opts, checked, parent,
+                 checkable=True, defcheck='MAR!S'):
         QAbstractTableModel.__init__(self, parent)
         self.checkCount = 0
         rows = []
@@ -563,35 +584,39 @@ class WctxModel(QAbstractTableModel):
             pctxmatch = lambda f: True
         if opts['modified']:
             for m in wctx.modified():
-                nchecked[m] = checked.get(m, m not in excludes and pctxmatch(m))
+                nchecked[m] = checked.get(m, 'M' in defcheck and
+                                          m not in excludes and pctxmatch(m))
                 rows.append(mkrow(m, 'M'))
         if opts['added']:
             for a in wctx.added():
-                nchecked[a] = checked.get(a, a not in excludes and pctxmatch(a))
+                nchecked[a] = checked.get(a, 'A' in defcheck and
+                                          a not in excludes and pctxmatch(a))
                 rows.append(mkrow(a, 'A'))
         if opts['removed']:
             for r in wctx.removed():
-                nchecked[r] = checked.get(r, r not in excludes and pctxmatch(r))
+                nchecked[r] = checked.get(r, 'R' in defcheck and
+                                          r not in excludes and pctxmatch(r))
                 rows.append(mkrow(r, 'R'))
         if opts['deleted']:
             for d in wctx.deleted():
-                nchecked[d] = checked.get(d, d not in excludes and pctxmatch(d))
+                nchecked[d] = checked.get(d, 'D' in defcheck and
+                                          d not in excludes and pctxmatch(d))
                 rows.append(mkrow(d, '!'))
         if opts['unknown']:
             for u in wctx.unknown() or []:
-                nchecked[u] = checked.get(u, False)
+                nchecked[u] = checked.get(u, '?' in defcheck)
                 rows.append(mkrow(u, '?'))
         if opts['ignored']:
             for i in wctx.ignored() or []:
-                nchecked[i] = checked.get(i, False)
+                nchecked[i] = checked.get(i, 'I' in defcheck)
                 rows.append(mkrow(i, 'I'))
         if opts['clean']:
             for c in wctx.clean() or []:
-                nchecked[c] = checked.get(c, False)
+                nchecked[c] = checked.get(c, 'C' in defcheck)
                 rows.append(mkrow(c, 'C'))
         if opts['subrepo']:
             for s in wctx.dirtySubrepos:
-                nchecked[s] = checked.get(s, True)
+                nchecked[s] = checked.get(s, 'S' in defcheck)
                 rows.append(mkrow(s, 'S'))
         # include clean unresolved files
         for f in ms:
@@ -610,6 +635,12 @@ class WctxModel(QAbstractTableModel):
             return 0 # no child
         return len(self.rows)
 
+    def check(self, files, state=True):
+        for f in files:
+            self.checked[f] = state
+        self.layoutChanged.emit()
+        self.checkToggled.emit()
+        
     def checkAll(self, state):
         for data in self.rows:
             self.checked[data[0]] = state
@@ -711,7 +742,7 @@ class WctxModel(QAbstractTableModel):
             try:
                 rank = sortList.index(value)
             except (IndexError, ValueError):
-                rank = len(shortList) # Set the lowest rank by default
+                rank = len(sortList) # Set the lowest rank by default
 
             return rank
 
@@ -726,7 +757,7 @@ class WctxModel(QAbstractTableModel):
             try:
                 rank = sortList.index(value)
             except (IndexError, ValueError):
-                rank = len(shortList) # Set the lowest rank by default
+                rank = len(sortList) # Set the lowest rank by default
 
             return rank
 
@@ -771,7 +802,8 @@ class WctxModel(QAbstractTableModel):
     def setFilter(self, match):
         'simple match in filename filter'
         self.layoutAboutToBeChanged.emit()
-        self.rows = [r for r in self.unfiltered if match in r[COL_PATH_DISPLAY]]
+        self.rows = [r for r in self.unfiltered
+                     if unicode(match) in r[COL_PATH_DISPLAY]]
         self.layoutChanged.emit()
         self.reset()
 
@@ -889,7 +921,8 @@ class StatusDialog(QDialog):
         self.setWindowFlags(Qt.Window)
         self.loadSettings()
 
-        QShortcut(QKeySequence.Refresh, self, self.stwidget.refreshWctx)
+        qtlib.newshortcutsforstdkey(QKeySequence.Refresh, self,
+                                    self.stwidget.refreshWctx)
         QTimer.singleShot(0, self.stwidget.refreshWctx)
 
     def linkActivated(self, link):

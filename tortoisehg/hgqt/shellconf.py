@@ -83,7 +83,7 @@ class ShellConfigWindow(QDialog):
         cmenuwidget = QWidget()
         grid = QGridLayout()
         cmenuwidget.setLayout(grid)
-        tw.addTab(cmenuwidget, _("Contex Menu"))
+        tw.addTab(cmenuwidget, _("Context Menu"))
 
         w = QLabel(_("Top menu items:"))
         grid.addWidget(w, 0, 0)
@@ -216,7 +216,7 @@ class ShellConfigWindow(QDialog):
             list.clear()
             list.setSortingEnabled(True)
         promoted = [pi.strip() for pi in promoteditems.split(',')]
-        for cmd, info in menuthg.thgcmenu.items():
+        for cmd, info in menuthg.thmcmenu.items():
             label = info['label']
             item = QListWidgetItem(hglib.tounicode(label['str']))
             item._id = label['id']

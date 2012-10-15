@@ -6,10 +6,9 @@
 # GNU General Public License version 2, incorporated herein by reference.
 
 import os
-import re
 
-from mercurial import util, error, merge, commands
-from tortoisehg.hgqt import qtlib, htmlui, visdiff
+from mercurial import util, error, merge, commands, extensions
+from tortoisehg.hgqt import qtlib, htmlui, visdiff, lfprompt
 from tortoisehg.util import hglib, shlib
 from tortoisehg.hgqt.i18n import _
 
@@ -19,7 +18,7 @@ from PyQt4.QtGui import *
 class WctxActions(QObject):
     'container class for working context actions'
 
-    def __init__(self, repo, parent):
+    def __init__(self, repo, parent, checkable=True):
         super(WctxActions, self).__init__(parent)
 
         self.menu = QMenu(parent)
@@ -38,20 +37,31 @@ class WctxActions(QObject):
             parent.addAction(action)
             allactions.append(action)
 
-        make(_('&Visual Diff'), vdiff, frozenset('MAR!'), 'visualdiff', 'CTRL+D')
+        make(_('&Diff to parent'), vdiff, frozenset('MAR!'), 'visualdiff', 'CTRL+D')
         make(_('Copy patch'), copyPatch, frozenset('MAR!'), 'copy-patch')
         make(_('Edit'), edit, frozenset('MACI?'), 'edit-file', 'SHIFT+CTRL+E')
-        make(_('Copy path'), copyPath, frozenset('MARC?!I'), '')
+        make(_('Open'), openfile, frozenset('MACI?'), '', 'SHIFT+CTRL+L')
+        allactions.append(None)
+        make(_('Open subrepository'), opensubrepo, frozenset('S'),
+            'thg-repository-open', 'Shift+Ctrl+O')
+        make(_('Explore subrepository'), explore, frozenset('S'),
+            'system-file-manager')
+        make(_('Open terminal in subrepository'), terminal, frozenset('S'),
+            'utilities-terminal')
+        allactions.append(None)
+        make(_('Copy path'), copyPath, frozenset('MARC?!IS'), '')
         make(_('View missing'), viewmissing, frozenset('R!'))
         allactions.append(None)
-        make(_('&Revert...'), revert, frozenset('MAR!'), 'hg-revert')
+        make(_('&Revert...'), revert, frozenset('SMAR!'), 'hg-revert')
         make(_('&Add'), add, frozenset('R'), 'fileadd')
         allactions.append(None)
         make(_('File History'), log, frozenset('MARC!'), 'hg-log')
         make(_('&Annotate'), annotate, frozenset('MARC!'), 'hg-annotate')
         allactions.append(None)
-        make(_('&Forget'), forget, frozenset('MAC!'), 'filedelete')
+        make(_('&Forget'), forget, frozenset('MC!'), 'filedelete')
         make(_('&Add'), add, frozenset('I?'), 'fileadd')
+        if 'largefiles' in self.repo.extensions():
+            make(_('Add &Largefiles...'), addlf, frozenset('I?'))
         make(_('&Detect Renames...'), guessRename, frozenset('A?!'),
              'detect_rename')
         make(_('&Ignore...'), ignore, frozenset('?'), 'ignore')
@@ -60,6 +70,10 @@ class WctxActions(QObject):
         allactions.append(None)
         make(_('Mark unresolved'), unmark, frozenset('r'))
         make(_('Mark resolved'), mark, frozenset('u'))
+        if checkable:
+            allactions.append(None)
+            make(_('Check'), check, frozenset('MARC?!IS'), '')
+            make(_('Uncheck'), uncheck, frozenset('MARC?!IS'), '')
         self.allactions = allactions
 
     def updateActionSensitivity(self, selrows):
@@ -155,9 +169,11 @@ class WctxActions(QObject):
                 notify = func(parent, hu, repo, files)
                 o, e = hu.getdata()
                 if e:
-                    QMessageBox.warning(parent, name + _(' errors'), e)
+                    QMessageBox.warning(parent, name + _(' errors'),
+                        hglib.tounicode(e))
                 elif o:
-                    QMessageBox.information(parent, name + _(' output'), o)
+                    QMessageBox.information(parent, name + _(' output'),
+                        hglib.tounicode(o))
                 elif notify:
                     wfiles = [repo.wjoin(x) for x in files]
                     shlib.shell_notify(wfiles)
@@ -199,7 +215,7 @@ def copyPath(parent, ui, repo, files):
     clip = QApplication.clipboard()
     absfiles = [hglib.fromunicode(QDir.toNativeSeparators(repo.wjoin(fname)))
          for fname in files]
-    clip.setText(os.linesep.join(absfiles))
+    clip.setText(hglib.tounicode(os.linesep.join(absfiles)))
 
 def vdiff(parent, ui, repo, files):
     dlg = visdiff.visualdiff(ui, repo, files, {})
@@ -208,6 +224,28 @@ def vdiff(parent, ui, repo, files):
 
 def edit(parent, ui, repo, files, lineno=None, search=None):
     qtlib.editfiles(repo, files, lineno, search, parent)
+
+def openfile(parent, ui, repo, files):
+    qtlib.openfiles(repo, files, parent)
+
+def opensubrepo(parent, ui, repo, files):
+    for filename in files:
+        path = os.path.join(repo.root, filename)
+        if os.path.isdir(path):
+            parent.linkActivated.emit(u'subrepo:'+hglib.tounicode(path))
+        else:
+            QMessageBox.warning(parent,
+                _("Cannot open subrepository"),
+                _("The selected subrepository does not exist on the working directory"))
+
+def explore(parent, ui, repo, files):
+    qtlib.openfiles(repo, files, parent)
+
+def terminal(parent, ui, repo, files):
+    for filename in files:
+        root = repo.wjoin(filename)
+        if os.path.isdir(root):
+            qtlib.openshell(root, filename)
 
 def viewmissing(parent, ui, repo, files):
     base, _ = visdiff.snapshot(repo, files, repo['.'])
@@ -220,7 +258,7 @@ def viewother(parent, ui, repo, files):
     edit(parent, ui, repo, [os.path.join(base, f) for f in files])
 
 def revert(parent, ui, repo, files):
-    revertopts = {'date': None, 'rev': '.'}
+    revertopts = {'date': None, 'rev': '.', 'all': False}
 
     if len(repo.parents()) > 1:
         res = qtlib.CustomPrompt(
@@ -232,18 +270,27 @@ def revert(parent, ui, repo, files):
         elif res == 1:
             revertopts['rev'] = repo[None].p2().rev()
         else:
-            return
+            return False
         commands.revert(ui, repo, *files, **revertopts)
     else:
-        res = qtlib.CustomPrompt(
+        wctx = repo[None]
+        if [file for file in files if file in wctx.modified()]:
+            res = qtlib.CustomPrompt(
                 _('Confirm Revert'),
                 _('Revert local file changes?'), parent,
                 (_('&Revert with backup'), _('&Discard changes'),
                 _('Cancel')), 2, 2, files).run()
-        if res == 2:
-            return False
-        if res == 1:
-            revertopts['no_backup'] = True
+            if res == 2:
+                return False
+            if res == 1:
+                revertopts['no_backup'] = True
+        else:
+            res = qtlib.CustomPrompt(
+                    _('Confirm Revert'),
+                    _('Revert the following files?'),
+                    parent, (_('&Revert'), _('Cancel')), 1, 1, files).run()
+            if res == 1:
+                return False
         commands.revert(ui, repo, *files, **revertopts)
         return True
 
@@ -266,7 +313,21 @@ def forget(parent, ui, repo, files):
     return True
 
 def add(parent, ui, repo, files):
-    commands.add(ui, repo, *files)
+    if 'largefiles' in repo.extensions():
+        result = lfprompt.promptForLfiles(parent, ui, repo, files)
+        if not result:
+            return False
+        files, lfiles = result
+        if files:
+            commands.add(ui, repo, normal=True, *files)
+        if lfiles:
+            commands.add(ui, repo, lfsize='', normal=False, large=True, *lfiles)
+    else:
+        commands.add(ui, repo, *files)
+    return True
+
+def addlf(parent, ui, repo, files):
+    commands.add(ui, repo, lfsize='', normal=None, large=True, *files)
     return True
 
 def guessRename(parent, ui, repo, files):
@@ -296,7 +357,7 @@ def delete(parent, ui, repo, files):
             _('Delete the following unversioned files?'),
             parent, (_('&Delete'), _('Cancel')), 1, 1, files).run()
     if res == 1:
-        return
+        return False
     for wfile in files:
         os.unlink(wfile)
     return True
@@ -307,10 +368,11 @@ def copy(parent, ui, repo, files):
     fd = QFileDialog(parent)
     fname = fd.getSaveFileName(parent, _('Copy file to'), wfile)
     if not fname:
-        return
+        return False
     fname = hglib.fromunicode(fname)
     wfiles = [wfile, fname]
-    commands.copy(ui, repo, *wfiles)
+    opts = {'force': True}  # existing file is already checked by QFileDialog
+    commands.copy(ui, repo, *wfiles, **opts)
     return True
 
 def rename(parent, ui, repo, files):
@@ -343,4 +405,12 @@ def resolve_with(tool, repo, files):
     opts = {'tool': tool}
     paths = [repo.wjoin(f) for f in files]
     commands.resolve(repo.ui, repo, *paths, **opts)
+    return True
+
+def check(parent, ui, repo, files):
+    parent.tv.model().check(files)
+    return True
+
+def uncheck(parent, ui, repo, files):
+    parent.tv.model().check(files, False)
     return True

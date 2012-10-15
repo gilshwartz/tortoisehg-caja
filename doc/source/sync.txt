@@ -224,9 +224,7 @@ It is a known issue that TortoisePlink does not use compression in many
 scenarios, and thus is up to four times slower than openssh and other
 clients.  TortoiseHg recommends the use of HTTPS for Windows clients.
 
-See the FAQ_ for help if you have trouble connecting to ssh servers.
-
-.. _FAQ: http://bitbucket.org/tortoisehg/stable/wiki/FAQ#tortoisehg-faq
+See the :doc:`faq` for help if you have trouble connecting to ssh servers.
 
 Email
 -----

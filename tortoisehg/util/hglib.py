@@ -12,58 +12,8 @@ import time
 import urllib
 
 from mercurial import ui, util, extensions, match, bundlerepo, cmdutil
-from mercurial import encoding, templatefilters, filemerge, error
-from mercurial import demandimport, revset
+from mercurial import encoding, templatefilters, filemerge, error, scmutil
 from mercurial import dispatch as hgdispatch
-
-
-demandimport.disable()
-try:
-    # hg >= 1.9
-    from mercurial.scmutil import canonpath, userrcpath
-    user_rcpath = userrcpath
-except (ImportError, AttributeError):
-    # hg <= 1.8
-    from mercurial.util import canonpath, user_rcpath
-try:
-    # hg >= 1.9
-    from mercurial.util import localpath
-except (ImportError, AttributeError):
-    # hg <= 1.8
-    from mercurial.hg import localpath
-try:
-    # hg >= 1.9
-    from mercurial.util import hidepassword, removeauth
-except (ImportError, AttributeError):
-    # hg <= 1.8
-    from mercurial.url import hidepassword, removeauth
-try:
-    # hg >= 1.9
-    from mercurial.httpconnection import readauthforuri as hgreadauthforuri
-except (ImportError, AttributeError):
-    # hg <= 1.8
-    from mercurial.url import readauthforuri as hgreadauthforuri
-try:
-    # hg >= 1.9
-    from mercurial.scmutil import revrange, expandpats, revpair, match, matchall
-except (ImportError, AttributeError):
-    # hg <= 1.8
-    from mercurial.cmdutil import revrange, expandpats, revpair, match, matchall
-demandimport.enable()
-
-def readauthforuri(ui, uri, user):
-    try:
-        return hgreadauthforuri(ui, uri, user)
-    except TypeError:
-        return hgreadauthforuri(ui, uri)
-
-def revsetmatch(ui, pattern):
-    try:
-        # hg >= 1.9
-        return revset.match(ui, pattern)
-    except TypeError:
-        # hg <= 1.8
-        return revset.match(pattern)
 
 _encoding = encoding.encoding
 _encodingmode = encoding.encodingmode
@@ -87,6 +37,8 @@ def tounicode(s):
         return None
     if isinstance(s, unicode):
         return s
+    if isinstance(s, encoding.localstr):
+        return s._utf8.decode('utf-8')
     for e in ('utf-8', _encoding):
         try:
             return s.decode(e, 'strict')
@@ -108,11 +60,15 @@ def fromunicode(s, errors='strict'):
     s = unicode(s)  # s can be QtCore.QString
     for enc in (_encoding, _fallbackencoding):
         try:
-            return s.encode(enc)
+            l = s.encode(enc)
+            if s == l.decode(enc):
+                return l  # non-lossy encoding
+            return encoding.localstr(s.encode('utf-8'), l)
         except UnicodeEncodeError:
             pass
 
-    return s.encode(_encoding, errors)  # last ditch
+    l = s.encode(_encoding, errors)  # last ditch
+    return encoding.localstr(s.encode('utf-8'), l)
 
 def toutf(s):
     """
@@ -122,6 +78,8 @@ def toutf(s):
     """
     if s is None:
         return None
+    if isinstance(s, encoding.localstr):
+        return s._utf8
     return tounicode(s).encode('utf-8').replace('\0','')
 
 def fromutf(s):
@@ -133,15 +91,10 @@ def fromutf(s):
     if s is None:
         return None
     try:
-        return s.decode('utf-8').encode(_encoding)
-    except (UnicodeDecodeError, UnicodeEncodeError):
-        pass
-    try:
-        return s.decode('utf-8').encode(_fallbackencoding)
-    except (UnicodeDecodeError, UnicodeEncodeError):
-        pass
-    u = s.decode('utf-8', 'replace') # last ditch
-    return u.encode(_encoding, 'replace')
+        return fromunicode(s.decode('utf-8'), 'replace')
+    except UnicodeDecodeError:
+        # can't round-trip
+        return str(fromunicode(s.decode('utf-8', 'replace'), 'replace'))
 
 _tabwidth = None
 def gettabwidth(ui):
@@ -387,13 +340,14 @@ def canonpaths(list):
     root = paths.find_root(cwd)
     for f in list:
         try:
-            canonpats.append(canonpath(root, cwd, f))
+            canonpats.append(scmutil.canonpath(root, cwd, f))
         except util.Abort:
             # Attempt to resolve case folding conflicts.
             fu = f.upper()
             cwdu = cwd.upper()
             if fu.startswith(cwdu):
-                canonpats.append(canonpath(root, cwd, f[len(cwd+os.sep):]))
+                canonpats.append(scmutil.canonpath(root, cwd,
+                                                   f[len(cwd+os.sep):]))
             else:
                 # May already be canonical
                 canonpats.append(f)
@@ -494,7 +448,155 @@ def difftools(ui):
     return tools
 
 
-def hgcmd_toq(q, label, args):
+tortoisehgtoollocations = {
+    'workbench.custom-toolbar': 'Workbench custom toolbar',
+    'workbench.revdetails.custom-menu': 'Revision details context menu',
+}
+
+def tortoisehgtools(uiorconfig, selectedlocation=None):
+    """Parse 'tortoisehg-tools' section of ini file.
+
+    >>> from pprint import pprint
+    >>> from mercurial import config
+    >>> class memui(ui.ui):
+    ...     def readconfig(self, filename, root=None, trust=False,
+    ...                    sections=None, remap=None):
+    ...         pass  # avoid reading settings from file-system
+
+    Changes:
+
+    >>> hgrctext = '''
+    ... [tortoisehg-tools]
+    ... update_to_tip.icon = hg-update
+    ... update_to_tip.command = hg update tip
+    ... update_to_tip.tooltip = Update to tip
+    ... '''
+    >>> uiobj = memui()
+    >>> uiobj._tcfg.parse('<hgrc>', hgrctext)
+
+    into the following dictionary
+
+    >>> tools, toollist = tortoisehgtools(uiobj)
+    >>> pprint(tools) #doctest: +NORMALIZE_WHITESPACE
+    {'update_to_tip': {'command': 'hg update tip',
+                       'icon': 'hg-update',
+                       'tooltip': 'Update to tip'}}
+    >>> toollist
+    ['update_to_tip']
+
+    If selectedlocation is set, only return those tools that have been
+    configured to be shown at the given "location".
+    Tools are added to "locations" by adding them to one of the
+    "extension lists", which are lists of tool names, which follow the same
+    format as the workbench.task-toolbar setting, i.e. a list of tool names,
+    separated by spaces or "|" to indicate separators.
+
+    >>> hgrctext_full = hgrctext + '''
+    ... update_to_null.icon = hg-update
+    ... update_to_null.command = hg update null
+    ... update_to_null.tooltip = Update to null
+    ... explore_wd.command = explorer.exe /e,{ROOT}
+    ... explore_wd.enable = iswd
+    ... explore_wd.label = Open in explorer
+    ... explore_wd.showoutput = True
+    ...
+    ... [tortoisehg]
+    ... workbench.custom-toolbar = update_to_tip | explore_wd
+    ... workbench.revdetails.custom-menu = update_to_tip update_to_null
+    ... '''
+    >>> uiobj = memui()
+    >>> uiobj._tcfg.parse('<hgrc>', hgrctext_full)
+
+    >>> tools, toollist = tortoisehgtools(
+    ...     uiobj, selectedlocation='workbench.custom-toolbar')
+    >>> sorted(tools.keys())
+    ['explore_wd', 'update_to_tip']
+    >>> toollist
+    ['update_to_tip', '|', 'explore_wd']
+
+    >>> tools, toollist = tortoisehgtools(
+    ...     uiobj, selectedlocation='workbench.revdetails.custom-menu')
+    >>> sorted(tools.keys())
+    ['update_to_null', 'update_to_tip']
+    >>> toollist
+    ['update_to_tip', 'update_to_null']
+
+    Valid "locations lists" are:
+        - workbench.custom-toolbar
+        - workbench.revdetails.custom-menu
+
+    >>> tortoisehgtools(uiobj, selectedlocation='invalid.location')
+    Traceback (most recent call last):
+      ...
+    ValueError: invalid location 'invalid.location'
+
+    This function can take a ui object or a config object as its input.
+
+    >>> cfg = config.config()
+    >>> cfg.parse('<hgrc>', hgrctext)
+    >>> tools, toollist = tortoisehgtools(cfg)
+    >>> pprint(tools) #doctest: +NORMALIZE_WHITESPACE
+    {'update_to_tip': {'command': 'hg update tip',
+                       'icon': 'hg-update',
+                       'tooltip': 'Update to tip'}}
+    >>> toollist
+    ['update_to_tip']
+
+    >>> cfg = config.config()
+    >>> cfg.parse('<hgrc>', hgrctext_full)
+    >>> tools, toollist = tortoisehgtools(
+    ...     cfg, selectedlocation='workbench.custom-toolbar')
+    >>> sorted(tools.keys())
+    ['explore_wd', 'update_to_tip']
+    >>> toollist
+    ['update_to_tip', '|', 'explore_wd']
+
+    No error for empty config:
+
+    >>> emptycfg = config.config()
+    >>> tortoisehgtools(emptycfg)
+    ({}, [])
+    >>> tortoisehgtools(emptycfg, selectedlocation='workbench.custom-toolbar')
+    ({}, [])
+    """
+    if isinstance(uiorconfig, ui.ui):
+        configitems = uiorconfig.configitems
+        configlist = uiorconfig.configlist
+    else:
+        configitems = uiorconfig.items
+        def configlist(section, name):
+            return uiorconfig.get(section, name, '').split()
+
+    tools = {}
+    for key, value in configitems('tortoisehg-tools'):
+        toolname, field = key.split('.')
+        if toolname not in tools:
+            tools[toolname] = {}
+        bvalue = util.parsebool(value)
+        if bvalue is not None:
+            value = bvalue
+        tools[toolname][field] = value
+
+    if selectedlocation is None:
+        return tools, sorted(tools.keys())
+
+    # Only return the tools that are linked to the selected location
+    if selectedlocation not in tortoisehgtoollocations:
+        raise ValueError('invalid location %r' % selectedlocation)
+
+    guidef = configlist('tortoisehg', selectedlocation) or []
+    toollist = []
+    selectedtools = {}
+    for name in guidef:
+        if name != '|':
+            info = tools.get(name, None)
+            if info is None:
+                continue
+            selectedtools[name] = info
+        toollist.append(name)
+    return selectedtools, toollist
+
+def hmcmd_toq(q, label, args):
     '''
     Run an hg command in a background thread, pipe all output to a Queue
     object.  Assumes command is completely noninteractive.
@@ -615,7 +717,7 @@ def validate_synch_path(path, repo):
     for alias, path_aux in repo.ui.configitems('paths'):
         if path == alias:
             return_path = path_aux
-        elif path == hidepassword(path_aux):
+        elif path == util.hidepassword(path_aux):
             return_path = path_aux
     return return_path
 
@@ -658,7 +760,7 @@ def getDeepestSubrepoContainingFile(wfile, ctx):
     Also return the corresponding subrepo context and the filename relative to
     its containing subrepo
     """
-    if wfile in ctx.manifest():
+    if wfile in ctx:
         return '', wfile, ctx
     for wsub in ctx.substate:
         if wfile.startswith(wsub):
@@ -675,7 +777,7 @@ def getDeepestSubrepoContainingFile(wfile, ctx):
                 # The selected revision does not exist in the working copy
                 continue
             wfileinsub =  wfile[len(wsub)+1:]
-            if wfileinsub in sctx.substate or wfileinsub in sctx.manifest():
+            if wfileinsub in sctx.substate or wfileinsub in sctx:
                 return wsub, wfileinsub, sctx
             else:
                 wsubsub, wfileinsub, sctx = \
@@ -719,10 +821,5 @@ def getLineSeparator(line):
     return linesep
 
 def dispatch(ui, args):
-    if hasattr(hgdispatch, 'request'):
-        # hg >= 1.9, see mercurial changes 08bfec2ef031, 80c599eee3f3
-        req = hgdispatch.request(args, ui)
-        return hgdispatch._dispatch(req)
-    else:
-        # hg <= 1.8
-        return hgdispatch._dispatch(ui, args)
+    req = hgdispatch.request(args, ui)
+    return hgdispatch._dispatch(req)

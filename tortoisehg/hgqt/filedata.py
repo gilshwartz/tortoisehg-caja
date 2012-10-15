@@ -13,6 +13,14 @@ from mercurial import ui as uimod
 from tortoisehg.util import hglib, patchctx
 from tortoisehg.hgqt.i18n import _
 
+def _exceedsMaxLineLength(data, maxlength=100000):
+    if len(data) < maxlength:
+        return False
+    for line in data.splitlines():
+        if len(line) > maxlength:
+            return True
+    return False
+
 class FileData(object):
     def __init__(self, ctx, ctx2, wfile, status=None):
         self.contents = None
@@ -28,6 +36,7 @@ class FileData(object):
             self.error = hglib.tounicode(str(e))
 
     def checkMaxDiff(self, ctx, wfile, maxdiff, status):
+        self.error = None
         p = _('File or diffs not displayed: ')
         try:
             fctx = ctx.filectx(wfile)
@@ -45,10 +54,16 @@ class FileData(object):
             self.error = p + _('File is larger than the specified max size.\n'
                                'maxdiff = %s KB') % (maxdiff // 1024)
             return None
+
         try:
             data = fctx.data()
-            if '\0' in data:
+            if '\0' in data or ctx.isStandin(wfile):
                 self.error = p + _('File is binary')
+            elif _exceedsMaxLineLength(data):
+                # it's incredibly slow to render long line by QScintilla
+                self.error = p + \
+                    _('File may be binary (maximum line length exceeded)')
+            if self.error:
                 if status != 'A':
                     return None
 
@@ -83,16 +98,17 @@ class FileData(object):
                 return 'C'
             return None
 
+        isbfile = False
         repo = ctx._repo
         self.flabel += u'<b>%s</b>' % hglib.tounicode(wfile)
 
         if isinstance(ctx, patchctx.patchctx):
             self.diff = ctx.thgmqpatchdata(wfile)
             flags = ctx.flags(wfile)
-            if flags in ('x', '-'):
-                lbl = _("exec mode has been <font color='red'>%s</font>")
-                change = (flags == 'x') and _('set') or _('unset')
-                self.elabel = lbl % change
+            if flags == 'x':
+                self.elabel = _("exec mode has been <font color='red'>set</font>")
+            elif flags == '-':
+                self.elabel = _("exec mode has been <font color='red'>unset</font>")
             elif flags == 'l':
                 self.flabel += _(' <i>(is a symlink)</i>')
             return
@@ -238,7 +254,7 @@ class FileData(object):
                         else:
                             self.error = _('Not a Mercurial subrepo, not previewable')
                             return
-                except (util.Abort), e:
+                except (util.Abort, KeyError), e:
                     sactual = ''
 
                 out = []
@@ -248,10 +264,10 @@ class FileData(object):
                     data = []
                 else:
                     _ui.pushbuffer()
-                    commands.status(_ui, srepo)
+                    commands.status(_ui, srepo, modified=True, added=True, removed=True, deleted=True)
                     data = _ui.popbuffer()
                     if data:
-                        out.append(_('File Status:') + u'\n')
+                        out.append(_('The subrepository is dirty.') + u' ' + _('File Status:') + u'\n')
                         out.append(hglib.tounicode(data))
                         out.append(u'\n')
 
@@ -313,6 +329,9 @@ class FileData(object):
                     else:
                         self.contents = olddata
                 self.flabel += _(' <i>(was deleted)</i>')
+            elif hasattr(ctx.p1(), 'hasStandin') and ctx.p1().hasStandin(wfile):
+                self.error = 'binary file'
+                self.flabel += _(' <i>(was deleted)</i>')
             else:
                 self.flabel += _(' <i>(was added, now missing)</i>')
             return
@@ -326,6 +345,8 @@ class FileData(object):
                     return
                 else:
                     data = util.posixfile(absfile, 'r').read()
+            elif ctx.hasStandin(wfile):
+                data = '\0'
             else:
                 data = ctx.filectx(wfile).data()
             if '\0' in data:
@@ -335,20 +356,19 @@ class FileData(object):
             return
 
         if status in ('M', 'A'):
+            if ctx.hasStandin(wfile):
+                wfile = ctx.findStandin(wfile)
+                isbfile = True
             res = self.checkMaxDiff(ctx, wfile, maxdiff, status)
             if res is None:
                 return
             fctx, newdata = res
             self.contents = newdata
-            change = None
-            for pfctx in fctx.parents():
-                if 'x' in fctx.flags() and 'x' not in pfctx.flags():
-                    change = _('set')
-                elif 'x' not in fctx.flags() and 'x' in pfctx.flags():
-                    change = _('unset')
-            if change:
-                lbl = _("exec mode has been <font color='red'>%s</font>")
-                self.elabel = lbl % change
+            for pctx in ctx.parents():
+                if 'x' in fctx.flags() and 'x' not in pctx.flags(wfile):
+                    self.elabel = _("exec mode has been <font color='red'>set</font>")
+                elif 'x' not in fctx.flags() and 'x' in pctx.flags(wfile):
+                    self.elabel = _("exec mode has been <font color='red'>unset</font>")
 
         if status == 'A':
             renamed = fctx.renamed()
@@ -376,5 +396,8 @@ class FileData(object):
         revs = [str(ctx), str(ctx2)]
         diffopts = patch.diffopts(repo.ui, {})
         diffopts.git = False
+        if isbfile:
+            olddata += '\0'
+            newdata += '\0'
         self.diff = mdiff.unidiff(olddata, olddate, newdata, newdate,
                                   oldname, wfile, revs, diffopts)

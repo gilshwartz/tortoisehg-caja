@@ -32,7 +32,7 @@ if os.name == 'nt':
                 pass
         threading.Thread(target=start_browser).start()
 
-    def shell_notify(paths):
+    def shell_notify(paths, noassoc=False):
         try:
             from win32com.shell import shell, shellcon
             import pywintypes
@@ -57,6 +57,10 @@ if os.name == 'nt':
             shell.SHChangeNotify(shellcon.SHCNE_UPDATEITEM,
                                  shellcon.SHCNF_IDLIST | shellcon.SHCNF_FLUSH,
                                  pidl, None)
+        if not noassoc:
+            shell.SHChangeNotify(shellcon.SHCNE_ASSOCCHANGED,
+                                 shellcon.SHCNF_FLUSH,
+                                 None, None)
 
     def update_thgstatus(ui, root, wait=False):
         '''Rewrite the file .hg/thgstatus
@@ -90,7 +94,11 @@ if os.name == 'nt':
                 time.sleep(tdelta)
 
         repo = hg.repository(ui, root) # a fresh repo object is needed
+        repo.bfstatus = True
+        repo.lfstatus = True
         repostate = repo.status() # will update .hg/dirstate as a side effect
+        repo.bfstatus = False
+        repo.lfstatus = False
         modified, added, removed, deleted = repostate[:4]
 
         dirstatus = {}
@@ -131,10 +139,17 @@ if os.name == 'nt':
                 s = dirstatus[dn]
                 f.write(s + dn + '\n')
                 ui.note("%s %s\n" % (s, dn))
-            f.rename()
+            if hasattr(f, 'rename'):
+                # On Mercurial 1.9 and earlier, there was a rename() function
+                # that served the purpose now served by close(), while close()
+                # served the purpose now served by discard().
+                f.rename()
+            else:
+                f.close()
+        return update
 
 else:
-    def shell_notify(paths):
+    def shell_notify(paths, noassoc=False):
         if not paths:
             return
         notify = os.environ.get('THG_NOTIFY', '.tortoisehg/notify')

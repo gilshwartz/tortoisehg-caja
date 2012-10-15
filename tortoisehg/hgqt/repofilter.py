@@ -6,14 +6,19 @@
 # This software may be used and distributed according to the terms
 # of the GNU General Public License, incorporated herein by reference.
 
+import os
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
+
+from mercurial import revset as hgrevset
 
 from tortoisehg.util import hglib
 from tortoisehg.hgqt.i18n import _
 from tortoisehg.hgqt import revset, qtlib
 
-_permanent_queries = ('head()', 'merge()', 'tagged()', 'file(".hgsubstate") or file(".hgsub")')
+_permanent_queries = ('head()', 'merge()',
+                      'tagged()', 'bookmark()',
+                      'file(".hgsubstate") or file(".hgsub")')
 
 class RepoFilterBar(QToolBar):
     """Toolbar for RepoWidget to filter changesets"""
@@ -30,13 +35,18 @@ class RepoFilterBar(QToolBar):
 
     _allBranchesLabel = u'\u2605 ' + _('Show all') + u' \u2605'
 
-    def __init__(self, repo, parent):
+    def __init__(self, repo, parent=None):
         super(RepoFilterBar, self).__init__(parent)
         self.layout().setContentsMargins(0, 0, 0, 0)
         self.setIconSize(QSize(16,16))
         self.setFloatable(False)
         self.setMovable(False)
         self._repo = repo
+        self._permanent_queries = list(_permanent_queries)
+        username = repo.ui.config('ui', 'username')
+        if username:
+            self._permanent_queries.insert(0,
+                hgrevset.formatspec('author(%s)', os.path.expandvars(username)))
         self.filterEnabled = True
 
         #Check if the font contains the glyph needed by the branch combo
@@ -128,7 +138,7 @@ class RepoFilterBar(QToolBar):
         if selection not in self.revsethist:
             return
         self.revsethist.remove(selection)
-        full = self.revsethist + list(_permanent_queries)
+        full = self.revsethist + self._permanent_queries
         self.revsetcombo.clear()
         self.revsetcombo.addItems(full)
         self.revsetcombo.setCurrentIndex(-1)
@@ -172,10 +182,10 @@ class RepoFilterBar(QToolBar):
         query = self.revsetcombo.lineEdit().text()
         if query in self.revsethist:
             self.revsethist.remove(query)
-        if query not in _permanent_queries:
+        if query not in self._permanent_queries:
             self.revsethist.insert(0, query)
             self.revsethist = self.revsethist[:20]
-        full = self.revsethist + list(_permanent_queries)
+        full = self.revsethist + self._permanent_queries
         self.revsetcombo.clear()
         self.revsetcombo.addItems(full)
         self.revsetcombo.lineEdit().setText(query)
@@ -185,10 +195,14 @@ class RepoFilterBar(QToolBar):
         self.entrydlg.restoreGeometry(s.value('revset/' + repoid + '/geom').toByteArray())
         self.revsethist = list(s.value('revset/' + repoid + '/queries').toStringList())
         self.filtercb.setChecked(s.value('revset/' + repoid + '/filter', True).toBool())
-        full = self.revsethist + list(_permanent_queries)
+        full = self.revsethist + self._permanent_queries
         self.revsetcombo.clear()
         self.revsetcombo.addItems(full)
         self.revsetcombo.setCurrentIndex(-1)
+
+        self._branchReloading = True
+        self.setBranch(s.value('revset/' + repoid + '/branch').toString())
+        self._branchReloading = False
 
         # Show the filter bar if necessary
         if s.value('revset/' + repoid + '/showrepofilterbar').toBool():
@@ -205,6 +219,7 @@ class RepoFilterBar(QToolBar):
         s.setValue('revset/' + repoid + '/queries', self.revsethist)
         s.setValue('revset/' + repoid + '/filter', self.filtercb.isChecked())
         s.setValue('revset/' + repoid + '/showrepofilterbar', not self.isHidden())
+        s.setValue('revset/' + repoid + '/branch', self.branch())
 
     def _initbranchfilter(self):
         self._branchLabel = QToolButton(
@@ -246,6 +261,10 @@ class RepoFilterBar(QToolBar):
         else:
             branches = self._repo.namedbranches
 
+        # easy access to common branches (Python sorted() is stable)
+        priomap = {self._repo.dirstate.branch(): -2, 'default': -1}
+        branches = sorted(branches, key=lambda e: priomap.get(e, 0))
+
         self._branchReloading = True
         self._branchCombo.clear()
         self._branchCombo.addItem(self._allBranchesLabel)
@@ -254,25 +273,30 @@ class RepoFilterBar(QToolBar):
             self._branchCombo.setItemData(self._branchCombo.count() - 1,
                                           hglib.tounicode(branch),
                                           Qt.ToolTipRole)
-        self._branchLabel.setEnabled(self.filterEnabled and (len(branches) > 1 or self._abranchAction.isChecked()))
-        self._branchCombo.setEnabled(self.filterEnabled and (len(branches) > 1 or self._abranchAction.isChecked()))
+        self._branchCombo.setEnabled(self.filterEnabled and bool(branches))
         self._branchReloading = False
 
-        if not curbranch:
-            curbranch = self._allBranchesLabel
-        self.setBranch(curbranch)
+        if curbranch and curbranch not in branches:
+            self._emitBranchChanged()  # falls back to "show all"
+        else:
+            self.setBranch(curbranch)
 
     @pyqtSlot(unicode)
     def setBranch(self, branch):
         """Change the current branch by name [unicode]"""
-        self._branchCombo.setCurrentIndex(self._branchCombo.findText(branch))
+        if not branch:
+            index = 0
+        else:
+            index = self._branchCombo.findText(branch)
+        if index >= 0:
+            self._branchCombo.setCurrentIndex(index)
 
     def branch(self):
         """Return the current branch name [unicode]"""
-        curbranch = self._branchCombo.currentText()
-        if curbranch == self._allBranchesLabel:
-            curbranch = ''
-        return unicode(curbranch)
+        if self._branchCombo.currentIndex() == 0:
+            return ''
+        else:
+            return unicode(self._branchCombo.currentText())
 
     @pyqtSlot()
     def _emitBranchChanged(self):

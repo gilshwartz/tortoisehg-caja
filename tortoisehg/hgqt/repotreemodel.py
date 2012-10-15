@@ -5,6 +5,8 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
+from mercurial import util, hg, ui
+
 from tortoisehg.util import hglib, paths
 from tortoisehg.hgqt.i18n import _
 from tortoisehg.hgqt import qtlib
@@ -73,10 +75,12 @@ def getRepoItemList(root, includeSubRepos=False):
 
 class RepoTreeModel(QAbstractItemModel):
 
+    updateProgress = pyqtSignal(int, int, QString, QString)
+
     def __init__(self, filename, parent, showSubrepos=False,
             showNetworkSubrepos=False, showShortPaths=False):
         QAbstractItemModel.__init__(self, parent)
-
+        self.updateProgress.connect(parent.updateProgress)
         self.showSubrepos = showSubrepos
         self.showNetworkSubrepos = showNetworkSubrepos
         self.showShortPaths = showShortPaths
@@ -202,10 +206,18 @@ class RepoTreeModel(QAbstractItemModel):
         group = parent.internalPointer()
         d = str(data.data(repoRegMimeType))
         if not data.hasUrls():
-            # don't allow nesting of groups
-            row = parent.row()
-            group = self.rootItem
-            parent = QModelIndex()
+            # The source is a group
+            if row < 0:
+                # The group has been dropped on a group
+                # In that case, place the group at the same level as the target
+                # group
+                row = parent.row()
+                parent = parent.parent()
+                group = parent.internalPointer()
+                if row < 0 or not isinstance(group, RepoGroupItem):
+                    # The group was dropped at the top level
+                    group = self.rootItem
+                    parent = QModelIndex()
         itemread = readXml(d, extractXmlElementName)
         if itemread is None:
             return False
@@ -250,9 +262,27 @@ class RepoTreeModel(QAbstractItemModel):
         if row < 0:
             row = rgi.childCount()
 
-        # Is the root of the repo that we want to add a subrepo contained
-        # within a repo or subrepo? If so, assume it is an hg subrepo
-        itemIsSubrepo = not paths.find_root(os.path.dirname(root)) is None
+        # make sure all paths are properly normalized
+        root = os.path.normpath(root)
+
+        # Check whether the repo that we are adding is a subrepo
+        # This check could be expensive, particularly for network repositories
+        # Thus, only perform this check on network repos if the showNetworkSubrepos
+        # flag is set
+        itemIsSubrepo = False
+        if self.showNetworkSubrepos \
+                or not paths.netdrive_status(root):
+            outerrepopath = paths.find_root(os.path.dirname(root))
+            if outerrepopath:
+                # Check whether repo we are adding is a subrepo of
+                # its containing (outer) repo
+                # This check is currently quite imperfect, since it
+                # only checks the current repo revision
+                outerrepo = hg.repository(ui.ui(), path=outerrepopath)
+                relroot = util.normpath(root[len(outerrepopath)+1:])
+                if relroot in outerrepo['.'].substate:
+                    itemIsSubrepo = True
+
         self.beginInsertRows(grp, row, row)
         if itemIsSubrepo:
             ri = SubrepoItem(root)
@@ -309,13 +339,23 @@ class RepoTreeModel(QAbstractItemModel):
             count += 1
 
     def loadSubrepos(self, root, filterFunc=(lambda r: True)):
-        for c in getRepoItemList(root):
+        repoList = getRepoItemList(root)
+        for n, c in enumerate(repoList):
+            QCoreApplication.processEvents()
             if filterFunc(c.rootpath()):
                 if self.showNetworkSubrepos \
                         or not paths.netdrive_status(c.rootpath()):
+                    self.updateProgress.emit(n, len(repoList),
+                        _('Updating repository registry'),
+                        _('Loading repository %s')
+                        % hglib.tounicode(c.rootpath()))
+                    QCoreApplication.processEvents()
                     self.removeRows(0, c.childCount(),
                         self.createIndex(c.row(), 0, c))
                     c.appendSubrepos()
+        self.updateProgress.emit(len(repoList), len(repoList),
+            _('Updating repository registry'),
+            _('Repository Registry updated'))
 
     def updateCommonPaths(self, showShortPaths=None):
         if not showShortPaths is None:
@@ -327,3 +367,7 @@ class RepoTreeModel(QAbstractItemModel):
                 else:
                     grp.updateCommonPath('')
 
+    def sortchilds(self, childs, keyfunc):
+        self.layoutAboutToBeChanged.emit()
+        childs.sort(key=keyfunc)
+        self.layoutChanged.emit()

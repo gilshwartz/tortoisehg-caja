@@ -6,7 +6,7 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
-import re
+import re, os
 
 from mercurial import util
 
@@ -125,9 +125,17 @@ class Scintilla(QsciScintilla):
 
     def __init__(self, parent=None):
         super(Scintilla, self).__init__(parent)
+        self.autoUseTabs = True
         self.setUtf8(True)
+        self.setWrapVisualFlags(QsciScintilla.WrapFlagByBorder)
         self.textChanged.connect(self._resetfindcond)
         self._resetfindcond()
+
+
+    def read(self, f):
+        result = super(Scintilla, self).read(f)
+        self.setDefaultEolMode()
+        return result
 
     def inputMethodQuery(self, query):
         if query == Qt.ImMicroFocus:
@@ -171,23 +179,28 @@ class Scintilla(QsciScintilla):
         else:
             self._stdMenu.clear()
         if not self.isReadOnly():
-            a = self._stdMenu.addAction(_('Undo'), self.undo, QKeySequence.Undo)
+            a = self._stdMenu.addAction(_('Undo'), self.undo)
+            a.setShortcuts(QKeySequence.Undo)
             a.setEnabled(self.isUndoAvailable())
-            a = self._stdMenu.addAction(_('Redo'), self.redo, QKeySequence.Redo)
+            a = self._stdMenu.addAction(_('Redo'), self.redo)
+            a.setShortcuts(QKeySequence.Redo)
             a.setEnabled(self.isRedoAvailable())
             self._stdMenu.addSeparator()
-            a = self._stdMenu.addAction(_('Cut'), self.cut, QKeySequence.Cut)
+            a = self._stdMenu.addAction(_('Cut'), self.cut)
+            a.setShortcuts(QKeySequence.Cut)
             a.setEnabled(self.hasSelectedText())
-        a = self._stdMenu.addAction(_('Copy'), self.copy, QKeySequence.Copy)
+        a = self._stdMenu.addAction(_('Copy'), self.copy)
+        a.setShortcuts(QKeySequence.Copy)
         a.setEnabled(self.hasSelectedText())
         if not self.isReadOnly():
-            self._stdMenu.addAction(_('Paste'), self.paste, QKeySequence.Paste)
-            a = self._stdMenu.addAction(_('Delete'), self.removeSelectedText,
-                               QKeySequence.Delete)
+            a = self._stdMenu.addAction(_('Paste'), self.paste)
+            a.setShortcuts(QKeySequence.Paste)
+            a = self._stdMenu.addAction(_('Delete'), self.removeSelectedText)
+            a.setShortcuts(QKeySequence.Delete)
             a.setEnabled(self.hasSelectedText())
         self._stdMenu.addSeparator()
-        self._stdMenu.addAction(_('Select All'),
-                                self.selectAll, QKeySequence.SelectAll)
+        a = self._stdMenu.addAction(_('Select All'), self.selectAll)
+        a.setShortcuts(QKeySequence.SelectAll)
         self._stdMenu.addSeparator()
         qsci = QsciScintilla
         wrapmenu = QMenu(_('Wrap'), self)
@@ -210,7 +223,7 @@ class Scintilla(QsciScintilla):
                 a.setChecked(self.whitespaceVisibility() == m)
                 a.triggered.connect(lambda: self.setWhitespaceVisibility(m))
             mkaction(name, mode)
-        vsmenu = QMenu(_('EolnVisibility'), self)
+        vsmenu = QMenu(_('EOL Visibility'), self)
         for name, mode in ((_('Visible'), True),
                            (_('Invisible'), False)):
             def mkaction(n, m):
@@ -219,20 +232,72 @@ class Scintilla(QsciScintilla):
                 a.setChecked(self.eolVisibility() == m)
                 a.triggered.connect(lambda: self.setEolVisibility(m))
             mkaction(name, mode)
-        self._stdMenu.addMenu(wrapmenu)
-        self._stdMenu.addMenu(wsmenu)
-        self._stdMenu.addMenu(vsmenu)
+        eolmodemenu = None
+        tabindentsmenu = None
+        acmenu = None
+        if not self.isReadOnly():
+            eolmodemenu = QMenu(_('EOL Mode'), self)
+            for name, mode in ((_('Windows'), qsci.EolWindows),
+                               (_('Unix'), qsci.EolUnix),
+                               (_('Mac'), qsci.EolMac)):
+                def mkaction(n, m):
+                    a = eolmodemenu.addAction(n)
+                    a.setCheckable(True)
+                    a.setChecked(self.eolMode() == m)
+                    a.triggered.connect(lambda: self.setEolMode(m))
+                mkaction(name, mode)
+            tabindentsmenu = QMenu(_('TAB inserts'), self)
+            for name, mode in ((_('Auto'), -1),
+                               (_('TAB'), True),
+                               (_('Spaces'), False)):
+                def mkaction(n, m):
+                    a = tabindentsmenu.addAction(n)
+                    a.setCheckable(True)
+                    a.setChecked(self.indentationsUseTabs() == m or \
+                        (self.autoUseTabs and n == 'Auto'))
+                    a.triggered.connect(lambda: self.setIndentationsUseTabs(m))
+                mkaction(name, mode)
+            acmenu = QMenu(_('Auto-Complete'), self)
+            for name, value in ((_('Enable'), 2),
+                                (_('Disable'), -1)):
+                def mkaction(n, v):
+                    a = acmenu.addAction(n)
+                    a.setCheckable(True)
+                    a.setChecked(self.autoCompletionThreshold() == v)
+                    a.triggered.connect(lambda: self.setAutoCompletionThreshold(v))
+                mkaction(name, value)
+
+        editoptsmenu = QMenu(_('Editor Options'), self)
+        editoptsmenu.addMenu(wrapmenu)
+        editoptsmenu.addSeparator()
+        editoptsmenu.addMenu(wsmenu)
+        if (tabindentsmenu): editoptsmenu.addMenu(tabindentsmenu)
+        editoptsmenu.addSeparator()
+        editoptsmenu.addMenu(vsmenu)
+        if (eolmodemenu): editoptsmenu.addMenu(eolmodemenu)
+        editoptsmenu.addSeparator()
+        if (acmenu): editoptsmenu.addMenu(acmenu)
+        self._stdMenu.addMenu(editoptsmenu)
         return self._stdMenu
 
     def saveSettings(self, qs, prefix):
         qs.setValue(prefix+'/wrap', self.wrapMode())
         qs.setValue(prefix+'/whitespace', self.whitespaceVisibility())
         qs.setValue(prefix+'/eol', self.eolVisibility())
+        if self.autoUseTabs:
+            qs.setValue(prefix+'/usetabs', -1)
+        else:
+            qs.setValue(prefix+'/usetabs', self.indentationsUseTabs())
+        qs.setValue(prefix+'/autocomplete', self.autoCompletionThreshold())
 
     def loadSettings(self, qs, prefix):
         self.setWrapMode(qs.value(prefix+'/wrap').toInt()[0])
         self.setWhitespaceVisibility(qs.value(prefix+'/whitespace').toInt()[0])
         self.setEolVisibility(qs.value(prefix+'/eol').toBool())
+        self.setIndentationsUseTabs(qs.value(prefix+'/usetabs').toInt()[0])
+        self.setDefaultEolMode()
+        self.setAutoCompletionThreshold(qs.value(prefix+'/autocomplete').toInt()[0])
+
 
     @pyqtSlot(unicode, bool, bool, bool)
     def find(self, exp, icase=True, wrap=False, forward=True):
@@ -308,6 +373,20 @@ class Scintilla(QsciScintilla):
     def showHScrollBar(self, show=True):
         self.SendScintilla(self.SCI_SETHSCROLLBAR, show)
 
+    def setDefaultEolMode(self):
+        if self.lines():
+            mode = qsciEolModeFromLine(hglib.fromunicode(self.text(0)))
+        else:
+            mode = qsciEolModeFromOs()
+        self.setEolMode(mode)
+        return mode
+
+    def setIndentationsUseTabs(self, tabs):
+        self.autoUseTabs = (tabs == -1)
+        if self.autoUseTabs and self.lines():
+            tabs = findTabIndentsInLines(hglib.fromunicode(self.text()))
+        super(Scintilla, self).setIndentationsUseTabs(tabs)
+
 class SearchToolBar(QToolBar):
     conditionChanged = pyqtSignal(unicode, bool, bool)
     """Emitted (pattern, icase, wrap) when search condition changed"""
@@ -315,7 +394,7 @@ class SearchToolBar(QToolBar):
     searchRequested = pyqtSignal(unicode, bool, bool, bool)
     """Emitted (pattern, icase, wrap, forward) when requested"""
 
-    def __init__(self, parent=None, hidable=False, settings=None):
+    def __init__(self, parent=None, hidable=False):
         super(SearchToolBar, self).__init__(_('Search'), parent,
                                             objectName='search',
                                             iconSize=QSize(16, 16))
@@ -324,6 +403,7 @@ class SearchToolBar(QToolBar):
                                              shortcut=Qt.Key_Escape)
             self._close_button.clicked.connect(self.hide)
             self.addWidget(self._close_button)
+            self.addWidget(qtlib.Spacer(2, 2))
 
         self._le = QLineEdit()
         if hasattr(self._le, 'setPlaceholderText'): # Qt >= 4.7
@@ -335,28 +415,35 @@ class SearchToolBar(QToolBar):
             self._lbl.setBuddy(self._le)
         self._le.returnPressed.connect(self._emitSearchRequested)
         self.addWidget(self._le)
+        self.addWidget(qtlib.Spacer(4, 4))
         self._chk = QCheckBox(_('Ignore case'))
         self.addWidget(self._chk)
         self._wrapchk = QCheckBox(_('Wrap search'))
         self.addWidget(self._wrapchk)
-        self._bt = QPushButton(_('Search'), enabled=False)
+        self._btprev = QPushButton(_('Prev'), icon=qtlib.geticon('go-up'),
+                                   iconSize=QSize(16, 16))
+        self._btprev.clicked.connect(
+            lambda: self._emitSearchRequested(forward=False))
+        self.addWidget(self._btprev)
+        self._bt = QPushButton(_('Next'), icon=qtlib.geticon('go-down'),
+                               iconSize=QSize(16, 16))
         self._bt.clicked.connect(self._emitSearchRequested)
-        self._le.textChanged.connect(lambda s: self._bt.setEnabled(bool(s)))
+        self._le.textChanged.connect(self._updateSearchButtons)
         self.addWidget(self._bt)
 
         self.setFocusProxy(self._le)
+        self.setStyleSheet(qtlib.tbstylesheet)
 
-        def defaultsettings():
-            s = QSettings()
-            s.beginGroup('searchtoolbar')
-            return s
-        self._settings = settings or defaultsettings()
+        self._settings = QSettings()
+        self._settings.beginGroup('searchtoolbar')
         self.searchRequested.connect(self._writesettings)
         self._readsettings()
 
         self._le.textChanged.connect(self._emitConditionChanged)
         self._chk.toggled.connect(self._emitConditionChanged)
         self._wrapchk.toggled.connect(self._emitConditionChanged)
+
+        self._updateSearchButtons()
 
     def keyPressEvent(self, event):
         if event.matches(QKeySequence.FindNext):
@@ -402,6 +489,12 @@ class SearchToolBar(QToolBar):
     def _emitSearchRequested(self, forward=True):
         self.searchRequested.emit(self.pattern(), self.caseInsensitive(),
                                   self.wrapAround(), forward)
+
+    @pyqtSlot()
+    def _updateSearchButtons(self):
+        enabled = bool(self._le.text())
+        self._btprev.setEnabled(enabled)
+        self._bt.setEnabled(enabled)
 
     def pattern(self):
         """Returns the current search pattern [unicode]"""
@@ -464,10 +557,34 @@ class KeyPressInterceptor(QObject):
             return True
         return False
 
+def qsciEolModeFromOs():
+    if os.name.startswith('nt'):
+        return QsciScintilla.EolWindows
+    else:
+        return QsciScintilla.EolUnix
+
+def qsciEolModeFromLine(line):
+    if line.endswith('\r\n'):
+        return QsciScintilla.EolWindows
+    elif line.endswith('\r'):
+        return QsciScintilla.EolMac
+    elif line.endswith('\n'):
+        return QsciScintilla.EolUnix
+    else:
+        return qsciEolModeFromOs()
+
+def findTabIndentsInLines(lines, linestocheck=100):
+    for line in lines[:linestocheck]:
+        if line.startswith(' '):
+            return False
+        elif line.startswith('\t'):
+            return True
+    return False # Use spaces for indents default
+    
 def fileEditor(filename, **opts):
     'Open a simple modal file editing dialog'
     dialog = QDialog()
-    dialog.setWindowFlags(dialog.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+    dialog.setWindowFlags(dialog.windowFlags() & ~Qt.WindowContextHelpButtonHint | Qt.WindowMaximizeButtonHint)
     dialog.setWindowTitle(filename)
     dialog.setLayout(QVBoxLayout())
     editor = Scintilla()
@@ -487,7 +604,7 @@ def fileEditor(filename, **opts):
     def showsearchbar():
         searchbar.show()
         searchbar.setFocus(Qt.OtherFocusReason)
-    QShortcut(QKeySequence.Find, dialog, showsearchbar)
+    qtlib.newshortcutsforstdkey(QKeySequence.Find, dialog, showsearchbar)
     dialog.layout().addWidget(searchbar)
 
     BB = QDialogButtonBox
@@ -508,6 +625,7 @@ def fileEditor(filename, **opts):
         f.open(QIODevice.ReadOnly)
         editor.read(f)
         editor.setModified(False)
+
         ret = dialog.exec_()
         if ret == QDialog.Accepted:
             f = QFile(filename)

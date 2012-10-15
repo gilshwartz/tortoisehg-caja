@@ -53,7 +53,7 @@ The syntax is ::
 	thg archive -r [REV] -t [TYPE] [DEST]
 
 where [REV] is the revision to archive, [TYPE] is the type of archive to create,
-and [DEST] is the name of the file or filder to create.
+and [DEST] is the name of the file or folder to create.
 
 See `hg.1.html#archive <http://www.selenic.com/mercurial/hg.1.html#archive>`_ 
 for details, or type :command:`hg help archive` at the command line or in the

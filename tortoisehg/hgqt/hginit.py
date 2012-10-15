@@ -64,12 +64,12 @@ class InitDialog(QDialog):
         self.vbox.addLayout(self.hbox)
 
         # some extras
-        self.hgcmd_lbl = QLabel(_('Hg command:'))
-        self.hgcmd_lbl.setAlignment(Qt.AlignRight)
-        self.hgcmd_txt = QLineEdit()
-        self.hgcmd_txt.setReadOnly(True)
-        self.grid.addWidget(self.hgcmd_lbl, 4, 0)
-        self.grid.addWidget(self.hgcmd_txt, 4, 1)
+        self.hmcmd_lbl = QLabel(_('Hg command:'))
+        self.hmcmd_lbl.setAlignment(Qt.AlignRight)
+        self.hmcmd_txt = QLineEdit()
+        self.hmcmd_txt.setReadOnly(True)
+        self.grid.addWidget(self.hmcmd_lbl, 4, 0)
+        self.grid.addWidget(self.hmcmd_txt, 4, 1)
 
         # init defaults
         self.cwd = os.getcwd()
@@ -115,7 +115,7 @@ class InitDialog(QDialog):
         if self.make_pre_1_7_chk.isChecked():
             cmd.append('--config format.dotencode=False')
         cmd.append(self.getPath())
-        self.hgcmd_txt.setText(hglib.tounicode(' '.join(cmd)))
+        self.hmcmd_txt.setText(hglib.tounicode(' '.join(cmd)))
 
     def getPath(self):
         return hglib.fromunicode(self.dest_edit.text()).strip()

@@ -1,11 +1,13 @@
 from ctypes import *
 import comtypes
 import pythoncom
-from comtypes import IUnknown, GUID, COMMETHOD, POINTER
+from comtypes import IUnknown, GUID, COMMETHOD, POINTER, COMError
 from comtypes.typeinfo import ITypeInfo
 from comtypes.client import CreateObject
 from comtypes.automation import _midlSAFEARRAY
 from _winreg import *
+from tortoisehg.hgqt import qtlib
+from tortoisehg.hgqt.i18n import _
 
 class IBugTraqProvider(IUnknown):
     _iid_ = GUID("{298B927C-7220-423C-B7B4-6E241F00CD93}")
@@ -72,6 +74,7 @@ class BugTraq:
     def __init__(self, guid):
         self.guid = guid
         self.bugtr = None
+        self.errorshown = False # do not show the COM Error more than once
 
     def _get_bugtraq_object(self):
         if self.bugtr == None:
@@ -79,6 +82,11 @@ class BugTraq:
             try:
                 self.bugtr = obj.QueryInterface(IBugTraqProvider2)
             except COMError:
+                if not self.errorshown:
+                    self.errorshown = True
+                    qtlib.ErrorMsgBox(_('Issue Tracker Plugin Error'),
+                        _('Could not instantiate Issue Tracker plugin COM object'),
+                        _('This error will not be shown again until you restart the workbench'))
                 return None
         return self.bugtr
 
@@ -90,12 +98,19 @@ class BugTraq:
         pathlist = bstrarray.from_param(())
 
         bugtr = self._get_bugtraq_object()
-        if self.supports_bugtraq2_interface():
-            (bugid, revPropNames, revPropValues, newmessage) = bugtr.GetCommitMessage2(
-                    0, parameters, commonurl, commonroot, pathlist, logmessage, bugid)
-        else:
-            newmessage = bugtr.GetCommitMessage(
-                    0, parameters, commonroot, pathlist, logmessage)
+        if bugtr is None:
+            return ""
+        try:
+            if self.supports_bugtraq2_interface():
+                (bugid, revPropNames, revPropValues, newmessage) = bugtr.GetCommitMessage2(
+                        0, parameters, commonurl, commonroot, pathlist, logmessage, bugid)
+            else:
+                newmessage = bugtr.GetCommitMessage(
+                        0, parameters, commonroot, pathlist, logmessage)
+        except COMError:
+            qtlib.ErrorMsgBox(_('Issue Tracker Plugin Error'),
+                _('Error getting commit message information from Issue Tracker plugin'))
+            return ""
 
         return newmessage
 
@@ -108,8 +123,15 @@ class BugTraq:
         pathlist = bstrarray.from_param(())
 
         bugtr = self._get_bugtraq_object()
-        errormessage = bugtr.OnCommitFinished(0, commonroot, pathlist,
+        if bugtr is None:
+            return ""
+        try:
+            errormessage = bugtr.OnCommitFinished(0, commonroot, pathlist,
                 logmessage, 0)
+        except COMError:
+            qtlib.ErrorMsgBox(_('Issue Tracker Plugin Error'),
+                _('Error executing "commit finished" trigger'))
+            return ""
         return errormessage
 
     def show_options_dialog(self, options):
@@ -117,7 +139,14 @@ class BugTraq:
             return ""
 
         bugtr = self._get_bugtraq_object()
-        options = bugtr.ShowOptionsDialog(0, options)
+        if bugtr is None:
+            return ""
+        try:
+            options = bugtr.ShowOptionsDialog(0, options)
+        except COMError:
+            qtlib.ErrorMsgBox(_('Issue Tracker Plugin Error'),
+                _('Cannot open Plugin Options dialog'))
+            return ""
         return options
 
     def has_options(self):
@@ -125,10 +154,14 @@ class BugTraq:
             return False
 
         bugtr = self._get_bugtraq_object()
+        if bugtr is None:
+            return False
         return bugtr.HasOptions() != 0
 
     def get_link_text(self, parameters):
         bugtr = self._get_bugtraq_object()
+        if bugtr is None:
+            return ""
         return bugtr.GetLinkText(0, parameters)
 
     def supports_bugtraq2_interface(self):

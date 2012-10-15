@@ -11,7 +11,7 @@ import re
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-from mercurial import match, util, error
+from mercurial import commands, match, ui, util, error
 
 from tortoisehg.hgqt.i18n import _
 from tortoisehg.util import shlib, hglib
@@ -28,8 +28,9 @@ class HgignoreDialog(QDialog):
     def __init__(self, repo, parent=None, *pats):
         'Initialize the Dialog'
         QDialog.__init__(self, parent)
-        self.setWindowFlags(self.windowFlags() &
-                            ~Qt.WindowContextHelpButtonHint)
+        self.setWindowFlags(self.windowFlags()
+            & ~Qt.WindowContextHelpButtonHint
+            | Qt.WindowMaximizeButtonHint)
 
         self.repo = repo
         self.pats = pats
@@ -171,7 +172,7 @@ class HgignoreDialog(QDialog):
         self.contextmenu.exec_(point)
 
     def unknownDoubleClicked(self, item):
-        self.insertFilters([str(item.text())])
+        self.insertFilters([hglib.fromunicode(item.text())])
 
     def insertFilters(self, pats=False, isregexp=False):
         if pats is False:
@@ -247,8 +248,10 @@ class HgignoreDialog(QDialog):
 
         try:
             self.repo.thginvalidate()
+            self.repo.lfstatus = True
             wctx = self.repo[None]
             wctx.status(unknown=True)
+            self.repo.lfstatus = False
         except (EnvironmentError, error.RepoError), e:
             qtlib.WarningMsgBox(_('Unable to read repository status'),
                                 uni(str(e)), parent=self)
@@ -263,8 +266,11 @@ class HgignoreDialog(QDialog):
             return
 
         if not self.pats:
-            self.pats = [self.lclunknowns[i.row()]
+            try:
+                self.pats = [self.lclunknowns[i.row()]
                          for i in self.unknownlist.selectedIndexes()]
+            except IndexError:
+                self.pats = []
         self.lclunknowns = wctx.unknown()
         self.unknownlist.clear()
         self.unknownlist.addItems([uni(u) for u in self.lclunknowns])
@@ -279,11 +285,20 @@ class HgignoreDialog(QDialog):
     def writeIgnoreFile(self):
         eol = self.doseoln and '\r\n' or '\n'
         out = eol.join(self.ignorelines) + eol
+        hasignore = os.path.exists(self.repo.join(self.ignorefile))
 
         try:
             f = util.atomictempfile(self.ignorefile, 'wb', createmode=None)
             f.write(out)
-            f.rename()
+            f.close()
+            if not hasignore:
+                ret = qtlib.QuestionMsgBox(_('New file created'),
+                                           _('TortoiseHg has created a new '
+                                             '.hgignore file.  Would you like to '
+                                             'add this file to the source code '
+                                             'control repository?'), parent=self)
+                if ret:
+                    commands.add(ui.ui(), self.repo, self.ignorefile)
             shlib.shell_notify([self.ignorefile])
             self.ignoreFilterUpdated.emit()
         except EnvironmentError, e:

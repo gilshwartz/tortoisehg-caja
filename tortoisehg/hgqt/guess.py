@@ -158,8 +158,10 @@ class DetectRenameDialog(QDialog):
 
     def refresh(self):
         self.repo.thginvalidate()
+        self.repo.lfstatus = True
         wctx = self.repo[None]
         wctx.status(unknown=True)
+        self.repo.lfstatus = False
         self.unrevlist.clear()
         dests = []
         for u in wctx.unknown():

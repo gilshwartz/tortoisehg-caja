@@ -24,7 +24,7 @@ V Linuxu
 	
 .. note:: Ve Window obsahuje TortoiseHg jak thg.exe, tak thgw.exe. programy. Nástroj thgw.exe je zamýšlen pro použití v zástupci na ploše nebo v menu. Nástroj thg.exe je pro použití v konzoli a pro volání nápovědy z příkazového řádku. Dávkový soubor thg.cmd, který instalace přidá do proměnné PATH, volá thg.exe.	
     
-TortoiseHg je napsán převážně v Pythonu a PyQt (extenze rozhraní Windowsu je významná výjimka). Skript thg a dialogy TortoiseHg lze použít na jakékoliv platformě, která podporuje PyQt, včetně Mac OS X.
+TortoiseHg je napsán převážně v Pythonu a PyQt (extenze rozhraní Windows je významná výjimka). Skript thg a dialogy TortoiseHg lze použít na jakékoliv platformě, která podporuje PyQt, včetně Mac OS X.
 
 Instalace TortoiseHg
 ====================
@@ -62,7 +62,7 @@ Jazykové nastavení ve Windows
 Uživatelské rozhraní TorotiseHg bylo přeloženo do mnoha jazyků. Jazykové balíčky nejsou potřebné, neboť všechny přeložené jazyky jsou nainstalované. Preferovaný jazyk (:guilabel:`UI Language`) lze nastavit v nástroji pro globální konfiguraci.
 
 Kontextové nabídky rozhraní Windows jsou překládány pomocí registrů Windows. Překlady pro mnohé lokalizace byly nainstalovány do složky
-:file:`C:\\Program Files\\TortoiseHg\\i18n\\cmenu`. Na vybraném jazyku proveďte dvojpoklep a potvrďte dotaz. 
+:file:`C:\\Program Files\\TortoiseHg\\i18n\\cmenu`. Na vybraném jazyku proveďte dvojpoklep a potvrďte dotazy. 
 
 
 V OS Linux a Mac

@@ -12,7 +12,7 @@ from mercurial import util
 
 from tortoisehg.util import hglib, shlib
 from tortoisehg.hgqt.i18n import _
-from tortoisehg.hgqt import qtlib, status, cmdui
+from tortoisehg.hgqt import qtlib, status, cmdui, lfprompt
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -51,7 +51,7 @@ class QuickOpDialog(QDialog):
         toplayout = QVBoxLayout()
         toplayout.setContentsMargins(5, 5, 5, 0)
         layout.addLayout(toplayout)
-        
+
         hbox = QHBoxLayout()
         lbl = QLabel(LABELS[command][0])
         slbl = QLabel()
@@ -68,12 +68,20 @@ class QuickOpDialog(QDialog):
                 }
         filetypes = types[self.command]
 
+        checktypes = { 'add'    : '?',
+                       'forget' : '',
+                       'revert' : 'MAR!',
+                       'remove' : '',
+                     }
+        defcheck = checktypes[self.command]
+
         opts = {}
         for s, val in status.statusTypes.iteritems():
             opts[val.name] = s in filetypes
 
         opts['checkall'] = True # pre-check all matching files
-        stwidget = status.StatusWidget(repo, pats, opts, self)
+        stwidget = status.StatusWidget(repo, pats, opts, self,
+                                       defcheck=defcheck)
         toplayout.addWidget(stwidget, 1)
 
         hbox = QHBoxLayout()
@@ -108,6 +116,15 @@ class QuickOpDialog(QDialog):
         toplayout.addLayout(hbox)
         self.bb = bb
 
+        if self.command == 'add':
+            if 'largefiles' in self.repo.extensions():
+                self.addLfilesButton = QPushButton(_('Add &Largefiles'))
+            else:
+                self.addLfilesButton = None
+            if self.addLfilesButton:
+                self.addLfilesButton.clicked.connect(self.addLfiles)
+                bb.addButton(self.addLfilesButton, BB.ActionRole)
+
         layout.addWidget(self.statusbar)
 
         s = QSettings()
@@ -122,7 +139,8 @@ class QuickOpDialog(QDialog):
         self.stwidget.refreshWctx()
         QShortcut(QKeySequence('Ctrl+Return'), self, self.accept)
         QShortcut(QKeySequence('Ctrl+Enter'), self, self.accept)
-        QShortcut(QKeySequence.Refresh, self, self.stwidget.refreshWctx)
+        qtlib.newshortcutsforstdkey(QKeySequence.Refresh, self,
+                                    self.stwidget.refreshWctx)
         QShortcut(QKeySequence('Escape'), self, self.reject)
 
     def commandStarted(self):
@@ -147,9 +165,14 @@ class QuickOpDialog(QDialog):
                                 _('No operation to perform'),
                                 parent=self)
             return
+        self.repo.bfstatus = True
+        self.repo.lfstatus = True
+        repostate = self.repo.status()
+        self.repo.bfstatus = False
+        self.repo.lfstatus = False
         if self.command == 'remove':
             if not self.chk.isChecked():
-                modified = self.repo.status()[0]
+                modified = repostate[0]
                 selmodified = []
                 for wfile in files:
                     if wfile in modified:
@@ -167,14 +190,18 @@ class QuickOpDialog(QDialog):
                         cmdline.append('--force')
                     elif ret == 2:
                         return
-            wctx = self.repo[None]
+            unknown, ignored = repostate[4:6]
             for wfile in files:
-                if wfile not in wctx:
+                if wfile in unknown or wfile in ignored:
                     try:
                         util.unlink(wfile)
                     except EnvironmentError:
                         pass
                     files.remove(wfile)
+        elif self.command == 'add':
+            if 'largefiles' in self.repo.extensions():
+                self.addWithPrompt(files)
+                return
         if files:
             cmdline.extend(files)
             self.files = files
@@ -198,6 +225,35 @@ class QuickOpDialog(QDialog):
                     s.setValue('quickop/forceremove', self.chk.isChecked())
             QDialog.reject(self)
 
+    def addLfiles(self):
+        if 'largefiles' in self.repo.extensions():
+            cmdline = ['add', '--large']
+        files = self.stwidget.getChecked()
+        if not files:
+            qtlib.WarningMsgBox(_('No files selected'),
+                                _('No operation to perform'),
+                                parent=self)
+            return
+        cmdline.extend(files)
+        self.files = files
+        self.cmd.run(cmdline)
+
+    def addWithPrompt(self, files):
+        result = lfprompt.promptForLfiles(self, self.repo.ui, self.repo, files)
+        if not result:
+            return
+        files, lfiles = result
+        if files:
+            cmdline = ['add']
+            cmdline.extend(files)
+            self.files = files
+            self.cmd.run(cmdline)
+        if lfiles:
+            if 'largefiles' in self.repo.extensions():
+                cmdline = ['add', '--large']
+            cmdline.extend(lfiles)
+            self.files = lfiles
+            self.cmd.run(cmdline)
 
 instance = None
 class HeadlessQuickop(QWidget):

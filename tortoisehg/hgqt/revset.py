@@ -51,6 +51,9 @@ _common = (
        'mercurial/hg.1.html#dates">help dates</a>')),
     ('ancestor(single, single)',
      _('Greatest common ancestor of the two changesets.')),
+    ('matching(revset [, ''field(s) to match''])',
+     _('Find revisions that "match" one or more fields of the given set of '
+       'revisions.')),
 )
 
 _filepatterns = (
@@ -86,7 +89,7 @@ _ancestry = (
     ('p2(set)',
      _('Second parent for all changesets in set, or the working directory.')),
     ('roots(set)',
-     _('Changesets whith no parent changeset in set.')),
+     _('Changesets with no parent changeset in set.')),
     ('present(set)',
      _('An empty set, if any revision in set isn\'t found; otherwise, '
        'all revisions in set.')),
@@ -128,11 +131,13 @@ class RevisionSetQuery(QDialog):
         layout.setContentsMargins(*(4,)*4)
         self.setLayout(layout)
 
+        logical = _logical
+        ancestry = _ancestry
+
         if 'hgsubversion' in repo.extensions():
-            global _logical, _ancestry
-            _logical = list(_logical) + [('fromsvn()',
+            logical = list(logical) + [('fromsvn()',
                     _('all revisions converted from subversion')),]
-            _ancestry = list(_ancestry) + [('svnrev(rev)',
+            ancestry = list(ancestry) + [('svnrev(rev)',
                     _('changeset which represents converted svn revision')),]
 
         self.stbar = cmdui.ThgStatusBar(self)
@@ -174,8 +179,8 @@ class RevisionSetQuery(QDialog):
         def setAncHelp(row):
             self.stbar.showMessage(self.alw._help[row])
         self.alw = QListWidget(self)
-        self.alw.addItems([x for x, y in _ancestry])
-        self.alw._help = [y for x, y in _ancestry]
+        self.alw.addItems([x for x, y in ancestry])
+        self.alw._help = [y for x, y in ancestry]
         self.alw.currentRowChanged.connect(setAncHelp)
         agb.layout().addWidget(self.alw)
         hbox.addWidget(agb)
@@ -186,8 +191,8 @@ class RevisionSetQuery(QDialog):
         def setManipHelp(row):
             self.stbar.showMessage(self.llw._help[row])
         self.llw = QListWidget(self)
-        self.llw.addItems([x for x, y in _logical])
-        self.llw._help = [y for x, y in _logical]
+        self.llw.addItems([x for x, y in logical])
+        self.llw._help = [y for x, y in logical]
         self.llw.currentRowChanged.connect(setManipHelp)
         lgb.layout().addWidget(self.llw)
         hbox.addWidget(lgb)
@@ -204,7 +209,8 @@ class RevisionSetQuery(QDialog):
         layout.addLayout(hbox, 1)
 
         self.entry = RevsetEntry(self)
-        self.entry.addCompletions(_logical, _ancestry, _filepatterns, _common)
+        self.entry.addCompletions(logical, ancestry, _filepatterns, _common)
+        self.entry.returnPressed.connect(self.returnPressed)
         layout.addWidget(self.entry, 0)
 
         txt = _('<a href="http://www.selenic.com/mercurial/hg.1.html#revsets">'
@@ -234,7 +240,6 @@ class RevisionSetQuery(QDialog):
         self.progress.emit(*cmdui.stopProgress(_('Running')))
 
     def returnPressed(self):
-        text = self.entry.text()
         if self.entry.hasSelectedText():
             lineFrom, indexFrom, lineTo, indexTo = self.entry.getSelection()
             start = self.entry.positionFromLineIndex(lineFrom, indexFrom)
@@ -253,7 +258,6 @@ class RevisionSetQuery(QDialog):
         else:
             self.runQuery()
         self.entry.setFocus()
-
 
     def currentItemChanged(self, current, previous):
         if current is None:
@@ -306,6 +310,9 @@ class RevisionSetQuery(QDialog):
         self.accept()
 
 class RevsetEntry(QsciScintilla):
+
+    returnPressed = pyqtSignal()
+
     def __init__(self, parent=None):
         super(RevsetEntry, self).__init__(parent)
         self.setMarginWidth(1, 0)
@@ -348,6 +355,7 @@ class RevsetEntry(QsciScintilla):
         if event.key() in (Qt.Key_Enter, Qt.Key_Return):
             if not self.isListActive():
                 event.ignore()
+                self.returnPressed.emit()
                 return
         super(RevsetEntry, self).keyPressEvent(event)
 
@@ -379,7 +387,7 @@ class RevsetThread(QThread):
         cwd = os.getcwd()
         try:
             os.chdir(self.repo.root)
-            func = hglib.revsetmatch(self.repo.ui, self.text)
+            func = revset.match(self.repo.ui, self.text)
             l = []
             for c in func(self.repo, range(len(self.repo))):
                 l.append(c)

@@ -10,7 +10,7 @@ import sys, os
 from mercurial import node
 from mercurial import ui, hg, util, error
 
-from tortoisehg.util import hglib
+from tortoisehg.util import hglib, paths
 from tortoisehg.hgqt.i18n import _
 from tortoisehg.hgqt import qtlib, hgrcutil
 
@@ -189,7 +189,10 @@ class RepoItem(RepoTreeItem):
     def data(self, column, role):
         if role == Qt.DecorationRole:
             if column == 0:
-                ico = qtlib.geticon('hg')
+                baseiconname = 'hg'
+                if paths.is_unc_path(self.rootpath()):
+                    baseiconname = 'thg-remote-repo'
+                ico = qtlib.geticon(baseiconname)
                 if not self._valid:
                     ico = qtlib.getoverlaidicon(ico, qtlib.geticon('dialog-warning'))
                 return QVariant(ico)
@@ -221,13 +224,21 @@ class RepoItem(RepoTreeItem):
             spath2 = spath2.lower()
 
         if cpath and spath2.startswith(cpath):
-            iShortPathStart = len(cpath) + 1
+            iShortPathStart = len(cpath)
             spath = spath[iShortPathStart:]
+            if spath and spath[0] in '/\\':
+                # do not show a slash at the beginning of the short path
+                spath = spath[1:]
+
         return hglib.tounicode(spath)
 
     def menulist(self):
-        return ['open', 'clone', 'addsubrepo', None, 'explore',
-                'terminal', 'copypath', None, 'rename', 'remove', None, 'settings']
+        acts = ['open', 'clone', 'addsubrepo', None, 'explore',
+                'terminal', 'copypath', None, 'rename', 'remove']
+        if self.childCount() > 0:
+            acts.extend([None, (_('Sort'), ['sortbyname', 'sortbyhgsub'])])
+        acts.extend([None, 'settings'])
+        return acts
 
     def flags(self):
         return (Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsDragEnabled
@@ -265,9 +276,15 @@ class RepoItem(RepoTreeItem):
             try:
                 sri = None
                 if repo is None:
+                    if not os.path.exists(self._root):
+                        self._valid = False
+                        return [self._root]
+                    elif not os.path.exists(os.path.join(self._root, '.hgsub')):
+                        return []  # skip repo creation, which is expensive
                     repo = hg.repository(ui.ui(), self._root)
                 wctx = repo['.']
-                for subpath in wctx.substate:
+                sortkey = lambda x: os.path.basename(util.normpath(repo.wjoin(x)))
+                for subpath in sorted(wctx.substate, key=sortkey):
                     sri = None
                     abssubpath = repo.wjoin(subpath)
                     subtype = wctx.substate[subpath][2]
@@ -342,7 +359,7 @@ class RepoItem(RepoTreeItem):
             if not hgrcutil.setConfigValue(abshgrcpath, 'web.name', shortname):
                 qtlib.WarningMsgBox(_('Unable to update repository name'),
                     _('An error occurred while updating the repository hgrc '
-                    'file (%s)' % abshgrcpath))
+                      'file (%s)') % hglib.tounicode(abshgrcpath))
                 return False
             self.setShortName(shortname)
             return True
@@ -398,8 +415,12 @@ class SubrepoItem(RepoItem):
         if isinstance(self._parent, RepoGroupItem):
             return super(SubrepoItem, self).menulist()
         else:
-            return ['open', 'clone', 'addsubrepo', None, 'explore', 'terminal',
-                'copypath', None, 'settings']
+            acts = ['open', 'clone', 'addsubrepo', None, 'explore',
+                    'terminal', 'copypath']
+            if self.childCount() > 0:
+                acts.extend([None, (_('Sort'), ['sortbyname', 'sortbyhgsub'])])
+            acts.extend([None, 'settings'])
+            return acts
 
     def getSupportedDragDropActions(self):
         if issubclass(type(self.parent()), RepoGroupItem):
@@ -446,7 +467,8 @@ class RepoGroupItem(RepoTreeItem):
 
     def menulist(self):
         return ['openAll', 'add', None, 'newGroup', None, 'rename', 'remove',
-            None, 'reloadRegistry']
+            None, (_('Sort'), ['sortbyname', 'sortbypath']), None,
+            'reloadRegistry']
 
     def flags(self):
         return (Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsDropEnabled
@@ -485,7 +507,8 @@ class RepoGroupItem(RepoTreeItem):
             self._commonpath = ''
         else:
             childs = [os.path.normcase(child.rootpath())
-                        for child in self.childs]
+                      for child in self.childs
+                      if not isinstance(child, RepoGroupItem)]
             self._commonpath = os.path.dirname(os.path.commonprefix(childs))
 
         return self._commonpath
@@ -499,7 +522,8 @@ class AllRepoGroupItem(RepoGroupItem):
 
     def menulist(self):
         return ['openAll', 'add', None, 'newGroup', None, 'rename',
-            None, 'reloadRegistry']
+            None, (_('Sort'), ['sortbyname', 'sortbypath']), None,
+            'reloadRegistry']
 
     def undump(self, xr):
         a = xr.attributes()

@@ -53,7 +53,7 @@ class BranchOpDialog(QDialog):
             for name in repo.namedbranches:
                 if name == wbu:
                     continue
-                branchCombo.addItem(name)
+                branchCombo.addItem(hglib.tounicode(name))
             branchCombo.activated.connect(self.accept)
 
             grid.addWidget(nochange, 0, 0)

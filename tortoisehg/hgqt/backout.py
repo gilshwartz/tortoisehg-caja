@@ -5,7 +5,7 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-from mercurial import hg, merge as mergemod
+from mercurial import error, hg, merge as mergemod
 
 from tortoisehg.util import hglib
 from tortoisehg.hgqt.i18n import _
@@ -101,6 +101,8 @@ class SummaryPage(BasePage):
                            'directory is clean.'))
         self.setLayout(QVBoxLayout())
 
+        self.groups = qtlib.WidgetGroups()
+
         repo = self.repo
         try:
             bctx = repo[self.wizard().backoutrev]
@@ -109,6 +111,7 @@ class SummaryPage(BasePage):
             qtlib.InfoMsgBox(_('Unable to backout'),
                              _('Backout revision not found'))
             QTimer.singleShot(0, self.wizard().close)
+            return
 
         if pctx == bctx:
             lbl = _('Backing out a parent revision is a single step operation')
@@ -116,6 +119,12 @@ class SummaryPage(BasePage):
             self.wizard().parentbackout = True
 
         op1, op2 = repo.dirstate.parents()
+        if op1 is None:
+            qtlib.InfoMsgBox(_('Unable to backout'),
+                             _('Backout requires a parent revision'))
+            QTimer.singleShot(0, self.wizard().close)
+            return
+
         a = repo.changelog.ancestor(op1, bctx.node())
         if a != bctx.node():
             qtlib.InfoMsgBox(_('Unable to backout'),
@@ -193,8 +202,6 @@ class SummaryPage(BasePage):
         ## working directory status
         sep = qtlib.LabeledSeparator(_('Working directory status'))
         self.layout().addWidget(sep)
-
-        self.groups = qtlib.WidgetGroups()
 
         wdbox = QHBoxLayout()
         self.layout().addLayout(wdbox)

@@ -54,7 +54,7 @@ Tato extenze je dokumentována v odstavci :ref:`perfarce-perforce` kapitoly :doc
 HGEOL
 =====
 
-Extenze hgeol je případným nástupce extenze win32text. Pokouší se řešit kompabilitní problémy EOLN kompletnějším a robustnějším způsobem. Místo popisu na tomto místě uvedeme odkazy na online-ovou dokumentaci, která se neustále vyvíjí.
+Extenze hgeol je případným nástupcem extenze win32text. Pokouší se řešit kompabilitní problémy EOLN kompletnějším a robustnějším způsobem. Místo popisu na tomto místě uvedeme odkazy na online-ovou dokumentaci, která se neustále vyvíjí.
 
 * `EOLTranslationPlan <http://mercurial.selenic.com/wiki/EOLTranslationPlan>`_
 * `Source code <http://bitbucket.org/mg/hg-eol/>`_
@@ -100,10 +100,9 @@ for more details.
 	On Windows 2K, the encrypted passwords are stored in the system
 	registry under HKCU\\Software\\Mercurial\\Keyring.
 
-**Repository configuration (HTTP)**
+**Konfigurace repozitáře (HTTP)**
 
-Edit repository-local .hg/hgrc and save there the remote repository path and
-the username, but do not save the password. For example::
+Editujte repozitář -> lokální -> .hg/hgrc a ulož tam cestu ke vzdálenému repozitáři, jméno uživatele, nikoli však heslo. Na příklad::
 
 	[paths]
 	myremote = https://my.server.com/hgrepo/someproject
@@ -113,26 +112,19 @@ the username, but do not save the password. For example::
 	myremote.prefix = my.server.com/hgrepo
 	myremote.username = mekk
 
-Simpler form with url-embedded name can also be used::
+Jednodušší forma s vloženým názvem url může být také použita:: 
 
 	[paths]
 	bitbucket = https://User@bitbucket.org/User/project_name/
 
 .. note::
-	If both username and password are given in .hg/hgrc, extension will
-	use them without using the password database. If username is not
-	given, extension will prompt for credentials every time, also
-	without saving the password. So, in both cases, it is effectively
-	reverting to the default behaviour.
+	Je-li v :file:`.hg/hgrc` zadáno jméno uživatele i heslo, potom je extenze použije bez použití heslové databáze. Není-li jméno uživatele uvedeno, extenze bude pokaždé vyžadovat osobní údaje, také bez uložení hesla. Takže v obou případech je účinné se vrátit k implicitnímu chování.
+	
+Podrobnější informace získáte v `[auth] <http://www.selenic.com/mercurial/hgrc.5.html#auth>`_.
 
-Consult `[auth] <http://www.selenic.com/mercurial/hgrc.5.html#auth>`_
-section documentation for more details.
+**Konfigurace repozitáře (SMTP)**
 
-**Repository configuration (SMTP)**
-
-Edit either repository-local .hg/hgrc, or ~/.hgrc (the latter is usually
-preferable) and set there all standard email and smtp properties, including
-smtp username, but without smtp password. For example::
+Editujte buď repozitář -> lokální -> .hg/hgrc nebo ~/.hgrc (vhodnější je obvykle ten druhý)  a zadejte tam všechny standardní vlastnosti pro email a smtp, včetně názvu uživatele smtp ale bez hesla pro smtp. Na příklad::
 
 	[email]
 	method = smtp
@@ -144,21 +136,83 @@ smtp username, but without smtp password. For example::
 	username = JoeDoe@gmail.com
 	tls = true
 
-Just as in case of HTTP, you must set username, but must not set password here
-to use the extension, in other cases it will revert to the default behaviour.
+Stejně jako v případě HTTP, musíte zadat jméno uživatele ale nesmíte zde uvádět heslo, chcete-li použít extenzi. V opačném případě se procedura překlopí do implicitního chování.
 
-**Usage**
+**Použití**
 
-Configure the repository as above, then just pull and push (or email) You
-should be asked for the password only once (per every username +
-remote_repository_url combination). 
+Konfigurujte repozitář jak výše uvedeno, pak už jen stahujte a vysílejte (pull a push) nebo emailujte. Na heslo byste měl být tázán pouze jednou (pro každou kombinaci jména uživatele a remote_repository_url).
 
 .. vim: noet ts=4
+
+projrc
+======
+
+`projrc <http://mercurial.selenic.com/wiki/ProjrcExtension>`_ je extenze, která prozkoumá soubor .hg/projrc, hledaje další konfigurační možnosti. Soubor se přenese klonováním a stažením (pull) ze seznamu serverů, který  '''musí ''' být nakonfigurován uživatelem. Z bezpečnostních důvodů '''musí ''' být také uvedeno, která konfigurační nastavení ''`projrc''` mají být přenesena (implicitně se žádná nastavení ze žádného serveru nepřenášejí).
+Uživatel také může nastavit extenzi tak, že automaticky zahrne všechny změny do souboru .hg/projrc.
+
+To je důležité pro centralizovaná nastavení, kde chcete distribuovat konfigurační nastavení do všech repozitářů s minimálním úsilím. Zejména to lze použít pro přemapování subrepozitářových zdrojů, jak je vysvětleno v textu 
+`SubrepoRemappingPlan <http://mercurial.selenic.com/wiki/SubrepoRemappingPlan>`_.
+
+**Konfigurace**
+
+Tato extenze (jako většina jiných) je implicitně nepovolena. Abyste ji mohli používat, musíte ji nejprve povolit v panelu Setting/Extension.
+
+Je-li extenze povolena, vidíte nový vstup "Projrc" v dialogu pro nastavení. Zde můžete extenzi konfigurovat úpravou následujících položek:
+
+	:guilabel:`Request confirmation`
+        Je-li True (implicitně), jste vyzván k potvrzení kdykoliv extenze zaznamená změny v souboru .hg/projrc vzdáleného serveru.
+        Je-li False, extenze automaticky přijme všechny změny souboru .hg/projrc vzdáleného serveru.
+
+    :guilabel:`Servers`
+        Toto nastavení je seznam čárkami oddělených globů, které se shodují s názvy serverů, z nichž bude soubor projrc stažen (pulled).
+		Pokud není toto nastvení zadáno, žádné soubory .hg/projrc se nikdy ze žádného serveru nepřenesou.
+		
+    :guilabel:`Include`
+        Tímto klíčem určíte, které sekce a které klíče budou přijaty ze vzdálených souborů projrc.
+		Je to seznam čárkami oddělených globů, které se shodují s názvy sekcí nebo klíčů, které mohou být připojeny.
+		Názvy klíčů musí být určeny názvem jejich sekce následovaným tečkou, následovanou názvem klíče (např. "''`diff.git`''").
+
+        Všechny sekce a klíče povolíte zadáním "*" (bez uvozovek).
+
+    :guilabel:`Exclude`
+        Toto nastavení je podobné nastavení "''`Include`''" ale má opačný účinek. Deklaruje seznam nastavení, která nebudou přenesena ze společných soubofů projrc. 
+
+        Seznam "exclude" má stejnou skladbu jako seznam "include". Je-li zadán exkluzivní seznam ale inkluzivní seznam je prázdný nebo neexistuje, budou připojeny všechny nevyloučené klíče.
+
+Jsou-li zadány oba seznamy a klíč nalézá shodu v obou seznamech, má prioritu nejvíce explicitní shoda v následujícím pořadí:
+
+    * za nejvíce explicitní jsou považovány přesné shody pro klíče   např. "''`ui.merge`''");
+    * následují shody vzorů (globů) (např.     "''`auth.bitbucket.com.*`''"), přičemž nejvíce explicitní je nejdelší vzor shody;
+    * shody na úrovni sekcí (e.g. "''`ui`''");
+    * globální ("''`*`''") shody.
+
+Shoduje-li se klíč stejnou délkou jak s exkluzivními, tak s inkluzivními vzory, je klíč "zahrnut" (to jest, inkluze má přednost pře exkluzí).
+
+**Použití**
+
+Řádně nastavená a povolená extenze prohledá soubory .hg/projrc při každém klonování nebo stahování z repozitářů, uvedených v její konfiguraci "servers".
+
+Kdykoliv extenze zjistí změnu ve vzdáleném souboru projrc (e.g. when
+you do not have a .hg/projrc file yet, or when the contents of said file
+have changed on the server), obdržíte varování pokud nemáte "Require confirmation" nastaveno na False (v kterémžto případě extenze předpokládá, že změny přijímáte). Přijmete-li změny, váš lokální soubor .hg/projrc je aktualizován a jeho nastavení jsou Mercurialem a TortoiseHg vzata v úvahu.
+
+Má-li lokální repozitář soubor .hg/projrc, uvidíte v dialogu pro nastavení další panel s názvem "project settings (.hg/projrc)". 
+
+Tento panel je pouze pro čtení a ukazuje aktuální nastavení v souboru .hg/projrc. I když můžete aktualizovat svoji lokální verzi .hg/projrc, nemožnost měnit údaje v panelu naznačuje, že nemůžete měnit nastavení vzdáleného repozitáře a že když se nastavení vzdáleného repozitáře změní, vaše lokální kopie bude aktualizována při nejbližší akci pull (pokud to dovolíte).
+
+Panel "project settings" se zařadí mezi panely "global settings" a "repository settings", čímž je naznačováno, že jeho nastavení jsou použita po globálních nastaveních ale před nastaveními lokálního repozitáře (uvedenými v souboru .hg/hgrc) 
+
+
+**Dodatečná poznámka**
+
+Podrobnější údaje o používání a konfiguraci z přikazového řádku, jakož i nejčersvější informace o extenzi získáte na stránce 
+`Wiki <http://mercurial.selenic.com/wiki/ProjrcExtension>`_.
+
 
 pbranch
 =======
 
-Patch Branches (`pbranch <http://mercurial.selenic.com/wiki/PatchBranchExtension>`_) 
+Patch Branches (větve oprávek- `pbranch <http://mercurial.selenic.com/wiki/PatchBranchExtension>`_) 
 je postup pro vytváření oprávkových řad pro předávání do hlavního repozitáře. Je založen na tematických větvích (pro každou oprávku jedna) a je proto velmi vhodný pro dlouhodobý vývoj a údržbu, zejména při kolektivní spolupráci.
 
 `Podrobný návod <http://arrenbrecht.ch/mercurial/pbranch/>`_ je na webu.

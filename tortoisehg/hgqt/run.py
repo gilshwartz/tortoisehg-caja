@@ -7,7 +7,7 @@
 # GNU General Public License version 2, incorporated herein by reference.
 
 shortlicense = '''
-Copyright (C) 2008-2011 Steve Borho <steve@borho.org> and others.
+Copyright (C) 2008-2012 Steve Borho <steve@borho.org> and others.
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 '''
@@ -24,7 +24,7 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
 import mercurial.ui as uimod
-from mercurial import util, fancyopts, cmdutil, extensions, error
+from mercurial import util, fancyopts, cmdutil, extensions, error, scmutil
 
 from tortoisehg.hgqt.i18n import agettext as _
 from tortoisehg.util import hglib, paths, i18n
@@ -92,18 +92,23 @@ def portable_fork(ui, opts):
             return
     elif config_nofork:
         return
+    portable_start_fork()
+    sys.exit(0)
+
+def portable_start_fork(extraargs=None):
     os.environ['THG_GUI_SPAWN'] = '1'
     # Spawn background process and exit
     if hasattr(sys, "frozen"):
         args = sys.argv
     else:
         args = [sys.executable] + sys.argv
+    if extraargs:
+        args += extraargs
     cmdline = subprocess.list2cmdline(args)
     os.chdir(origwdir)
     subprocess.Popen(cmdline,
                      creationflags=qtlib.openflags,
                      shell=True)
-    sys.exit(0)
 
 # Windows and Caja shellext execute
 # "thg subcmd --listfile TMPFILE" or "thg subcmd --listfileutf8 TMPFILE"(planning) .
@@ -135,9 +140,9 @@ def get_lines_from_listfile(filename, isutf8):
             fd.close()
             os.unlink(filename)
         if isutf8:
-          _linesutf8 = lines
+            _linesutf8 = lines
         else:
-          _lines = lines
+            _lines = lines
     except IOError:
         sys.stderr.write(_('can not read file "%s". Ignored.\n') % filename)
 
@@ -175,7 +180,7 @@ def get_files_from_listfile():
     files = []
     for f in lines:
         try:
-            cpath = hglib.canonpath(root, cwd, f)
+            cpath = scmutil.canonpath(root, cwd, f)
             # canonpath will abort on .hg/ paths
         except util.Abort:
             continue
@@ -268,6 +273,9 @@ def runcommand(ui, args):
 
     if options['help']:
         return help_(ui, cmd)
+
+    if options['newworkbench']:
+        cmdoptions['newworkbench'] = True
 
     path = options['repository']
     if path:
@@ -389,22 +397,20 @@ class GarbageCollector(QObject):
         #gc.set_debug(gc.DEBUG_SAVEALL)
 
     def check(self):
-        #return self.debug_cycles()
         l0, l1, l2 = gc.get_count()
-        if self.debug:
-            print 'gc_check called:', l0, l1, l2
         if l0 > self.threshold[0]:
             num = gc.collect(0)
             if self.debug:
-                print 'collecting gen 0, found:', num, 'unreachable'
+                print 'GarbageCollector.check:', l0, l1, l2
+                print 'collected gen 0, found', num, 'unreachable'
             if l1 > self.threshold[1]:
                 num = gc.collect(1)
                 if self.debug:
-                    print 'collecting gen 1, found:', num, 'unreachable'
+                    print 'collected gen 1, found', num, 'unreachable'
                 if l2 > self.threshold[2]:
                     num = gc.collect(2)
                     if self.debug:
-                        print 'collecting gen 2, found:', num, 'unreachable'
+                        print 'collected gen 2, found', num, 'unreachable'
 
     def debug_cycles(self):
         gc.collect()
@@ -484,10 +490,11 @@ class _QtRunner(QObject):
         opts['error'] = ''.join(''.join(traceback.format_exception(*args))
                                 for args in self.errors)
         etype, evalue = self.errors[0][:2]
-        if len(self.errors) == 1 and etype in self._recoverableexc:
+        if (len(set(e[0] for e in self.errors)) == 1
+            and etype in self._recoverableexc):
             opts['values'] = evalue
             errstr = self._recoverableexc[etype]
-            if etype == error.Abort and evalue.hint:
+            if etype is error.Abort and evalue.hint:
                 errstr = u''.join([errstr, u'<br><b>', _('hint:'),
                                    u'</b> %(arg1)s'])
                 opts['values'] = [str(evalue), evalue.hint]
@@ -495,8 +502,8 @@ class _QtRunner(QObject):
                                   hglib.tounicode(errstr), opts,
                                   parent=self._mainapp.activeWindow())
         elif etype is KeyboardInterrupt:
-            if qtlib.QuestionMsgBox(_('Keyboard interrupt'),
-                    _('Close this application?')):
+            if qtlib.QuestionMsgBox(hglib.tounicode(_('Keyboard interrupt')),
+                    hglib.tounicode(_('Close this application?'))):
                 QApplication.quit()
             else:
                 self.errors = []
@@ -541,7 +548,7 @@ class _QtRunner(QObject):
                     from tortoisehg.hgqt import thgrepo
                     thgrepo.repository(ui, opts['repository'])
                 except error.RepoError, e:
-                    qtlib.WarningMsgBox(_('Repository Error'),
+                    qtlib.WarningMsgBox(hglib.tounicode(_('Repository Error')),
                                         hglib.tounicode(str(e)))
                     return
             dlg = dlgfunc(ui, *args, **opts)
@@ -629,6 +636,11 @@ def email(ui, *pats, **opts):
     """send changesets by email"""
     from tortoisehg.hgqt.hgemail import run
     return qtrun(run, ui, *pats, **opts)
+
+def graft(ui, *revs, **opts):
+    """graft dialog"""
+    from tortoisehg.hgqt.graft import run
+    return qtrun(run, ui, *revs, **opts)
 
 def resolve(ui, *pats, **opts):
     """resolve dialog"""
@@ -1039,6 +1051,7 @@ globalopts = [
     ('', 'fork', None, _('always fork GUI process')),
     ('', 'listfile', '', _('read file list from file')),
     ('', 'listfileutf8', '', _('read file list from file encoding utf-8')),
+    ('', 'newworkbench', None, _('open a new workbench window')),
 ]
 
 table = {
@@ -1079,6 +1092,9 @@ table = {
         _('thg commit [OPTIONS] [FILE]...')),
     "drag_move": (drag_move, [], _('thg drag_move SOURCE... DEST')),
     "drag_copy": (drag_copy, [], _('thg drag_copy SOURCE... DEST')),
+    "graft": (graft,
+        [('r', 'rev', [], _('revisions to graft'))],
+        _('thg graft [-r] REV...')),
     "^grep|search": (grep,
         [('i', 'ignorecase', False, _('ignore case during search')),],
         _('thg grep')),
@@ -1120,7 +1136,7 @@ table = {
            _('name of the hgweb config file (DEPRECATED)'))],
          _('thg serve [--web-conf FILE]')),
     "^sync|synchronize": (sync, [], _('thg sync')),
-    "^status": (status,
+    "^status|st": (status,
          [('c', 'clean', False, _('show files without changes')),
           ('i', 'ignored', False, _('show ignored files'))],
         _('thg status [OPTIONS] [FILE]')),

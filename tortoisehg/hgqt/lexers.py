@@ -81,8 +81,16 @@ class LuaLexerSelector(_ScriptLexerSelector):
     regex = None
 
 class CppLexerSelector(_FilenameLexerSelector):
-    extensions = ('.c', '.cpp', '.cxx', '.h', '.hpp', '.hxx')
+    extensions = ('.c', '.cpp', '.cxx', '.cl', '.cu', '.h', '.hpp', '.hxx')
     _lexer = Qsci.QsciLexerCPP
+
+class DLexerSelector(_FilenameLexerSelector):
+    extensions = ('.d',)
+    _lexer = Qsci.QsciLexerD
+
+class PascalLexerSelector(_FilenameLexerSelector):
+    extensions = ('.pas',)
+    _lexer = Qsci.QsciLexerPascal
 
 class CSSLexerSelector(_FilenameLexerSelector):
     extensions = ('.css',)
@@ -95,6 +103,10 @@ class XMLLexerSelector(_FilenameLexerSelector):
 class HTMLLexerSelector(_FilenameLexerSelector):
     extensions = ('.htm', '.html')
     _lexer = Qsci.QsciLexerHTML
+
+class YAMLLexerSelector(_FilenameLexerSelector):
+    extensions = ('.yml',)
+    _lexer = Qsci.QsciLexerYAML
 
 class VerilogLexerSelector(_FilenameLexerSelector):
     extensions = ('.v', '.vh')
@@ -112,12 +124,16 @@ class MakeLexerSelector(_FilenameLexerSelector):
     extensions = ('.mk', 'makefile')
     _lexer = Qsci.QsciLexerMakefile
 
+class CMakeLexerSelector(_FilenameLexerSelector):
+    extensions = ('.cmake', 'cmakelists.txt')
+    _lexer = Qsci.QsciLexerCMake
+
 class SQLLexerSelector(_FilenameLexerSelector):
     extensions = ('.sql',)
     _lexer = Qsci.QsciLexerSQL
 
 class JSLexerSelector(_FilenameLexerSelector):
-    extensions = ('.js',)
+    extensions = ('.js', '.json')
     _lexer = Qsci.QsciLexerJavaScript
 
 class JavaLexerSelector(_FilenameLexerSelector):
@@ -129,8 +145,36 @@ class TeXLexerSelector(_FilenameLexerSelector):
     _lexer = Qsci.QsciLexerTeX
 
 class CSharpLexerSelector(_FilenameLexerSelector):
-    extensions = ('.cs')
+    extensions = ('.cs',)
     _lexer = Qsci.QsciLexerCSharp
+
+class TCLLexerSelector(_FilenameLexerSelector):
+    extensions = ('.tcl', '.do', '.fdo', '.udo')
+    _lexer = Qsci.QsciLexerTCL
+
+class MatlabLexerSelector(_FilenameLexerSelector):
+    extensions = ('.m',)
+    try:
+        _lexer = Qsci.QsciLexerMatlab
+    except AttributeError:  # QScintilla<2.5.1
+        # Python lexer is quite similar
+        _lexer = Qsci.QsciLexerPython
+
+class FortranLexerSelector(_FilenameLexerSelector):
+    extensions = ('.f90', '.f95', '.f03',)
+    _lexer = Qsci.QsciLexerFortran
+
+class Fortran77LexerSelector(_FilenameLexerSelector):
+    extensions = ('.f', '.f77',)
+    _lexer = Qsci.QsciLexerFortran77
+
+class SpiceLexerSelector(_FilenameLexerSelector):
+    extensions = ('.cir', '.sp',)
+    _lexer = Qsci.QsciLexerSpice
+
+class PropertyLexerSelector(_FilenameLexerSelector):
+    extensions = ('.ini', '.properties')
+    _lexer = Qsci.QsciLexerProperties
 
 class DiffLexerSelector(_ScriptLexerSelector):
     extensions = ()

@@ -4,6 +4,8 @@ Windows Explorer Integration
 .. module:: explorer
 	:synopsis: Windows explorer integration
 
+.. _explorer-context-label:
+
 Context Menus
 -------------
 

@@ -1,4 +1,4 @@
-# repowidget.py - TortoiseHg repository widget
+# revpanel.py - TortoiseHg rev panel widget
 #
 # Copyright (C) 2007-2010 Logilab. All rights reserved.
 # Copyright (C) 2010 Adrian Buehlmann <adrian@cadifra.com>
@@ -68,7 +68,7 @@ def data_func(widget, item, ctx):
                 branch = cctx.branch()
             children.append(revline_data(cctx, branch=branch))
         return children
-    elif item in ('transplant', 'p4', 'svn'):
+    elif item in ('graft', 'transplant', 'p4', 'svn', 'converted'):
         ts = widget.get_data(item, usepreset=True)
         if not ts:
             return None
@@ -118,7 +118,7 @@ def markup_func(widget, item, value):
             if branch:
                 return '%s - %s %s' % (revnum, branch, summary)
             return '%s - %s' % (revnum, summary)
-    if item in ('cset', 'transplant', 'patch', 'p4', 'svn'):
+    if item in ('cset', 'graft', 'transplant', 'patch', 'p4', 'svn', 'converted'):
         link = item != 'cset'
         if isinstance(value, basestring):
             return revid_markup(value)
@@ -138,8 +138,9 @@ def RevPanelWidget(repo):
     custom = csinfo.custom(data=data_func, label=label_func,
                            markup=markup_func)
     style = csinfo.panelstyle(contents=('cset', 'branch', 'close', 'user',
-                   'dateage', 'parents', 'children', 'tags', 'transplant',
-                   'p4', 'svn'), selectable=True, expandable=True)
+                   'dateage', 'parents', 'children', 'tags', 'graft', 'transplant',
+                   'p4', 'svn', 'converted'), selectable=True,
+                   expandable=True)
     return csinfo.create(repo, style=style, custom=custom)
 
 

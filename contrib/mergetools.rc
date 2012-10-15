@@ -37,7 +37,7 @@ araxis.regappend=\ConsoleCompare.exe
 araxis.priority=-2
 araxis.args=/3 /a2 /wait /merge /title1:"Parent 1" /title2:"Merge Result: "$output /title3:"Parent 2" $local $base $other $output
 araxis.premerge=False
-araxis.checkconflict=True
+araxis.checkconflicts=True
 araxis.binary=True
 araxis.gui=True
 araxis.diffargs=/2 /wait /title1:"$plabel1" /title2:"$clabel" $parent $child
@@ -78,6 +78,17 @@ diffmerge.gui=True
 diffmerge.diffargs=--nosplash --title1='$plabel1' --title2='$clabel' $parent $child
 diffmerge.diff3args=--nosplash --title1='$plabel1' --title2='$clabel' --title3='$plabel2' $parent1 $child $parent2
 diffmerge.dirdiff=True
+
+diffmerge3.regkey=Software\SourceGear\Common\DiffMerge\Installer
+diffmerge3.regkeyalt=Software\Wow6432Node\SourceGear\Common\DiffMerge\Installer
+diffmerge3.regname=Location
+diffmerge3.priority=-7
+diffmerge3.args=-nosplash -merge -title1=local -title2=merged -title3=other $local $base $other -result=$output
+diffmerge3.checkchanged=True
+diffmerge3.gui=True
+diffmerge3.diffargs=--nosplash --title1='$plabel1' --title2='$clabel' $parent $child
+diffmerge3.diff3args=--nosplash --title1='$plabel1' --title2='$clabel' --title3='$plabel2' $parent1 $child $parent2
+diffmerge3.dirdiff=True
 
 p4merge.priority=-8
 p4merge.args=$base $local $other $output
@@ -139,6 +150,25 @@ rekisa.gui = True
 rekisa.diffargs = "-Title=$plabel1" "$parent" "-Title=$clabel" "$child"
 rekisa.diff3args = "-Title=$plabel1" "$parent1" "-Title=$clabel" "$child" "-Title=$plabel2" "$parent2"
 rekisa.dirdiff = False
+
+; 2-way diff only version of Code Compare
+codecompare_diff.regkey=SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\CodeCompare_is1
+codecompare_diff.regname=InstallLocation
+codecompare_diff.regappend=CodeCompare.exe
+codecompare_diff.diffargs=/SC=TortoiseHg /title1="$plabel1" /title2="$clabel" $parent $child
+codecompare_diff.diff3args=/SC=TortoiseHg /title1="$plabel1" /title2="$clabel" /title3="$plabel2" $parent1 $child $parent2
+codecompare_diff.binary=False
+codecompare_diff.gui=True
+codecompare_diff.dirdiff=True
+
+; 3-way merge version of Code Compare (not for diff, just for merge, Pro version only)
+codecompare_merge.regkey=SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\CodeCompare_is1
+codecompare_merge.regname=InstallLocation
+codecompare_merge.regappend=CodeMerge.exe
+codecompare_merge.args=/SC=TortoiseHg /TF=$other /MF=$local /RF=$output /BF=$base /TT="Other: $other" /MT="Local: $local" /RT="Output: $output" /BT="Base: $base"
+codecompare_merge.binary=False
+codecompare_merge.gui=True
+codecompare_merge.checkconflicts=True
 
 ; Linux only diff tools, listed here for reference
 bcompare.priority=-1

@@ -15,7 +15,7 @@ from tortoisehg.util import cachethg, paths, hglib
 def _(msgid):
     return {'id': msgid, 'str': gettext(msgid)}
 
-thgcmenu = {
+thmcmenu = {
     'commit':     { 'label': _('Commit...'),
                     'help':  _('Commit changes in repository'),
                     'icon':  'menucommit.ico'},
@@ -73,7 +73,7 @@ thgcmenu = {
     'about':      { 'label': _('About TortoiseHg'),
                     'help':  _('Show About Dialog'),
                     'icon':  'menuabout.ico'},
-    'vdiff':      { 'label': _('Visual Diff'),
+    'vdiff':      { 'label': _('Diff to parent'),
                     'help':  _('View changes using GUI diff tool'),
                     'icon':  'TortoiseMerge.ico'},
     'hgignore':   { 'label': _('Edit Ignore Filter'),
@@ -93,10 +93,10 @@ _ALWAYS_DEMOTE_ = ('about', 'userconf', 'repoconf')
 
 class TortoiseMenu(object):
 
-    def __init__(self, menutext, helptext, hgcmd, icon=None, state=True):
+    def __init__(self, menutext, helptext, hmcmd, icon=None, state=True):
         self.menutext = menutext
         self.helptext = helptext
-        self.hgcmd = hgcmd
+        self.hmcmd = hmcmd
         self.icon = icon
         self.state = state
 
@@ -113,9 +113,9 @@ class TortoiseSubmenu(TortoiseMenu):
         TortoiseMenu.__init__(self, menutext, helptext, None, icon)
         self.menus = menus[:]
 
-    def add_menu(self, menutext, helptext, hgcmd, icon=None, state=True):
+    def add_menu(self, menutext, helptext, hmcmd, icon=None, state=True):
         self.menus.append(TortoiseMenu(menutext, helptext,
-                hgcmd, icon, state))
+                hmcmd, icon, state))
 
     def add_sep(self):
         self.menus.append(TortoiseMenuSep())
@@ -132,7 +132,7 @@ class TortoiseSubmenu(TortoiseMenu):
 
 class TortoiseMenuSep(object):
 
-    hgcmd = '----'
+    hmcmd = '----'
 
     def isSubmenu(self):
         return False
@@ -150,8 +150,8 @@ class thg_menu(object):
         self.sep = [False]
         self.promoted = promoted
 
-    def add_menu(self, hgcmd, icon=None, state=True):
-        if hgcmd in self.promoted:
+    def add_menu(self, hmcmd, icon=None, state=True):
+        if hmcmd in self.promoted:
             pos = 0
         else:
             pos = 1
@@ -162,9 +162,9 @@ class thg_menu(object):
             self.sep[pos] = False
             self.menus[pos].append(TortoiseMenuSep())
         self.menus[pos].append(TortoiseMenu(
-                thgcmenu[hgcmd]['label']['str'],
-                thgcmenu[hgcmd]['help']['str'], hgcmd,
-                thgcmenu[hgcmd]['icon'], state))
+                thmcmenu[hmcmd]['label']['str'],
+                thmcmenu[hmcmd]['help']['str'], hmcmd,
+                thmcmenu[hmcmd]['icon'], state))
 
     def add_sep(self):
         self.sep = [True for _s in self.sep]
@@ -207,7 +207,7 @@ class menuThg:
             if item:
                 promoted.append(item)
         if internal:
-            for item in thgcmenu.keys():
+            for item in thmcmenu.keys():
                 promoted.append(item)
         for item in _ALWAYS_DEMOTE_:
             if item in promoted:

@@ -224,6 +224,10 @@ class TagDialog(QDialog):
             self.finishfunc()
 
     def onAddTag(self):
+        if self.cmd.core.running():
+            self.set_status(_('Repository command still running'), False)
+            return
+
         tagu = self.tagCombo.currentText()
         tag = hglib.fromunicode(tagu)
         local = self.localCheckBox.isChecked()
@@ -283,6 +287,10 @@ class TagDialog(QDialog):
         self.cmd.run(cmd)
 
     def onRemoveTag(self):
+        if self.cmd.core.running():
+            self.set_status(_('Repository command still running'), False)
+            return
+
         tagu = self.tagCombo.currentText()
         tag = hglib.fromunicode(tagu)
         local = self.localCheckBox.isChecked()
@@ -328,6 +336,10 @@ class TagDialog(QDialog):
         self.cmd.run(cmd)
 
     def reject(self):
+        if self.cmd.core.running():
+            self.set_status(_('Repository command still running'), False)
+            return
+
         # prevent signals from reaching deleted objects
         self.repo.repositoryChanged.disconnect(self.refresh)
         super(TagDialog, self).reject()

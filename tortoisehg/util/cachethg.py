@@ -8,7 +8,7 @@
 import os
 import sys
 
-from mercurial import hg, util, ui, node, merge, error
+from mercurial import hg, util, ui, node, merge, error, scmutil
 from tortoisehg.util import paths, debugthg, hglib
 
 debugging = False
@@ -35,7 +35,7 @@ try:
         for p in excs.split(';'):
             path = p.strip()
             if path:
-                excludepath.append(path)
+                excludepaths.append(path)
     except EnvironmentError:
         pass
 except ImportError:
@@ -201,7 +201,7 @@ def get_states(upath, repo=None):
     tc1 = GetTickCount()
 
     try:
-        matcher = hglib.match(repo[None], [pdir])
+        matcher = scmutil.match(repo[None], [pdir])
         repostate = repo.status(match=matcher, ignored=True,
                         clean=True, unknown=True)
     except util.Abort, inst:

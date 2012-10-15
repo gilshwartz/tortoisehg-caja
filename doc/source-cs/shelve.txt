@@ -6,7 +6,7 @@ Almárka
 
 Nástroj **shelve** dovede přesouvat změny mezi pracovním adresářem a oprávkami v almárce (shelf patches). Byla-li povolena extenze MQ, umí také přesouvat změny **do** i **z** neaplikovaných oprávek.
 
-Nástroj shelve spustíme ve Verpánku výběrem :guilabel:`Repository > Shelve...`, (by a toolbar button on working file viewers) nebo příkazem :command:`thg shelve`
+Nástroj shelve spustíme ve Verpánku výběrem :guilabel:`Repository > Shelve...`, nebo příkazem :command:`thg shelve`
 
 .. note::
 	Vřele doporučujeme nastavit konfiguraci EOL oprávky na "auto", pokud používáte nástroj shelve pro textové soubory s DOS EOLn.

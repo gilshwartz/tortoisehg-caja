@@ -14,8 +14,11 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+import binascii, re
+
 from mercurial import util, error
 from mercurial.util import propertycache
+from mercurial.context import workingctx
 
 from tortoisehg.util import hglib
 from tortoisehg.hgqt.graph import Graph
@@ -34,7 +37,7 @@ mqpatchmimetype = 'application/thg-mqunappliedpatch'
 
 # TODO: Remove these two when we adopt GTK author color scheme
 COLORS = [ "blue", "darkgreen", "red", "green", "darkblue", "purple",
-           "cyan", Qt.darkYellow, "magenta", "darkred", "darkmagenta",
+           "dodgerblue", Qt.darkYellow, "magenta", "darkred", "darkmagenta",
            "darkcyan", "gray", ]
 COLORS = [str(QColor(x).name()) for x in COLORS]
 
@@ -50,6 +53,8 @@ COLUMNHEADERS = (
     ('LocalTime', _('Local Time', 'column header')),
     ('UTCTime', _('UTC Time', 'column header')),
     ('Changes', _('Changes', 'column header')),
+    ('Converted', _('Converted From', 'column header')),
+    ('Phase', _('Phase', 'column header')),
     )
 
 UNAPPLIED_PATCH_COLOR = '#999999'
@@ -65,6 +70,46 @@ def get_color(n, ignore=()):
         colors = COLORS
     return colors[n % len(colors)]
 
+def _parsebranchcolors(value):
+    r"""Parse tortoisehg.branchcolors setting
+
+    >>> _parsebranchcolors('foo:#123456  bar:#789abc ')
+    [('foo', '#123456'), ('bar', '#789abc')]
+    >>> _parsebranchcolors(r'foo\ bar:black foo\:bar:white')
+    [('foo bar', 'black'), ('foo:bar', 'white')]
+
+    >>> _parsebranchcolors(r'\u00c0:black')
+    [('\xc0', 'black')]
+    >>> _parsebranchcolors('\xc0:black')
+    [('\xc0', 'black')]
+
+    >>> _parsebranchcolors(None)
+    []
+    >>> _parsebranchcolors('ill:formed:value no-value')
+    []
+    >>> _parsebranchcolors(r'\ubad:unicode-repr')
+    []
+    """
+    if not value:
+        return []
+
+    colors = []
+    for e in re.split(r'(?:(?<=\\\\)|(?<!\\)) ', value):
+        pair = re.split(r'(?:(?<=\\\\)|(?<!\\)):', e)
+        if len(pair) != 2:
+            continue # ignore ill-formed
+        key, val = pair
+        key = key.replace('\\:', ':').replace('\\ ', ' ')
+        if r'\u' in key:
+            # apply unicode_escape only if \u found, so that raw non-ascii
+            # value isn't always mangled.
+            try:
+                key = hglib.fromunicode(key.decode('unicode_escape'))
+            except (UnicodeDecodeError, UnicodeEncodeError):
+                continue
+        colors.append((key, val))
+    return colors
+
 class HgRepoListModel(QAbstractTableModel):
     """
     Model used for displaying the revisions of a Hg *local* repository
@@ -76,7 +121,7 @@ class HgRepoListModel(QAbstractTableModel):
     _allcolumns = tuple(h[0] for h in COLUMNHEADERS)
     _allcolnames = dict(COLUMNHEADERS)
 
-    _columns = ('Graph', 'Rev', 'Branch', 'Description', 'Author', 'Age', 'Tags',)
+    _columns = ('Graph', 'Rev', 'Branch', 'Description', 'Author', 'Age', 'Tags', 'Phase',)
     _stretchs = {'Description': 1, }
     _mqtags = ('qbase', 'qtip', 'qparent')
 
@@ -102,27 +147,30 @@ class HgRepoListModel(QAbstractTableModel):
         self._user_colors = {}
         self._branch_colors = {}
 
-        self._columnmap = {
-            'Rev':      self.getrev,
-            'Node':     lambda ctx, gnode: str(ctx),
-            'Graph':    lambda ctx, gnode: "",
-            'Description': self.getlog,
-            'Author':   self.getauthor,
-            'Tags':     self.gettags,
-            'Branch':   self.getbranch,
-            'Filename': lambda ctx, gnode: gnode.extra[0],
-            'Age':      lambda ctx, gnode: hglib.age(ctx.date()).decode('utf-8'),
-            'LocalTime':lambda ctx, gnode: hglib.displaytime(ctx.date()),
-            'UTCTime':  lambda ctx, gnode: hglib.utctime(ctx.date()),
-            'Changes':  self.getchanges,
-        }
-
         if repo:
+            self.initBranchColors()
             self.reloadConfig()
             self.updateColumns()
             self.setBranch(branch)
 
-    def setBranch(self, branch=None, allparents=True):
+    def initBranchColors(self):
+        # Set all the branch colors once on a fixed order,
+        # which should make the branch colors more stable
+
+        # Always assign the first color to the default branch
+        self.namedbranch_color('default')
+
+        # Set the colors specified in the tortoisehg.brachcolors config key
+        self._branch_colors.update(_parsebranchcolors(
+            self.repo.ui.config('tortoisehg', 'branchcolors')))
+
+        # Then assign colors to all branches in alphabetical order
+        # Note that re-assigning the color to the default branch
+        # is not expensive
+        for branch in sorted(self.repo.branchtags().keys()):
+            self.namedbranch_color(branch)
+
+    def setBranch(self, branch=None, allparents=False):
         self.filterbranch = branch  # unicode
         self.invalidateCache()
         if self.revset and self.filterbyrevset:
@@ -452,7 +500,7 @@ class HgRepoListModel(QAbstractTableModel):
         ctx = self.repo.changectx(gnode.rev)
 
         if role == Qt.DisplayRole:
-            text = self._columnmap[column](ctx, gnode)
+            text = self._columnmap[column](self, ctx, gnode)
             if not isinstance(text, (QString, unicode)):
                 text = hglib.tounicode(text)
             return QVariant(text)
@@ -480,6 +528,8 @@ class HgRepoListModel(QAbstractTableModel):
         dragflags = Qt.ItemFlags(0)
         if ctx.thgmqunappliedpatch():
             dragflags = Qt.ItemIsDragEnabled | Qt.ItemIsDropEnabled
+        if isinstance(ctx, workingctx):
+            dragflags |= Qt.ItemIsDropEnabled
         if not self.revset:
             return Qt.ItemIsSelectable | Qt.ItemIsEnabled | dragflags
         if ctx.rev() not in self.revset:
@@ -655,3 +705,46 @@ class HgRepoListModel(QAbstractTableModel):
         if R:
             addtotal(R, 'log.removed')
         return ''.join(changes)
+
+    def getconv(self, ctx, gnode):
+        if ctx.rev() is not None:
+            extra = ctx.extra()
+            cvt = extra.get('convert_revision', '')
+            if cvt:
+                if cvt.startswith('svn:'):
+                    return cvt.split('@')[-1]
+                if len(cvt) == 40:
+                    try:
+                        binascii.unhexlify(cvt)
+                        return cvt[:12]
+                    except TypeError:
+                        pass
+            cvt = extra.get('p4', '')
+            if cvt:
+                return cvt
+        return ''
+
+    def getphase(self, ctx, gnode):
+        if ctx.rev() is None:
+            return ''
+        try:
+            return ctx.phasestr()
+        except:
+            return 'draft'
+
+    _columnmap = {
+        'Rev':      getrev,
+        'Node':     lambda self, ctx, gnode: str(ctx),
+        'Graph':    lambda self, ctx, gnode: "",
+        'Description': getlog,
+        'Author':   getauthor,
+        'Tags':     gettags,
+        'Branch':   getbranch,
+        'Filename': lambda self, ctx, gnode: gnode.extra[0],
+        'Age':      lambda self, ctx, gnode: hglib.age(ctx.date()).decode('utf-8'),
+        'LocalTime':lambda self, ctx, gnode: hglib.displaytime(ctx.date()),
+        'UTCTime':  lambda self, ctx, gnode: hglib.utctime(ctx.date()),
+        'Changes':  getchanges,
+        'Converted': getconv,
+        'Phase':    getphase,
+    }

@@ -102,7 +102,7 @@ repository's hgrc like this::
 hgsubversion (SVN)
 ==================
 
-* `hgsubversion <http://bitbucket.org/durin42/hgsubversion/wiki/Home>`_ home page
+* `hgsubversion <https://bitbucket.org/durin42/hgsubversion/wiki/Home>`_ home page
 * `hgsubversion Extension <http://mercurial.selenic.com/wiki/HgSubversion>`_ wiki page
 * `Working with Subversion Repositories <http://mercurial.selenic.com/wiki/WorkingWithSubversion>`_
 
@@ -116,7 +116,7 @@ TortoiseHg Windows installers come with the python-svn bindings that
 hgsubversion requires, so one only needs to clone the hgsubversion
 repository to your local computer::
 
-	hg clone http://bitbucket.org/durin42/hgsubversion/ C:\hgsvn
+	hg clone https://bitbucket.org/durin42/hgsubversion/ C:\hgsvn
 
 Then enable the extension in your Mercurial.ini file, specifying the
 hgsubversion folder inside the cloned repository::
@@ -158,7 +158,7 @@ TortoiseHg Windows installers come with the python-git bindings (named
 dulwich) that hg-git requires, so one only needs to clone the
 hg-git repository to your local computer::
 
-	hg clone http://bitbucket.org/durin42/hg-git/ C:\hg-git
+	hg clone https://bitbucket.org/durin42/hg-git/ C:\hg-git
 
 Then enable hggit in your Mercurial.ini file::
 

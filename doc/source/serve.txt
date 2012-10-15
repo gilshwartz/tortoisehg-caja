@@ -1,6 +1,16 @@
 Serve
 =====
 
+Mercurial comes with an in-built, light-weight web server capable of serving
+a single repository for single connection. Serve does not provide user
+authentication, but does provide a convenient, ad-hoc method of synchronizing
+a repository over a local network. For more complete information on publishing
+repositories, see the Mercurial wiki article on
+`Publishing Repositories <http://mercurial.selenic.com/wiki/PublishingRepositories>`_.
+
+From TortoiseHg
+---------------
+
 .. module:: serve.dialog
 	:synopsis: Dialog used to start/stop the web server
 
@@ -10,6 +20,9 @@ Serve
 The serve tool is a wrapper for Mercurial's built-in web server. Once
 launched, a computer can connect to the http port and browse your
 repositories, perform clone, pull, or even push operations if enabled.
+The web server can be launched from either the Workbench
+(:ref:`Repository Menu <workbench-repository-label>`) or the
+:ref:`Context Menu <explorer-context-label>`.
 
 Toolbar buttons:
 

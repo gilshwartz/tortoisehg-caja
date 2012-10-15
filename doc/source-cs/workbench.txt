@@ -1,5 +1,5 @@
-Workbench
-==========
+Verpánek
+=========
 
 .. module:: workbench.dialog
 	:synopsis: Description of the Workbench
@@ -11,36 +11,35 @@ Workbench, neboli Verpánek je hlavní procedura programu TortoiseHg. Umožňuje
 
 	Dialogové okno Verpánku
 	
-Hlavní kutidla (widgets) Verpánku jsou tato:
+Hlavní widgety Verpánku jsou tyto:
 
 	:guilabel:`Přehled revizí`
-		Widget s aktivovatelnými kartami pro zobrazení vícero repozitářů v jednom okně. Ve sloupcích jsou uváděny základní informace o každém changesetu. Lze si nastavit, které sloupce mají být viditelné (:menuselection:`View > Choose Log Columns...`) a v jakém pořadí. Je to hlavní, neboli centrální widget v aplikaci Workbench.
+		Widget s aktivovatelnými záložkami pro zobrazení vícero repozitářů v jednom okně. Ve sloupcích jsou uváděny základní informace o každém changesetu. Lze si nastavit, které sloupce mají být viditelné (:menuselection:`View > Choose Log Columns...`) a v jakém pořadí. Je to hlavní, neboli centrální widget v aplikaci Verpánek.
   
-	:guilabel:`Registr repozitářů`
+	:guilabel:`Repository Registry`
 		Implicitně je tento přemístitelný widget umístěn na levé straně okna Verpánku. Můžeme je skrýt nebo aktivovat tlačítkem s ikonou nebo volbou :menuselection:`View > Show Repository Registry`. Volba :menuselection:`View > Show Paths` umožní zobrazení nejenom jmen repozitářů ale i cest k nim.
 
 	:guilabel:`Output Log`
 		Tento přemístitelný widget, který vyvoláme tlačítkem s ikonou nebo výběrem :menuselection:`View > Show Outpt Log` poskytuje uživateli informaci o příkazech Mercurialu, které byly provedeny během stávající seance. Můžete jej také použít jako příkazový řádek pro přímé zadávání příkazů Mercurialu. V určitých situacích také zobrazuje chybová hlášení. Okno kutidla se smaže zavřením Verpánku.
 
 	:guilabel:`Task Tabs`
-		Vpravo dole jsou dva panely, kde lze provádět různé časté úlohy. Podrobněji viz dále.
+		Spodní pravá část Verpánku je vyhrazena pro celou řadu záložek (Revision details, Commit, MQ Patch, Synchronize, Manifest, Search), ovládaných (svislou) nástrojovou lištou. 
    
 Hlavní menu
 -----------
 
-Workbench má lištu s roletkovými nabídkami pro přístup k nástrojům a pro spouštění různých úloh. 
+Verpánek má lištu s roletkovými nabídkami pro přístup k nástrojům a pro spouštění různých úloh. 
 
 	:guilabel:`File`
-		
-		.. figure:: figures/file-menu.png
-			:alt: File menu
+	
+         .. figure:: figures/file-menu.png
+	         :alt: File menu
 			
    
 	:guilabel:`View`
-		
-		.. figure:: figures/view-menu.png
-			:alt: View menu
-			
+	    
+	    .. figure:: figures/view-menu.png
+		    :alt: View menu
 			
 	:guilabel:`Repozitory`
 		Provádění speciálních akcí s aktivním repozitářem	
@@ -48,8 +47,6 @@ Workbench má lištu s roletkovými nabídkami pro přístup k nástrojům a pro
 		.. figure:: figures/repository-menu.png
 			:alt: Repository menu
 			
-			
-
 	:guilabel:`Help`	
 		Obsahuje info o programu a popis Verpánku. 
 		
@@ -57,20 +54,26 @@ Workbench má lištu s roletkovými nabídkami pro přístup k nástrojům a pro
 Editovací nástrojová lišta
 --------------------------  
  
-.. figure:: figures/edit-toolbar.png
-	:alt: Edit Toolbar
+    .. figure:: figures/edit-toolbar.png
+	     :alt: Edit Toolbar
 	
 	
 Putování revizemi. Všechna tlačítka pracují s aktuálním repozitářem. 
 
-    :guilabel:`Refresh`
-        Znovu načíst (oživit) přehled revizí aktuálního repozitáře.
+    :guilabel:`Refresh current repository`
+        Znovu načíst (obnovit) přehled revizí aktuálního repozitáře.
+	
+    :guilabel:`Go to current revision`:
+		Přejít k poslední revizi.	
   
+    :guilabel:`Go to specific revision`:
+		Přejít k určené revizi.
+		
     :guilabel:`Zpět`:
 		Vrátit se k předchozí vybrané revizi.
    
     :guilabel:`Vpřed`
-		Přejít k následující revizi. 
+		Přejít k předchozí vybrané revizi. 
 
     :guilabel:`Filter toolbar`
 		Ukázat a aktivovat nástrojovou lištu pro editaci filtru.
@@ -85,9 +88,12 @@ Parkovací nástrojová lišta
 	
 Zobrazí nebo skryje parkovatelné widgety Verpánku.
 
-    :guilabel:`Repozitory Registry`
+    :guilabel:`Show Repozitory Registry`
+	
+	:guilabel:`Show Patch Queue`
+	    (pokud je extenze MQueue povolena)
 
-    :guilabel:`Output Log`
+    :guilabel:`Show Output Log`
   
 
 Synchronizační nástrojová lišta
@@ -98,75 +104,67 @@ Synchronizační nástrojová lišta
     
 Nástrojová lišta slouží pro synchronizaci s jinými repozitáři.
 
-    :guilabel:`Incoming`
-		Stáhne případné (příchozí) changesety ze vzdáleného repozitáře, uloží je v dočasném svazku souborů a zobrazí je.	Zobrazení těchto changesetů je normální, zatímco zobrazení ostatních revizí je šedivé. Nad přehledem revizí se vynoří tlačítka :guilabel:`Accept` a :guilabel:`Reject`.
+    :guilabel:`Check for incoming changes`
+		Načte (downloads) případné (příchozí) changesety ze vzdáleného repozitáře, uloží je v dočasném svazku souborů a zobrazí je.	Zobrazení těchto changesetů je normální, zatímco zobrazení ostatních revizí je šedivé. Nad přehledem revizí se vynoří tlačítka :guilabel:`Accept` a :guilabel:`Reject`.
    
-    :guilabel:`Pull`
-		Stáhne příchozí changesety ze vzdáleného repozitáře a potom uplatní některý z "after-pull" procedur (update, fetch nebo rebase). 
+    :guilabel:`Pull incoming changes`
+		Stáhne (pulls) příchozí changesety ze vzdáleného repozitáře a potom uplatní některý z "after-pull" procedur (update, fetch nebo rebase). 
 
-    :guilabel:`Outgoing`
+    :guilabel:`Detect ouutgoing changes`
 		Určí případné odchozí changesety, které by mohly být vyslány (push) ke vzdálenému repozitáři. Odchozí changesety se zobrazí normálně, zatímco zobrazení ostatních revizí je šedivé.
 
-    :guilabel:`Push`
-		Vyšle odchozí chanchesety do vzdáleného repozitáře. 
+    :guilabel:`Push outgoing changes`
+		Vyšle (pushes) odchozí chanchesety do vzdáleného repozitáře. 
 
 
-Lišta s úlohami
----------------
+Nástrojová lišta s úlohami
+--------------------------
 
-	
 .. figure:: figures/task-toolbar.png
-  	:alt: Task Toolbar		
-		
-Nástroje lišty zajišťují řadu úkolů
-	
-    :guilabel:`Revision Details`
-		Zobrazí informaci o aktuální revizi: soubory přidané, odstraněné,  přejmenované nebo modifikované, obsahy souborů, informaci o changesetu.
+	:alt: Task Toolbar
 
-..		.. figure:: figures/revdetails-takstab.png
-		    :alt: Revision Details Task Tab
-				
-..			
-   
-    :guilabel:`Commit`
-		Zde je možné přidávat nové soubory a provádět předání (commit) do repozitáře.
-		
-..		.. figure:: figures/commit-tasktab.png
-		   :alt: Commit Task Tab
+Nástroje lišty spouštějí jednotlivé widgety ve spodní pravé části Verpánku.
 
-..
-		   
-    :guilabel:`Synchronize`
-		Umožňuje podrobné nastavení cesty ke vzdálenému repozitáři. Přitom se zobrazí další lišta Synchronize.
-		
-..		.. figure:: figures/sync-tasktab.png
-		   :alt: Synchronise Task Tab
+:guilabel:`Revision Details`
+	Zobrazí informaci o aktuální revizi (ve třech polích): soubory přidané, odstraněné,  přejmenované nebo modifikované, obsahy souborů, informaci o changesetu.
 
-..
-		   
-    :guilabel:`Manifest`
-		Zobrazí úplnou informaci o obsahu repozitáře pro zadanou revizi.  Lze vidět obsah souborů nebo jejich anotace. V seznamu souborů a složek je k disposici kontextové menu pro další podrobné zkoumání. Dokonce lze odtud porovnávat soubory z různých revizí. 
-		
-..      .. figure:: figures/manifest-tasktab.png
-           :alt: Manifest Task Tab
+	.. figure:: figures/revdetails-tasktab.png
+		:alt: Revision Details
 
-..
 
-	:guilabel:`Search`
-		Slouží pro vyhledávání zadaného textu v souboru. 
+:guilabel:`Commit`
+	Zde je možné přidávat nové soubory a provádět komit do repozitáře.
 
-..		.. figure:: figures/search-tasktab.png
-           :alt: Search Task Tab
+	.. figure:: figures/commit-tasktab.png
+		:alt: Commit Task Tab
 
-..
-		   
-    :guilabel:`Patch Queue`
-		Tento widget (Fronta oprávek) používá procedury extenze MQ.
 
-..		.. figure:: figures/mq-tasktab.png
-           :alt: Patch Queue Task Tab
-		   
-		   
+:guilabel:`Patch Queue`
+	Tento widget používá procedury extenze MQ.
+
+	.. figure:: figures/mq-tasktab.png
+		:alt: Patch Queue Task Tab
+
+:guilabel:`Synchronize`
+	Umožňuje podrobné nastavení cesty ke vzdálenému repozitáři. Přitom se zobrazí další lišta Synchronize.
+
+	.. figure:: figures/sync-tasktab.png
+		:alt: Synchronise Task Tab
+
+:guilabel:`Manifest`
+	Zobrazí úplnou informaci o obsahu repozitáře pro zadanou revizi.  Lze vidět obsah souborů nebo jejich anotace. V seznamu souborů a složek je k disposici kontextové menu pro další podrobné zkoumání. Dokonce lze odtud porovnávat soubory z různých revizí. 
+
+	.. figure:: figures/manifest-tasktab.png
+		:alt: Manifest Task Tab
+
+
+:guilabel:`Search`
+	Slouží pro vyhledávání zadaného textu v souboru. 
+
+	.. figure:: figures/search-tasktab.png
+		:alt: Search Task Tab
+
+
 Mezi vybranou revizí nebo oprávkou a popisovanou nástrojovou lištou existují jisté relace:
 
 * Poklep na revizi "Working Directory" aktivuje panel s úlohou Commit.
@@ -210,7 +208,7 @@ V situaci, kdy hlavní panel ukazuje náhled na příchozí changesety, se na po
 	:guilabel:`Reject`
 		Odmítnout changesety z prohlíženého svazku.
    
-Workbench se pokusí nalézt zadanou vyhledávací frázi v repozitáři, porovnávaje ji s tagem, záložkou, názvem větve, hešem changesetu nebo s číslem revize. Není-li žádná shoda nalezena, zjistí Workbench, zda fráze obsahuje závorky. Pokud ne, předpokládá Workbench, že fráze je klíčovým slovem a provede hledání :command:`keyword ()`. Jsou-li závorky zjištěny, předpokládá Workbench, že fráze je specifikací sady revizí a pokusí se	sadu řešit.
+Verpánek se pokusí nalézt zadanou vyhledávací frázi v repozitáři, porovnávaje ji s tagem, záložkou, názvem větve, hešem changesetu nebo s číslem revize. Není-li žádná shoda nalezena, zjistí Verpánek, zda fráze obsahuje závorky. Pokud ne, předpokládá Verpánek, že fráze je klíčovým slovem a provede hledání :command:`keyword ()`. Jsou-li závorky zjištěny, předpokládá Verpánek, že fráze je specifikací sady revizí a pokusí se	sadu řešit.
 
 Potřebujete-li provést hledání s klíčovým slovem, které obsahuje závorky, použijte příkaz :command:`keyword` ("fráze(foo)").
 
@@ -404,8 +402,8 @@ Příklady::
 	issue.link = http://bitbucket.org/<your project and repo>/issue/{1}/
 
 	Mercurial:
-	issue.regex = \bissue\d+\b
-	issue.link = http://mercurial.selenic.com/bts/
+	issue.regex = \bissue(\d+)\b
+	issue.link = http://bz.selenic.com/show_bug.cgi?id={1}
 
 Konzola Output Log
 ------------------
@@ -438,7 +436,7 @@ Viz také `KeySequences <https://bitbucket.org/tortoisehg/thg/wiki/KeySentences>
 Nastavitelné možnosti
 ---------------------
 
-Workbench má několik nastavitelných voleb, které lze zadat v dialogu :menuselection:`File > Settings`.
+Verpánek má několik nastavitelných voleb, které lze zadat v dialogu :menuselection:`File > Settings`.
 
 	:guilabel:`Author coloring`
 		Zadáno-li 'true', budou changesety barevně označeny podle autorů.
@@ -458,7 +456,7 @@ Nastavení barev pro jednotlivé uživatele lze provést přidáním následují
 	[tortoisehg]
 	authorcolor.USERNAME = color
 
-Workbench také respektuje následující nastavení:
+Verpánek také respektuje následující nastavení:
 
 	:guilabel:`Tab Width`
 		Number of spaces to expand tabs in diffs

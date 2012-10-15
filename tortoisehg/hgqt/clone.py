@@ -21,7 +21,7 @@ from tortoisehg.hgqt import cmdui, qtlib
 class CloneDialog(QDialog):
 
     cmdfinished = pyqtSignal(int)
-    clonedRepository = pyqtSignal(QString)
+    clonedRepository = pyqtSignal(QString, QString)
 
     def __init__(self, args=None, opts={}, parent=None):
         super(CloneDialog, self).__init__(parent)
@@ -154,13 +154,13 @@ class CloneDialog(QDialog):
         self.startrev_chk, self.startrev_text = chktext(_('Start revision:'),
                                                         stretch=40)
 
-        self.hgcmd_lbl = QLabel(_('Hg command:'))
-        self.hgcmd_lbl.setAlignment(Qt.AlignRight)
-        self.hgcmd_txt = QLineEdit()
-        self.hgcmd_txt.setReadOnly(True)
-        grid.addWidget(self.hgcmd_lbl, 3, 0)
-        grid.addWidget(self.hgcmd_txt, 3, 1)
-        self.hgcmd_txt.setMinimumWidth(400)
+        self.hmcmd_lbl = QLabel(_('Hg command:'))
+        self.hmcmd_lbl.setAlignment(Qt.AlignRight)
+        self.hmcmd_txt = QLineEdit()
+        self.hmcmd_txt.setReadOnly(True)
+        grid.addWidget(self.hmcmd_lbl, 3, 0)
+        grid.addWidget(self.hmcmd_txt, 3, 1)
+        self.hmcmd_txt.setMinimumWidth(400)
 
         ## command widget
         self.cmd = cmdui.Widget(True, True, self)
@@ -296,7 +296,7 @@ class CloneDialog(QDialog):
         cmdline.append(src)
         if dest:
             cmdline.append(dest)
-        self.hgcmd_txt.setText(hglib.tounicode(' '.join(['hg'] + cmdline)))
+        self.hmcmd_txt.setText(hglib.tounicode(' '.join(['hg'] + cmdline)))
         return cmdline
 
     def startrev_available(self):
@@ -467,7 +467,8 @@ class CloneDialog(QDialog):
         if not ret:
             # Let the workbench know that a repository has been successfully
             # cloned
-            self.clonedRepository.emit(self.dest_combo.currentText())
+            self.clonedRepository.emit(self.dest_combo.currentText(),
+                self.src_combo.currentText())
 
     def onCloseClicked(self):
         if self.ret is 0:
@@ -521,6 +522,17 @@ class CloneDialog(QDialog):
             self.remote_text.setDisabled(True)
             self.startrev_chk.setDisabled(True)
             self.startrev_text.setDisabled(True)
+
+    def accept(self):
+        if self.cmd.core.running():
+            return
+        QDialog.accept(self)
+
+    def reject(self):
+        if self.cmd.core.running():
+            self.cmd.cancel()
+            return
+        QDialog.reject(self)
 
 def run(ui, *pats, **opts):
     return CloneDialog(pats, opts)

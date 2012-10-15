@@ -243,6 +243,22 @@
             </property>
             <layout class="QHBoxLayout" name="horizontalLayout">
              <item>
+              <widget class="QCheckBox" name="body_check">
+               <property name="toolTip">
+                <string>send patches as part of the email body</string>
+               </property>
+               <property name="text">
+                <string>body</string>
+               </property>
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
               <widget class="QCheckBox" name="attach_check">
                <property name="toolTip">
                 <string>send patches as attachments</string>
@@ -482,6 +498,7 @@
   <tabstop>gitpatch_radio</tabstop>
   <tabstop>plainpatch_radio</tabstop>
   <tabstop>bundle_radio</tabstop>
+  <tabstop>body_check</tabstop>
   <tabstop>attach_check</tabstop>
   <tabstop>inline_check</tabstop>
   <tabstop>diffstat_check</tabstop>

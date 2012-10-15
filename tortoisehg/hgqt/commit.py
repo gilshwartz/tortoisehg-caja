@@ -6,20 +6,26 @@
 # GNU General Public License version 2, incorporated herein by reference.
 
 import os
+import re
 
-from mercurial import ui, util, error
+from mercurial import ui, util, error, scmutil, phases
 
-from tortoisehg.util import hglib, shlib, wconfig, bugtraq
+from tortoisehg.util import hglib, shlib, wconfig
 
 from tortoisehg.hgqt.i18n import _
 from tortoisehg.hgqt.messageentry import MessageEntry
 from tortoisehg.hgqt import qtlib, qscilib, status, cmdui, branchop, revpanel
-from tortoisehg.hgqt import hgrcutil, mq
+from tortoisehg.hgqt import hgrcutil, mq, lfprompt, i18n
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from PyQt4.Qsci import QsciAPIs
 
+if os.name == 'nt':
+    from tortoisehg.util import bugtraq
+    _hasbugtraq = True
+else:
+    _hasbugtraq = False
 
 # Technical Debt for CommitWidget
 #  disable commit button while no message is entered or no files are selected
@@ -30,7 +36,6 @@ from PyQt4.Qsci import QsciAPIs
 class CommitWidget(QWidget, qtlib.TaskWidget):
     'A widget that encompasses a StatusWidget and commit extras'
     commitButtonEnable = pyqtSignal(bool)
-    mqButtonEnable = pyqtSignal(bool)
     linkActivated = pyqtSignal(QString)
     showMessage = pyqtSignal(unicode)
     commitComplete = pyqtSignal()
@@ -57,8 +62,12 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
         opts['ciexclude'] = repo.ui.config('tortoisehg', 'ciexclude', '')
         opts['pushafter'] = repo.ui.config('tortoisehg', 'cipushafter', '')
         opts['autoinc'] = repo.ui.config('tortoisehg', 'autoinc', '')
+        opts['recurseinsubrepos'] = repo.ui.config('tortoisehg', 'recurseinsubrepos', None)
         opts['bugtraqplugin'] = repo.ui.config('tortoisehg', 'issue.bugtraqplugin', None)
         opts['bugtraqparameters'] = repo.ui.config('tortoisehg', 'issue.bugtraqparameters', None)
+        if opts['bugtraqparameters']:
+            opts['bugtraqparameters'] = os.path.expandvars(opts['bugtraqparameters'])
+        opts['bugtraqtrigger'] = repo.ui.config('tortoisehg', 'issue.bugtraqtrigger', None)
         self.opts = opts # user, date
 
         self.stwidget = status.StatusWidget(repo, pats, opts, self)
@@ -112,23 +121,34 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
         tbar.addAction(_('Options')).triggered.connect(self.details)
         tbar.setIconSize(QSize(16,16))
 
-        if self.opts['bugtraqplugin'] != None:
-            self.bugtraq = self.createBugTracker()
-            try:
-                parameters = self.opts['bugtraqparameters']
-                linktext = self.bugtraq.get_link_text(parameters)
-            except Exception, e:
-                tracker = self.opts['bugtraqplugin'].split(' ', 1)[1]
-                qtlib.ErrorMsgBox(_('Issue Tracker'),
-                                  _('Failed to load issue tracker \'%s\': %s'
-                                    % (tracker, e)),
-                                  parent=self)
-                self.bugtraq = None
-            else:
-                # connect UI because we have a valid bug tracker
-                self.commitComplete.connect(self.bugTrackerPostCommit)
-                tbar.addAction(linktext).triggered.connect(
-                    self.getBugTrackerCommitMessage)
+        if _hasbugtraq and self.opts['bugtraqplugin'] != None:
+            # We create the "Show Issues" button, but we delay its setup
+            # because creating the bugtraq object is slow and blocks the GUI,
+            # which would result in a noticeable slow down while creating the commit widget
+            self.showIssues = tbar.addAction(_('Show Issues'))
+            self.showIssues.setEnabled(False)
+            self.showIssues.setToolTip(_('Please wait...'))
+            def setupBugTraqButton():
+                self.bugtraq = self.createBugTracker()
+                try:
+                    parameters = self.opts['bugtraqparameters']
+                    linktext = self.bugtraq.get_link_text(parameters)
+                except Exception, e:
+                    tracker = self.opts['bugtraqplugin'].split(' ', 1)[1]
+                    errormsg =  _('Failed to load issue tracker \'%s\': %s') \
+                                 % (tracker, hglib.tounicode(str(e)))
+                    self.showIssues.setToolTip(errormsg)
+                    qtlib.ErrorMsgBox(_('Issue Tracker'), errormsg,
+                                      parent=self)
+                    self.bugtraq = None
+                else:
+                    # connect UI because we have a valid bug tracker
+                    self.commitComplete.connect(self.bugTrackerPostCommit)
+                    self.showIssues.setText(linktext)
+                    self.showIssues.triggered.connect(self.getBugTrackerCommitMessage)
+                    self.showIssues.setToolTip(_('Show Issues...'))
+                    self.showIssues.setEnabled(True)
+            QTimer.singleShot(100, setupBugTraqButton)
 
         self.stopAction = tbar.addAction(_('Stop'))
         self.stopAction.triggered.connect(self.stop)
@@ -140,7 +160,7 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
         vbox.addLayout(hbox, 0)
         self.buttonHBox = hbox
 
-        if embedded and 'mq' in self.repo.extensions():
+        if 'mq' in self.repo.extensions():
             self.hasmqbutton = True
             pnhbox = QHBoxLayout()
             self.pnlabel = QLabel()
@@ -152,6 +172,17 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
             vbox.addLayout(pnhbox)
         else:
             self.hasmqbutton = False
+
+        class TruncLabel(QLabel):
+            def __init__(self):
+                QLabel.__init__(self)
+            def minimumSizeHint(self):
+                s = QLabel.minimumSizeHint(self)
+                return QSize(0, s.height())
+
+        self.optionslabel = TruncLabel()
+        self.optionslabel.setAcceptDrops(False)
+        vbox.addWidget(self.optionslabel, 0)
 
         self.pcsinfo = revpanel.ParentWidget(repo)
         vbox.addWidget(self.pcsinfo, 0)
@@ -182,11 +213,6 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
         # add our splitter where the docf used to be
         self.stwidget.split.addWidget(self.split)
         self.msgte = msgte
-        if not self.hasmqbutton:
-            QShortcut(QKeySequence('Ctrl+Return'), self,
-                      self.commit).setContext(Qt.WidgetWithChildrenShortcut)
-            QShortcut(QKeySequence('Ctrl+Enter'), self,
-                      self.commit).setContext(Qt.WidgetWithChildrenShortcut)
 
     @property
     def rev(self):
@@ -208,7 +234,7 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
             preferredActionName = self._getPreferredActionName()
             curractionName = self.mqgroup.checkedAction()._name
             if curractionName != preferredActionName:
-                self.mqSetAction(refresh=True,
+                self.commitSetAction(refresh=True,
                     actionName=preferredActionName)
 
     def _getPreferredActionName(self):
@@ -228,16 +254,30 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
                 # Set the button to QRefresh
                 return 'qref'
 
-    def mqSetupButton(self):
+    def commitSetupButton(self):
         ispatch = lambda r: 'qtip' in r.changectx('.').tags()
         notpatch = lambda r: 'qtip' not in r.changectx('.').tags()
-        acts = (
-            ('commit', _('Commit changes'), _('Commit'), notpatch),
-            ('qnew', _('Create a new patch'), _('QNew'), None),
-            ('qref', _('Refresh current patch'), _('QRefresh'), ispatch),
-        )
+        def canamend(r):
+            if ispatch(r):
+                return False
+            ctx = r.changectx('.')
+            return not ctx.children() \
+                and ctx.phase() != phases.public \
+                and len(ctx.parents()) < 2 \
+                and len(r.changectx(None).parents()) < 2
 
-        class MQToolButton(QToolButton):
+        acts = [
+            ('commit', _('Commit changes'), _('Commit'), notpatch),
+            ('amend', _('Amend current revision'), _('Amend'), canamend),
+        ]
+        if self.hasmqbutton:
+            acts += [
+                ('qnew', _('Create a new patch'), _('QNew'), None),
+                ('qref', _('Refresh current patch'), _('QRefresh'), ispatch),
+            ]
+        acts = tuple(acts)
+
+        class CommitToolButton(QToolButton):
             def styleOption(self):
                 opt = QStyleOptionToolButton()
                 opt.initFrom(self)
@@ -257,13 +297,13 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
                 # Set the desired width to keep the button from resizing
                 return QSize(self._width, QToolButton.sizeHint(self).height())
 
-        self.mqtb = mqtb = MQToolButton(self)
-        mqtb.setBold()
-        mqtb.setPopupMode(QToolButton.MenuButtonPopup)
-        fmk = lambda s: mqtb.fontMetrics().width(hglib.tounicode(s[2]))
-        mqtb._width = max(map(fmk, acts)) + 4*mqtb.menuButtonWidth()
+        self.committb = committb = CommitToolButton(self)
+        committb.setBold()
+        committb.setPopupMode(QToolButton.MenuButtonPopup)
+        fmk = lambda s: committb.fontMetrics().width(hglib.tounicode(s[2]))
+        committb._width = max(map(fmk, acts)) + 4*committb.menuButtonWidth()
 
-        class MQMenu(QMenu):
+        class CommitButtonMenu(QMenu):
             def __init__(self, parent, repo):
                 self.repo = repo
                 return QMenu.__init__(self, parent)
@@ -275,8 +315,8 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
                         a.setEnabled(a._enablefunc(self.repo))
                 return QMenu.showEvent(self, event)
         self.mqgroup = QActionGroup(self)
-        mqmenu = MQMenu(mqtb, self.repo)
-        menurefresh = lambda: self.mqSetAction(refresh=True)
+        commitbmenu = CommitButtonMenu(committb, self.repo)
+        menurefresh = lambda: self.commitSetAction(refresh=True)
         for a in acts:
             action = QAction(a[1], self.mqgroup)
             action._name = a[0]
@@ -284,19 +324,19 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
             action._enablefunc = a[3]
             action.triggered.connect(menurefresh)
             action.setCheckable(True)
-            mqmenu.addAction(action)
-        mqtb.setMenu(mqmenu)
-        mqtb.clicked.connect(self.mqPerformAction)
-        self.mqButtonEnable.connect(mqtb.setEnabled)
-        self.mqSetAction(actionName=self._getPreferredActionName())
+            commitbmenu.addAction(action)
+        committb.setMenu(commitbmenu)
+        committb.clicked.connect(self.mqPerformAction)
+        self.commitButtonEnable.connect(committb.setEnabled)
+        self.commitSetAction(actionName=self._getPreferredActionName())
         sc = QShortcut(QKeySequence('Ctrl+Return'), self, self.mqPerformAction)
         sc.setContext(Qt.WidgetWithChildrenShortcut)
         sc = QShortcut(QKeySequence('Ctrl+Enter'), self, self.mqPerformAction)
         sc.setContext(Qt.WidgetWithChildrenShortcut)
-        return mqtb
+        return committb
 
     @pyqtSlot(bool)
-    def mqSetAction(self, refresh=False, actionName=None):
+    def commitSetAction(self, refresh=False, actionName=None):
         if actionName:
             selectedAction = \
                 [act for act in self.mqgroup.actions() \
@@ -314,34 +354,35 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
             self.stwidget.setPatchContext(None)
             refreshwctx = refresh and oldpctx is not None
         else:
-            self.pnlabel.setVisible(False)
-            self.pnedit.setVisible(False)
+            if self.hasmqbutton:
+                self.pnlabel.setVisible(False)
+                self.pnedit.setVisible(False)
             ispatch = 'qtip' in pctx.tags()
             def switchAction(action, name):
                 action.setChecked(False)
-                action = self.mqtb.menu().getActionByName(name)
+                action = self.committb.menu().getActionByName(name)
                 action.setChecked(True)
                 return action
             if curraction._name == 'qref' and not ispatch:
                 curraction = switchAction(curraction, 'commit')
             elif curraction._name == 'commit' and ispatch:
                 curraction = switchAction(curraction, 'qref')
-            if curraction._name == 'qref':
+            if curraction._name in ('qref', 'amend'):
                 refreshwctx = refresh
                 self.stwidget.setPatchContext(pctx)
             elif curraction._name == 'commit':
                 refreshwctx = refresh and oldpctx is not None
                 self.stwidget.setPatchContext(None)
-        if curraction._name == 'qref':
-            if self.lastAction != 'qref':
+        if curraction._name in ('qref', 'amend'):
+            if self.lastAction not in ('qref', 'amend'):
                 self.lastCommitMsg = self.msgte.text()
             self.setMessage(hglib.tounicode(pctx.description()))
         else:
-            if self.lastAction == 'qref':
+            if self.lastAction in ('qref', 'amend'):
                 self.setMessage(self.lastCommitMsg)
         if refreshwctx:
             self.stwidget.refreshWctx()
-        self.mqtb.setText(curraction._text)
+        self.committb.setText(curraction._text)
         self.lastAction = curraction._name
 
     def getBranchCommandLine(self, branchName, repo):
@@ -394,26 +435,33 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
         curraction = self.mqgroup.checkedAction()
         if curraction._name == 'commit':
             return self.commit()
+        elif curraction._name == 'amend':
+            return self.commit(amend=True)
 
         # Check if we need to change branch first
-        commandlines = []
+        wholecmdlines = []  # [[cmd1, ...], [cmd2, ...], ...]
         if self.branchop:
-            commandlines, newbranch = self.getBranchCommandLine(self.branchop,
-                                                                self.repo)
-            if commandlines is None:
+            cmdlines, newbranch = self.getBranchCommandLine(self.branchop,
+                                                            self.repo)
+            if cmdlines is None:
                 return
+            wholecmdlines.extend(cmdlines)
+
         olist = ('user', 'date')
-        cmdlines = commandlines + mq.mqNewRefreshCommand(self.repo,
+        cmdlines = mq.mqNewRefreshCommand(self.repo,
                                           curraction._name == 'qnew',
                                           self.stwidget, self.pnedit,
                                           self.msgte.text(), self.opts, olist)
+        if not cmdlines:
+            return
+        wholecmdlines.extend(cmdlines)
+
         self.repo.incrementBusyCount()
         self.currentAction = curraction._name
         self.currentProgress = _('MQ Action', 'start progress')
         self.progress.emit(*cmdui.startProgress(self.currentProgress, ''))
         self.commitButtonEnable.emit(False)
-        self.mqButtonEnable.emit(False)
-        self.runner.run(*cmdlines)
+        self.runner.run(*wholecmdlines)
 
     @pyqtSlot(QString, QString)
     def fileDisplayed(self, wfile, contents):
@@ -453,6 +501,8 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
         self.msgte.lexer().setAPIs(self._apis)
 
     def bugTrackerPostCommit(self):
+        if not _hasbugtraq or self.opts['bugtraqtrigger'] != 'commit':
+            return
         # commit already happened, get last message in history
         message = self.lastmessage
         error = self.bugtraq.on_commit_finished(message)
@@ -468,7 +518,7 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
 
     def getBugTrackerCommitMessage(self):
         parameters = self.opts['bugtraqparameters']
-        message = self.getMessage()
+        message = self.getMessage(True)
         newMessage = self.bugtraq.get_commit_message(parameters, message)
         self.setMessage(newMessage)
 
@@ -495,6 +545,11 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
         self.refresh()
 
     @pyqtSlot()
+    def refreshWctx(self):
+        'User has requested a working context refresh'
+        self.stwidget.refreshWctx() # Trigger reload of working context
+
+    @pyqtSlot()
     def reload(self):
         'User has requested a reload'
         self.repo.thginvalidate()
@@ -503,7 +558,8 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
 
     def refresh(self):
         ispatch = self.repo.changectx('.').thgmqappliedpatch()
-        self.commitButtonEnable.emit(not ispatch)
+        if not self.hasmqbutton:
+            self.commitButtonEnable.emit(not ispatch)
         self.msgte.refresh(self.repo)
 
         # Update branch operation button
@@ -516,6 +572,21 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
             title = _('New Branch: ') + self.branchop
         self.branchbutton.setText(title)
 
+        # Update options label, showing only whitelisted options.
+        opts = []
+        for opt, value in self.opts.iteritems():
+            if opt in ['user', 'date', 'pushafter', 'autoinc',
+                       'recurseinsubrepos']:
+                if value is True:
+                    opts.append('--' + opt)
+                elif value:
+                    opts.append('--%s=%s' % (opt, value))
+
+        self.optionslabelfmt = _('<b>Selected Options:</b> %s')
+        self.optionslabel.setText(self.optionslabelfmt
+                                  % hglib.tounicode(' '.join(opts)))
+        self.optionslabel.setVisible(bool(opts))
+
         # Update parent csinfo widget
         self.pcsinfo.set_revision(None)
         self.pcsinfo.update()
@@ -525,9 +596,9 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
         # be nicer if csinfo exposed this information, or if csinfo could hold
         # widgets like pnlabel.
         if self.hasmqbutton:
-            parent = hglib.fromunicode(_('Parent:'))
-            patchname = hglib.fromunicode(_('Patch name:'))
-            text = hglib.fromunicode(self.pcsinfo.revlabel.text())
+            parent = _('Parent:')
+            patchname = _('Patch name:')
+            text = unicode(self.pcsinfo.revlabel.text())
             cellend = '</td>'
             firstidx = text.find(cellend) + len(cellend)
             secondidx = text[firstidx:].rfind('</tr>')
@@ -536,7 +607,7 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
                 self.pnlabel.setText(start + text[firstidx+secondidx:])
             else:
                 self.pnlabel.setText(patchname)
-            self.mqSetAction()
+            self.commitSetAction()
 
     def branchOp(self):
         d = branchop.BranchOpDialog(self.repo, self.branchop, self)
@@ -544,6 +615,14 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
         d.setWindowModality(Qt.WindowModal)
         if d.exec_() == QDialog.Accepted:
             self.branchop = d.branchop
+            if self.branchop is False:
+                if not self.getMessage(True).strip():
+                    engmsg = self.repo.ui.configbool(
+                        'tortoisehg', 'engmsg', False)
+                    msgset = i18n.keepgettext()._('Close %s branch')
+                    text = engmsg and msgset['id'] or msgset['str']
+                    self.setMessage(unicode(text) %
+                                    hglib.tounicode(self.repo[None].branch()))
             self.refresh()
 
     def canUndo(self):
@@ -566,28 +645,31 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
                                  QMessageBox.Ok | QMessageBox.Cancel)
         if d != QMessageBox.Ok:
             return
-        self.repo.incrementBusyCount()
-        self.repo.rollback()
-        self.repo.decrementBusyCount()
-        self.reload()
-        QTimer.singleShot(500, lambda: shlib.shell_notify([self.repo.root]))
+        self.currentAction = 'rollback'
+        self.currentProgress = _('Rollback', 'start progress')
+        self.progress.emit(*cmdui.startProgress(self.currentProgress, ''))
+        self.commitButtonEnable.emit(False)
+        self.runner.run(['rollback'])
+        self.stopAction.setEnabled(True)
 
     def updateRecentMessages(self):
         # Define a menu that lists recent messages
-        m = QMenu()
+        m = QMenu(self.recentMessagesButton)
         for s in self.msghistory:
             title = s.split('\n', 1)[0][:70]
             def overwriteMsg(newMsg): return lambda: self.msgSelected(newMsg)
             m.addAction(title).triggered.connect(overwriteMsg(s))
         self.recentMessagesButton.setMenu(m)
 
-    def getMessage(self):
+    def getMessage(self, allowreplace):
         text = self.msgte.text()
         try:
-            text = hglib.fromunicode(text, 'strict')
+            return hglib.fromunicode(text, 'strict')
         except UnicodeEncodeError:
-            pass # TODO
-        return text
+            if allowreplace:
+                return hglib.fromunicode(text, 'replace')
+            else:
+                raise
 
     def msgSelected(self, message):
         if self.msgte.text() and self.msgte.isModified():
@@ -645,8 +727,8 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
         self.stwidget.saveSettings(s, lpref+'status')
         s.setValue(gpref+'history-'+repoid, self.msghistory)
         s.setValue(gpref+'userhist', self.userhist)
+        msg = self.getMessage(True)
         try:
-            msg = self.getMessage()
             self.repo.opener('cur-message.txt', 'w').write(msg)
         except EnvironmentError:
             pass
@@ -666,15 +748,45 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
         self.userhist.insert(0, user)
         self.userhist = self.userhist[:10]
 
-    def commit(self):
+    def commit(self, amend=False):
         repo = self.repo
-        msg = self.getMessage()
+        try:
+            msg = self.getMessage(False)
+        except UnicodeEncodeError:
+            res = qtlib.CustomPrompt(
+                    _('Message Translation Failure'),
+                    _('Unable to translate message to local encoding\n'
+                      'Consider setting HGENCODING environment variable\n'
+                      'Replace untranslatable characters with "?"?\n'), self,
+                     (_('&Replace'), _('Cancel')), 0, 1, []).run()
+            if res == 0:
+                msg = self.getMessage(True)
+                self.msgte.setText(hglib.tounicode(msg))
+            self.msgte.setFocus()
+            return
+
         if not msg:
             qtlib.WarningMsgBox(_('Nothing Commited'),
                                 _('Please enter commit message'),
                                 parent=self)
             self.msgte.setFocus()
             return
+
+        linkmandatory = self.repo.ui.configbool('tortoisehg',
+                                                'issue.linkmandatory', False)
+        if linkmandatory:
+            issueregex = self.repo.ui.config('tortoisehg', 'issue.regex')
+            if issueregex:
+                m = re.search(issueregex, msg)
+                if not m:
+                    qtlib.WarningMsgBox(_('Nothing Commited'),
+                                        _('No issue link was found in the commit message.  '
+                                          'The commit message should contain an issue '
+                                          'link.  Configure this in the \'Issue Tracking\' '
+                                          'section of the settings.'),
+                                        parent=self)
+                    self.msgte.setFocus()
+                    return False
 
         commandlines = []
 
@@ -689,15 +801,19 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
                                                                 self.repo)
             if commandlines is None:
                 return
-        self.files = self.stwidget.getChecked('MAR?!S')
-        if not (self.files or brcmd or newbranch):
+        if len(repo.parents()) > 1:
+            merge = True
+            self.files = []
+        else:
+            merge = False
+            self.files = self.stwidget.getChecked('MAR?!S')
+        canemptycommit = bool(brcmd or newbranch or amend)
+        if not (self.files or canemptycommit or merge):
             qtlib.WarningMsgBox(_('No files checked'),
                                 _('No modified files checkmarked for commit'),
                                 parent=self)
             self.stwidget.tv.setFocus()
             return
-        if len(repo.parents()) > 1:
-            self.files = []
 
         user = qtlib.getCurrentUsername(self, self.repo, self.opts)
         if not user:
@@ -706,12 +822,27 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
 
         checkedUnknowns = self.stwidget.getChecked('?I')
         if checkedUnknowns:
-            res = qtlib.CustomPrompt(
-                    _('Confirm Add'),
-                    _('Add selected untracked files?'), self,
-                    (_('&Add'), _('Cancel')), 0, 1,
-                    checkedUnknowns).run()
+            confirm = self.repo.ui.configbool('tortoisehg', 'confirmaddfiles', True)
+            if confirm:
+                res = qtlib.CustomPrompt(
+                        _('Confirm Add'),
+                        _('Add selected untracked files?'), self,
+                        (_('&Add'), _('Cancel')), 0, 1,
+                        checkedUnknowns).run()
+            else:
+                res = 0
             if res == 0:
+                haslf = 'largefiles' in repo.extensions()
+                if haslf:
+                    result = lfprompt.promptForLfiles(self, repo.ui, repo,
+                                                      checkedUnknowns)
+                    if not result:
+                        return
+                    checkedUnknowns, lfiles = result
+                    if lfiles:
+                        cmd = ['add', '--repository', repo.root, '--large'] + \
+                            [repo.wjoin(f) for f in lfiles]
+                        commandlines.append(cmd)
                 cmd = ['add', '--repository', repo.root] + \
                       [repo.wjoin(f) for f in checkedUnknowns]
                 commandlines.append(cmd)
@@ -719,11 +850,15 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
                 return
         checkedMissing = self.stwidget.getChecked('!')
         if checkedMissing:
-            res = qtlib.CustomPrompt(
-                    _('Confirm Remove'),
-                    _('Remove selected deleted files?'), self,
-                    (_('&Remove'), _('Cancel')), 0, 1,
-                    checkedMissing).run()
+            confirm = self.repo.ui.configbool('tortoisehg', 'confirmdeletefiles', True)
+            if confirm:
+                res = qtlib.CustomPrompt(
+                        _('Confirm Remove'),
+                        _('Remove selected deleted files?'), self,
+                        (_('&Remove'), _('Cancel')), 0, 1,
+                        checkedMissing).run()
+            else:
+                res = 0
             if res == 0:
                 cmd = ['remove', '--repository', repo.root] + \
                       [repo.wjoin(f) for f in checkedMissing]
@@ -747,13 +882,25 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
             dcmd = []
         cmdline = ['commit', '--repository', repo.root, '--verbose',
                    '--user', user, '--message='+msg]
-        cmdline += dcmd + brcmd + [repo.wjoin(f) for f in self.files]
+        cmdline += dcmd + brcmd
+
+        if self.opts.get('recurseinsubrepos'):
+            cmdline.append('--subrepos')
+
+        if amend:
+            cmdline.append('--amend')
+
+        if not self.files and canemptycommit and not merge:
+            # make sure to commit empty changeset by excluding all files
+            cmdline.extend(['--exclude', repo.root])
+
+        cmdline.append('--')
+        cmdline.extend([repo.wjoin(f) for f in self.files])
         if len(repo.parents()) == 1:
             for fname in self.opts.get('autoinc', '').split(','):
                 fname = fname.strip()
                 if fname:
-                    cmdline.extend(['--include', fname])
-
+                    cmdline.append(repo.wjoin(fname))
         commandlines.append(cmdline)
 
         if self.opts.get('pushafter'):
@@ -761,11 +908,13 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
             commandlines.append(cmd)
 
         repo.incrementBusyCount()
-        self.currentAction = 'commit'
+        if amend:
+            self.currentAction = 'amend'
+        else:
+            self.currentAction = 'commit'
         self.currentProgress = _('Commit', 'start progress')
         self.progress.emit(*cmdui.startProgress(self.currentProgress, ''))
         self.commitButtonEnable.emit(False)
-        self.mqButtonEnable.emit(False)
         self.runner.run(*commandlines)
         self.stopAction.setEnabled(True)
 
@@ -776,16 +925,18 @@ class CommitWidget(QWidget, qtlib.TaskWidget):
         self.progress.emit(*cmdui.stopProgress(self.currentProgress))
         self.stopAction.setEnabled(False)
         self.commitButtonEnable.emit(True)
-        self.mqButtonEnable.emit(True)
         self.repo.decrementBusyCount()
         if ret == 0:
+            if self.currentAction == 'rollback':
+                shlib.shell_notify([self.repo.root])
+                return
             self.branchop = None
             umsg = self.msgte.text()
-            if self.currentAction != 'qref':
+            if self.currentAction not in ('qref', 'amend'):
                 self.lastCommitMsg = ''
                 if self.currentAction == 'commit':
                     # capture last message for BugTraq plugin
-                    self.lastmessage = self.getMessage()
+                    self.lastmessage = self.getMessage(True)
                 if umsg:
                     self.addMessageToHistory(umsg)
                 self.setMessage('')
@@ -915,7 +1066,22 @@ class DetailsDialog(QDialog):
         hbox.addWidget(self.autoincle)
         hbox.addWidget(autoincsave)
         layout.addLayout(hbox)
-
+        
+        hbox = QHBoxLayout()
+        recursesave = QPushButton(_('Save in Repo'))
+        recursesave.clicked.connect(self.saveRecurseInSubrepos)
+        self.recursecb = QCheckBox(_('Recurse into subrepositories (--subrepos)'))
+        SP = QSizePolicy
+        self.recursecb.setSizePolicy(SP(SP.Expanding, SP.Minimum))
+        #self.recursecb.toggled.connect(recursesave.setEnabled)
+        
+        if opts.get('recurseinsubrepos'):
+            self.recursecb.setChecked(True)
+            
+        hbox.addWidget(self.recursecb)
+        hbox.addWidget(recursesave)
+        layout.addLayout(hbox)
+        
         BB = QDialogButtonBox
         bb = QDialogButtonBox(BB.Ok|BB.Cancel)
         bb.accepted.connect(self.accept)
@@ -928,7 +1094,7 @@ class DetailsDialog(QDialog):
         self.saveToPath([fn])
 
     def saveGlobal(self):
-        self.saveToPath(hglib.user_rcpath())
+        self.saveToPath(scmutil.userrcpath())
 
     def saveToPath(self, path):
         fn, cfg = hgrcutil.loadIniFile(path, self)
@@ -998,6 +1164,29 @@ class DetailsDialog(QDialog):
             qtlib.WarningMsgBox(_('Unable to write configuration file'),
                                 hglib.tounicode(e), parent=self)
 
+    def saveRecurseInSubrepos(self):
+        path = os.path.join(self.repo.root, '.hg', 'hgrc')
+        fn, cfg = hgrcutil.loadIniFile([path], self)
+        if not hasattr(cfg, 'write'):
+            qtlib.WarningMsgBox(_('Unable to save recurse in subrepos.'),
+                   _('Iniparse must be installed.'), parent=self)
+            return
+        if fn is None:
+            return
+        try:
+            state = self.recursecb.isChecked()
+            if state:
+                cfg.set('tortoisehg', 'recurseinsubrepos', state)
+            else:
+                try:
+                    del cfg['tortoisehg']['recurseinsubrepos']
+                except KeyError:
+                    pass
+            wconfig.writefile(cfg, fn)
+        except IOError, e:
+            qtlib.WarningMsgBox(_('Unable to write configuration file'),
+                                hglib.tounicode(e), parent=self)
+
     def accept(self):
         outopts = {}
         if self.datecb.isChecked():
@@ -1040,6 +1229,16 @@ class DetailsDialog(QDialog):
         else:
             outopts['pushafter'] = ''
 
+        if self.autoinccb.isChecked():
+            outopts['autoinc'] = hglib.fromunicode(self.autoincle.text())
+        else:
+            outopts['autoinc'] = ''
+
+        if self.recursecb.isChecked():
+            outopts['recurseinsubrepos'] = 'true'
+        else:
+            outopts['recurseinsubrepos'] = ''
+        
         self.outopts = outopts
         QDialog.accept(self)
 
@@ -1061,8 +1260,8 @@ class CommitDialog(QDialog):
         toplayout = QVBoxLayout()
         toplayout.setContentsMargins(5, 5, 5, 0)
         layout.addLayout(toplayout)
-        
-        commit = CommitWidget(repo, pats, opts, False, self)
+
+        commit = CommitWidget(repo, pats, opts, False, self, rev='.')
         toplayout.addWidget(commit, 1)
 
         self.statusbar = cmdui.ThgStatusBar(self)
@@ -1071,16 +1270,15 @@ class CommitDialog(QDialog):
         commit.linkActivated.connect(self.linkActivated)
 
         BB = QDialogButtonBox
-        bb = QDialogButtonBox(BB.Ok|BB.Close|BB.Discard)
-        bb.accepted.connect(self.accept)
+        bb = QDialogButtonBox(BB.Close|BB.Discard)
         bb.rejected.connect(self.reject)
         bb.button(BB.Discard).setText('Undo')
         bb.button(BB.Discard).clicked.connect(commit.rollback)
         bb.button(BB.Close).setDefault(False)
         bb.button(BB.Discard).setDefault(False)
-        bb.button(BB.Ok).setDefault(True)
-        self.commitButton = bb.button(BB.Ok)
-        self.commitButton.setText(_('Commit', 'action button'))
+        self.commitButton = commit.commitSetupButton()
+        bb.addButton(self.commitButton, BB.AcceptRole)
+
         self.bb = bb
 
         toplayout.addWidget(self.bb)
@@ -1091,14 +1289,13 @@ class CommitDialog(QDialog):
         commit.loadSettings(s, 'committool')
         repo.repositoryChanged.connect(self.updateUndo)
         commit.commitComplete.connect(self.postcommit)
-        commit.commitButtonEnable.connect(self.commitButton.setEnabled)
 
         self.setWindowTitle(_('%s - commit') % repo.displayname)
         self.commit = commit
         self.commit.reload()
         self.updateUndo()
         self.commit.msgte.setFocus()
-        QShortcut(QKeySequence.Refresh, self, self.refresh)
+        qtlib.newshortcutsforstdkey(QKeySequence.Refresh, self, self.refresh)
 
     def done(self, ret):
         self.commit.repo.configChanged.disconnect(self.commit.configChanged)
@@ -1143,15 +1340,28 @@ class CommitDialog(QDialog):
                 self.commit.stwidget.refthread.wait()
                 QTimer.singleShot(0, self.reject)
 
+    def promptExit(self):
+        exit = self.commit.canExit()
+        if not exit:
+            exit = qtlib.QuestionMsgBox(_('TortoiseHg Commit'),
+                _('Are you sure that you want to cancel the commit operation?'),
+                parent=self)
+        if exit:
+            s = QSettings()
+            s.setValue('commit/geom', self.saveGeometry())
+            self.commit.saveSettings(s, 'committool')
+        return exit
+    
     def accept(self):
         self.commit.commit()
 
     def reject(self):
-        if self.commit.canExit():
-            s = QSettings()
-            s.setValue('commit/geom', self.saveGeometry())
-            self.commit.saveSettings(s, 'committool')
+        if self.promptExit():
             QDialog.reject(self)
+
+    def closeEvent(self, event):
+        if not self.promptExit():
+            event.ignore()
 
 def run(ui, *pats, **opts):
     from tortoisehg.util import paths

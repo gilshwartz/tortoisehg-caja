@@ -81,13 +81,13 @@ class ArchiveDialog(QDialog):
         self.grid.addWidget(self.zipradio, 9, 1)
 
         # some extras
-        self.hgcmd_lbl = QLabel(_('Hg command:'))
-        self.hgcmd_lbl.setAlignment(Qt.AlignRight|Qt.AlignVCenter)
-        self.hgcmd_txt = QLineEdit()
-        self.hgcmd_txt.setReadOnly(True)
+        self.hmcmd_lbl = QLabel(_('Hg command:'))
+        self.hmcmd_lbl.setAlignment(Qt.AlignRight|Qt.AlignVCenter)
+        self.hmcmd_txt = QLineEdit()
+        self.hmcmd_txt.setReadOnly(True)
         self.keep_open_chk = QCheckBox(_('Always show output'))
-        self.grid.addWidget(self.hgcmd_lbl, 10, 0)
-        self.grid.addWidget(self.hgcmd_txt, 10, 1)
+        self.grid.addWidget(self.hmcmd_lbl, 10, 0)
+        self.grid.addWidget(self.hmcmd_txt, 10, 1)
         self.grid.addWidget(self.keep_open_chk, 11, 1)
 
         # command widget
@@ -191,14 +191,13 @@ class ArchiveDialog(QDialog):
         FD = QFileDialog
         if select['type'] == 'files':
             caption = _('Select Destination Folder')
-            response = FD.getExistingDirectory(parent=self, caption=caption,
-                    directory=dest, options=FD.ShowDirsOnly | FD.ReadOnly)
+            filter = ''
         else:
-            caption = _('Open File')
+            caption = _('Select Destination File')
             ext = '*' + select['ext']
             filter = '%s (%s)\nAll Files (*.*)' % (select['label'], ext)
-            response = FD.getOpenFileName(parent=self, caption=caption,
-                    directory=dest, filter=filter, options=FD.ReadOnly)
+        response = FD.getSaveFileName(parent=self, caption=caption,
+                directory=dest, filter=filter, options=FD.ReadOnly)
         if response:
             self.dest_edit.setText(response)
             self.update_path()
@@ -301,7 +300,7 @@ class ArchiveDialog(QDialog):
                 cmdline.append(f)
         cmdline.append('--')
         cmdline.append(dest)  # dest: local str
-        self.hgcmd_txt.setText(hglib.tounicode('hg ' + ' '.join(cmdline)))
+        self.hmcmd_txt.setText(hglib.tounicode('hg ' + ' '.join(cmdline)))
         return cmdline
 
     def archive(self):

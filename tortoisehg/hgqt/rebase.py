@@ -69,6 +69,9 @@ class RebaseDialog(QDialog):
                                      'from their original branch'))
         self.detachchk.setChecked(opts.get('detach', True))
         self.layout().addWidget(self.detachchk)
+        self.collapsechk = QCheckBox(_('Collapse the rebased changesets '))
+        self.collapsechk.setChecked(opts.get('collapse', False))
+        self.layout().addWidget(self.collapsechk)
 
         self.autoresolvechk = QCheckBox(_('Automatically resolve merge conflicts '
                                            'where possible'))
@@ -102,8 +105,8 @@ class RebaseDialog(QDialog):
         self.bbox = bbox
 
         if self.checkResolve() or not (s or d):
-            for w in (srcb, destb, sep, self.keepchk, self.detachchk,
-                      self.keepbrancheschk):
+            for w in (srcb, destb, sep, self.keepchk, self.detachchk, 
+                      self.collapsechk, self.keepbrancheschk):
                 w.setHidden(True)
             self.cmd.setShowOutput(True)
         else:
@@ -156,6 +159,7 @@ class RebaseDialog(QDialog):
         self.keepchk.setEnabled(False)
         self.keepbrancheschk.setEnabled(False)
         self.detachchk.setEnabled(False)
+        self.collapsechk.setEnabled(False)
         cmdline = ['rebase', '--repository', self.repo.root]
         cmdline += ['--config', 'ui.merge=internal:' +
                     (self.autoresolvechk.isChecked() and 'merge' or 'fail')]
@@ -168,6 +172,8 @@ class RebaseDialog(QDialog):
                 cmdline += ['--keepbranches']
             if self.detachchk.isChecked():
                 cmdline += ['--detach']
+            if self.collapsechk.isChecked():
+                cmdline += ['--collapse']
             if self.svnchk is not None and self.svnchk.isChecked():
                 cmdline += ['--svn']
             else:
@@ -189,6 +195,9 @@ class RebaseDialog(QDialog):
             msg = _('Rebase is complete')
             if self.aborted:
                 msg = _('Rebase aborted')
+            elif ret == 255:
+                msg = _('Rebase failed')
+                self.cmd.setShowOutput(True)  # contains hint
             self.showMessage.emit(msg)
             self.rebasebtn.setEnabled(True)
             self.rebasebtn.setText(_('Close'))

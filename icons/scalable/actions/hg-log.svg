@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
+
 <svg
    xmlns:dc="http://purl.org/dc/elements/1.1/"
    xmlns:cc="http://creativecommons.org/ns#"
@@ -13,9 +14,9 @@
    height="32"
    id="svg2"
    sodipodi:version="0.32"
-   inkscape:version="0.46"
+   inkscape:version="0.48.0 r9654"
    version="1.0"
-   sodipodi:docname="log.svg"
+   sodipodi:docname="hg-log.svg"
    inkscape:output_extension="org.inkscape.output.svg.inkscape">
   <defs
      id="defs4">
@@ -139,7 +140,8 @@
        y1="22.244335"
        x2="9.6913376"
        y2="26.859375"
-       gradientUnits="userSpaceOnUse" />
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1.1920272,0,0,1.3667825,-3.5744515,-11.932794)" />
     <linearGradient
        inkscape:collect="always"
        xlink:href="#linearGradient5209"
@@ -155,7 +157,7 @@
        xlink:href="#linearGradient5209"
        id="linearGradient3832"
        gradientUnits="userSpaceOnUse"
-       gradientTransform="matrix(0.6666667,0,0,0.75,17,8.6250015)"
+       gradientTransform="matrix(0.79709556,0,0,0.94809792,16.535185,1.7572829)"
        x1="11.5"
        y1="13"
        x2="11.5"
@@ -180,18 +182,20 @@
      objecttolerance="10"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="22.627416"
-     inkscape:cx="11.807022"
-     inkscape:cy="9.0043033"
+     inkscape:zoom="11.33"
+     inkscape:cx="11.810758"
+     inkscape:cy="9.0071522"
      inkscape:document-units="px"
      inkscape:current-layer="layer3"
      showgrid="true"
      inkscape:snap-bbox="true"
      inkscape:snap-nodes="true"
-     inkscape:window-width="1024"
-     inkscape:window-height="753"
-     inkscape:window-x="0"
-     inkscape:window-y="0">
+     inkscape:window-width="1218"
+     inkscape:window-height="778"
+     inkscape:window-x="54"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:snap-global="false">
     <inkscape:grid
        type="xygrid"
        id="grid2898"
@@ -226,8 +230,7 @@
      id="layer4"
      inkscape:label="Bitmap"
      style="display:none"
-     sodipodi:insensitive="true">
-  </g>
+     sodipodi:insensitive="true" />
   <g
      inkscape:groupmode="layer"
      id="layer3"
@@ -235,38 +238,41 @@
      style="display:inline">
     <path
        sodipodi:type="arc"
-       style="opacity:1;fill:url(#linearGradient3841);fill-opacity:1;stroke:#c17d11;stroke-width:1.06527162;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       style="fill:url(#linearGradient3841);fill-opacity:1;stroke:#c17d11;stroke-width:1.06527162;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
        id="path3380"
        sodipodi:cx="11.402098"
        sodipodi:cy="13.261669"
        sodipodi:rx="4.8613591"
        sodipodi:ry="4.7729712"
        d="M 16.263457,13.261709 A 4.8613591,4.7729712 0 1 1 16.248829,12.89168"
-       sodipodi:start="8.3121372e-06"
+       sodipodi:start="8.3121372e-006"
        sodipodi:end="6.2055899"
        sodipodi:open="true"
-       transform="matrix(0.9279594,0,0,0.949621,0.440686,2.4064404)" />
+       transform="matrix(1.1095084,0,0,1.2004449,-3.087324,-6.8098803)" />
     <path
        sodipodi:nodetypes="cccccc"
        id="path2816"
-       d="M 20.252743,16.252743 L 26.75,16.25 L 29.75,19.25 L 29.75,27.75 L 20.252743,27.747257 L 20.252743,16.252743 z"
-       style="fill:#eeeeec;stroke:#204a87;stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;display:inline" />
+       d="m 20.424305,11.399744 7.768404,-0.0035 3.586928,3.792391 0,10.74511 -11.355332,-0.0035 0,-14.530567 z"
+       style="fill:#eeeeec;stroke:#204a87;stroke-width:0.61470503;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;display:inline"
+       inkscape:connector-curvature="0" />
     <rect
-       y="18"
-       x="22"
-       height="6"
-       width="6"
+       y="13.608505"
+       x="22.513403"
+       height="7.5847836"
+       width="7.1738596"
        id="rect2818"
-       style="fill:url(#linearGradient3832);fill-opacity:1;stroke:none;stroke-width:1.04799998;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;display:inline" />
+       style="fill:url(#linearGradient3832);fill-opacity:1;stroke:none;display:inline" />
     <path
        sodipodi:nodetypes="cccc"
        id="path2820"
-       d="M 26.75,16.25 L 29.75,19.25 L 26.75,19.25 L 26.75,16.25 z"
-       style="fill:#d3d7cf;fill-opacity:1;stroke:#204a87;stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;display:inline" />
+       d="m 28.192709,11.396275 3.586928,3.792393 -3.586928,0 0,-3.792393 z"
+       style="fill:#d3d7cf;fill-opacity:1;stroke:#204a87;stroke-width:0.61470503;stroke-linecap:butt;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;display:inline"
+       inkscape:connector-curvature="0" />
     <path
-       style="opacity:1;fill:url(#linearGradient3390);fill-opacity:1;stroke:#4e9a06;stroke-width:1;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-       d="M 8,20.5 C 6,20.5 4.5,22 4.5,24 L 4.5,29.5 L 17.5,29.5 L 17.5,24 C 17.5,22 16,20.5 14,20.5 L 8,20.5 z"
+       style="fill:url(#linearGradient3390);fill-opacity:1;stroke:#4e9a06;stroke-width:1.27641761;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+       d="m 5.9617668,16.086245 c -2.3840545,0 -4.1720956,2.050173 -4.1720956,4.783738 l 0,7.517303 15.4963558,0 0,-7.517303 c 0,-2.733565 -1.788042,-4.783738 -4.172097,-4.783738 l -7.1521632,0 z"
        id="rect2605"
-       sodipodi:nodetypes="ccccccc" />
+       sodipodi:nodetypes="ccccccc"
+       inkscape:connector-curvature="0" />
   </g>
 </svg>

@@ -176,7 +176,7 @@ class ExceptionMsgBox(QDialog):
                 fake = FakeRepo()
                 qtlib.editfiles(fake, [fname], lineno, parent=self)
             except Exception, e:
-                QDesktopServices.openUrl(QUrl.fromLocalFile(fname))
+                qtlib.openlocalurl(fname)
         if ref.startswith('#fix:'):
             from tortoisehg.hgqt import settings
             errtext = ref[5:].split(' ')[0]

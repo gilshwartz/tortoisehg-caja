@@ -30,8 +30,9 @@ class ImportDialog(QDialog):
 
     def __init__(self, repo, parent, **opts):
         super(ImportDialog, self).__init__(parent)
-        self.setWindowFlags(self.windowFlags() &
-                            ~Qt.WindowContextHelpButtonHint)
+        self.setWindowFlags(self.windowFlags()
+                            & ~Qt.WindowContextHelpButtonHint
+                            | Qt.WindowMaximizeButtonHint)
         self.setWindowIcon(qtlib.geticon('hg-import'))
 
         self.tempfiles = []
@@ -262,8 +263,8 @@ class ImportDialog(QDialog):
             for file in self.cslist.curitems:
                 shutil.copy(file, self.repo.shelfdir)
             return
-        hgcmd = ('import', 'copy', 'import --no-commit', 'qimport')[idx]
-        cmdline = hgcmd.split(' ') + ['--repository', self.repo.root]
+        hmcmd = ('import', 'copy', 'import --no-commit', 'qimport')[idx]
+        cmdline = hmcmd.split(' ') + ['--repository', self.repo.root]
         if self.p0chk.isChecked():
             cmdline.append('-p0')
         cmdline.extend(['--verbose', '--'])
@@ -321,6 +322,7 @@ class ImportDialog(QDialog):
             self.close_btn.setAutoDefault(True)
             self.close_btn.setFocus()
             self.cancel_btn.setHidden(True)
+            self.import_btn.setHidden(False)
         else:
             self.accept()
 

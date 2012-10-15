@@ -11,7 +11,7 @@ import shlex
 import binascii
 import cStringIO
 
-from mercurial import patch, util
+from mercurial import patch, util, error
 from mercurial import node
 from mercurial.util import propertycache
 from hgext import mq, record
@@ -42,6 +42,7 @@ class patchctx(object):
         self._mtime = None
         self._fsize = 0
         self._parseerror = None
+        self._phase = 'draft'
 
         try:
             self._mtime = os.path.getmtime(patchpath)
@@ -58,6 +59,8 @@ class patchctx(object):
         try:
             self._branch = ph.branch or ''
             self._node = binascii.unhexlify(ph.nodeid)
+            if self._repo.ui.configbool('mq', 'secret'):
+                self._phase = 'secret'
         except TypeError:
             pass
         except AttributeError:
@@ -66,9 +69,15 @@ class patchctx(object):
             ph.diffstartline = len(ph.comments)
             if ph.message:
                 ph.diffstartline += 1
+        except error.ConfigError:
+            pass
+
         self._user = ph.user or ''
-        self._date = ph.date and util.parsedate(ph.date) or util.makedate()
         self._desc = ph.message and '\n'.join(ph.message).strip() or ''
+        try:
+            self._date = ph.date and util.parsedate(ph.date) or util.makedate()
+        except error.Abort:
+            self._date = util.makedate()
 
     def invalidate(self):
         # ensure the patch contents are re-read
@@ -128,6 +137,11 @@ class patchctx(object):
     def thgmqunappliedpatch(self):  return True
     def thgid(self):                return self._identity
 
+    # largefiles/kbfiles methods
+    def hasStandin(self, file):     return False
+    def isStandin(self, path):      return False
+    def removeStandin(self, path):  return path
+
     def longsummary(self):
         summary = hglib.tounicode(self.description())
         if self._repo.ui.configbool('tortoisehg', 'longsummary'):
@@ -166,6 +180,9 @@ class patchctx(object):
                 chunk.write(buf)
             return buf.getvalue()
         return ''
+
+    def phasestr(self):
+        return self._phase
 
     @propertycache
     def _files(self):

@@ -67,6 +67,8 @@ launching other tools.
 			
 			View menu
 
+.. _workbench-repository-label:
+
 	:guilabel:`Repository`
 		Perform special actions on the active repository.
 
@@ -506,11 +508,11 @@ Examples::
 
 	BitBucket:
 	issue.regex = #(\d+)\b
-	issue.link = http://bitbucket.org/<your project and repo>/issue/{1}/
+	issue.link = https://bitbucket.org/<your project and repo>/issue/{1}/
 
 	Mercurial:
-	issue.regex = \bissue\d+\b
-	issue.link = http://mercurial.selenic.com/bts/
+	issue.regex = \bissue(\d+)\b
+	issue.link = http://bz.selenic.com/show_bug.cgi?id={1}
 
 Output Log Console
 ------------------

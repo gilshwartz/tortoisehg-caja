@@ -12,14 +12,13 @@ import time
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-from mercurial import hg, ui, url, util, error
-from mercurial import merge as mergemod
+from mercurial import patch
 from hgext import mq as mqmod
 
-from tortoisehg.util import hglib, patchctx
+from tortoisehg.util import hglib
 from tortoisehg.hgqt.i18n import _
 from tortoisehg.hgqt import qtlib, cmdui, rejects, qscilib, thgrepo, status
-from tortoisehg.hgqt import qqueue, qreorder, fileview, thgimport, messageentry
+from tortoisehg.hgqt import qqueue, qreorder, thgimport, messageentry
 from tortoisehg.hgqt.qtlib import geticon
 
 # TODO
@@ -353,7 +352,7 @@ class MQPatchesWidget(QDockWidget):
             uguards = hglib.tounicode(' '.join(item._thgguards))
         else:
             uguards = ''
-        new, ok = QInputDialog.getText(self,
+        new, ok = qtlib.getTextInput(self,
                       _('Configure guards'),
                       _('Input new guards for %s:') % hglib.tounicode(patch),
                       text=uguards)
@@ -532,6 +531,7 @@ class MQPatchesWidget(QDockWidget):
         self.setGuardsAct.setEnabled(False)
         self.qpopAct.setEnabled(bool(applied))
         self.qpopAllAct.setEnabled(bool(applied))
+        self.qreorderAct.setEnabled(bool(repo.thgmqunappliedpatches))
 
     def refreshSelectedGuards(self):
         total = len(self.allguards)
@@ -706,7 +706,8 @@ class MQWidget(QWidget, qtlib.TaskWidget):
             self.layout().addWidget(self.statusbar)
             self.progress.connect(self.statusbar.progress)
             self.showMessage.connect(self.statusbar.showMessage)
-            QShortcut(QKeySequence.Refresh, self, self.reload)
+            qtlib.newshortcutsforstdkey(QKeySequence.Refresh, self,
+                                        self.reload)
             self.resize(850, 550)
 
         self.loadConfigs()

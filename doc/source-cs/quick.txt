@@ -11,7 +11,7 @@ Všechny nástroje TortoiseHg jsou přístupné ze třech míst:
 
 1. Z aplikace :guilabel:`Workbench`
  
-   Workbench spustíme z menu Start nebo z kontextového menu aktivovaného poklepem pravé klávesy myši s kurzorem kdekoli v pracovní ploše (anglicky: by right clicking on the Desktop) - `Hg Workbench`. 
+   Verpánek spustíme z menu Start nebo z kontextového menu aktivovaného poklepem pravé klávesy myši s kurzorem kdekoli v pracovní ploše (anglicky: by right clicking on the Desktop) - `Hg Workbench`. 
 	
    .. figure:: figures/desktop-workbench.png
     :alt: Desktop Context Menu
@@ -118,7 +118,7 @@ pokud k tomu nemáme pádný důvod.
 Po stisku tlačítka :guilabel:`Create`, vytvoří Mercurial v našem projektovém adresáři složku :file:`.hg`. Zde si program ukládá všechna  verzovaná data. Této složce se říká `repozitář` nebo `store`, zatímco adresář, který obsahuje zdrojové soubory, je označován jako `pracovní adresář`.
 Se složkou :file:`.hg` nikdy přímo nepracujeme. Při zadávání příkazů se odkazujeme na pracovní adresář.
 
-Nový repozitář se také přidá do RepoRegistrů, pokud tuto operaci provedeme z verpánku.
+Nový repozitář se také přidá do RepoRegistrů, pokud tuto operaci provedeme z Verpánku.
 
 .. note:: 
     Mezi pracovním adresářem a repozitářem existuje tajemná symbióza. Jak později poznáme, mění se obsah pracovního adresáře podle aktuálně nastavené revize. Ponecháme-li aktuální starší revizi, můžeme případné novější soubory v Průzkumníku Windows nevidět!
@@ -127,7 +127,7 @@ Nový repozitář se také přidá do RepoRegistrů, pokud tuto operaci provedem
 	Ručně editovat soubory ve složce :file:`.hg` je nebezpečné, může dojít k poškození repozitáře. Jedinou výjimkou je konfigurační soubor :file:`.hg/hgrc`. 
 
 .. note::
-	Možná jste již vytvořil jeden či více repozitářů. Protože lze ve verpánku manipulovat s více repozitáři, můžete je přidat do panelu Repozitory Registry výběrem :menuselection:`File > Open Repozitory...`. Nebo můžete jejich složku přetáhnout z Průzkumníka.
+	Možná jste již vytvořil jeden či více repozitářů. Protože lze ve Verpánku manipulovat s více repozitáři, můžete je přidat do panelu Repozitory Registry výběrem :menuselection:`File > Open Repozitory...`. Nebo můžete jejich složku přetáhnout z Průzkumníka.
 
 	
 
@@ -192,7 +192,7 @@ Sdílení repozitáře
 ==================
 
 Nyní své výtvory již můžete sdílet s ostatními. Zkopírujete svůj repozitář
-někam, kam mají přístup všichni členové naší skupiny. Tomuto úkonu se říká
+někam, kam mají přístup všichni členové vaší skupiny. Tomuto úkonu se říká
 *klonování repozitáře*. Provést jej můžeme trojím způsobem:
 
 Workbench: Z menu vyberete :menuselection:`File > Clone repozitory...`
