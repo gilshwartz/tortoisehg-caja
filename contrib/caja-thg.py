@@ -5,16 +5,22 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2, incorporated herein by reference.
 
-from gi.repository import Caja
-from gi.repository import GObject
-from gi.repository import GLib
-from gi.repository import Gio
-from gi.repository import Gtk
+import gtk
+import gobject
+import caja
+import matevfs
 import os
 import sys
 
 thg_main     = 'thg'
-idstr_prefix = 'HgCaja3'
+idstr_prefix = 'HgCaja2'
+
+if gtk.gtk_version < (2, 14, 0):
+    # at least on 2.12.12, gtk widgets can be confused by control
+    # char markups (like "&#x1;"), so use cgi.escape instead
+    from cgi import escape as markup_escape_text
+else:
+    from gobject import markup_escape_text
 
 try:
     from mercurial import demandimport
@@ -56,7 +62,7 @@ demandimport.disable()
 
 nofilecmds = 'about serve synch repoconfig userconfig merge unmerge'.split()
 
-class HgExtensionDefault(GObject.GObject):
+class HgExtensionDefault:
 
     def __init__(self):
         self.scanStack = []
@@ -66,27 +72,17 @@ class HgExtensionDefault(GObject.GObject):
         from tortoisehg.util import menuthg
         self.hgtk = paths.find_in_path(thg_main)
         self.menu = menuthg.menuThg()
+        self.notify = os.path.expanduser('~/.tortoisehg/notify')
 
-        # Get the configuration directory path
         try:
-            self.notify = os.environ['XDG_CONFIG_HOME']
-        except KeyError:
-            self.notify = os.path.join('$HOME', '.config')
-
-        self.notify = os.path.expandvars(os.path.join(
-            self.notify,
-            'TortoiseHg'))
-
-        # Create folder if it does not exist
-        if not os.path.isdir(self.notify):
-            os.makedirs(self.notify)
-
-        # Create the notify file
-        self.notify = os.path.join(self.notify, 'notify')
-        open(self.notify, 'w').close()
-
-        self.gmon = Gio.file_new_for_path(self.notify).monitor(Gio.FileMonitorFlags.NONE, None)
-        self.gmon.connect('changed', self.notified)
+            f = open(self.notify, 'w')
+            f.close()
+            ds_uri = matevfs.get_uri_from_local_path(self.notify)
+            self.gmon = matevfs.monitor_add(ds_uri,
+                      matevfs.MONITOR_FILE, self.notified)
+        except (matevfs.NotSupportedError, IOError), e:
+            debugf('no notification because of %s', e)
+            self.notify = ''
 
     def icon(self, iname):
         return paths.get_tortoise_icon(iname)
@@ -187,10 +183,10 @@ class HgExtensionDefault(GObject.GObject):
                 # can not insert a separator till now
                 pass
             elif menu_info.isSubmenu():
-                if hasattr(Caja, 'Menu'):
-                    item = Caja.MenuItem(name=idstr, label=menu_info.menutext,
-                            tip=menu_info.helptext)
-                    submenu = Caja.Menu()
+                if hasattr(caja, 'Menu'):
+                    item = caja.MenuItem(idstr, menu_info.menutext,
+                            menu_info.helptext)
+                    submenu = caja.Menu()
                     item.set_submenu(submenu)
                     for subitem in self._buildMenu(menu_info.get_menus()):
                         submenu.append_item(subitem)
@@ -200,7 +196,7 @@ class HgExtensionDefault(GObject.GObject):
                         items.append(subitem)
             else:
                 if menu_info.state:
-                    item = Caja.MenuItem.new(idstr,
+                    item = caja.MenuItem(idstr,
                                  menu_info.menutext,
                                  menu_info.helptext,
                                  self.icon(menu_info.icon))
@@ -222,7 +218,7 @@ class HgExtensionDefault(GObject.GObject):
             return self.buildMenu(vfs_files, False)
 
     def get_columns(self):
-        return Caja.Column.new(idstr_prefix + "::80hg_status",
+        return caja.Column(idstr_prefix + "::80hg_status",
                                "hg_status",
                                "Hg Status",
                                "Version control status"),
@@ -240,9 +236,7 @@ class HgExtensionDefault(GObject.GObject):
         emblem, status = cache2state.get(cachestate, (None, '?'))
         return emblem, status
 
-    def notified(self, monitor=None, changedfile=None, otherfile=None, event=None):
-        if event == Gio.FileMonitorEvent.CHANGES_DONE_HINT: return
-
+    def notified(self, mon_uri=None, event_uri=None, event=None):
         debugf('notified from hgtk, %s', event, level='n')
         f = open(self.notify, 'a+')
         files = None
@@ -277,7 +271,7 @@ class HgExtensionDefault(GObject.GObject):
             self._invalidate_dirs()
         else:
             #group invalidation of directories
-            GLib.timeout_add(200, self._invalidate_dirs)
+            gobject.timeout_add(200, self._invalidate_dirs)
 
     def _invalidate_dirs(self):
         for path in self.inv_dirs:
@@ -286,19 +280,19 @@ class HgExtensionDefault(GObject.GObject):
                 vfs.invalidate_extension_info()
         self.inv_dirs.clear()
 
-    # property page borrowed from http://www.gnome.org/~gpoo/hg/caja-hg/
+    # property page borrowed from http://www.gnome.org/~gpoo/hg/nautilus-hg/
     def __add_row(self, row, label_item, label_value):
-        label = Gtk.Label(label_item)
+        label = gtk.Label(label_item)
         label.set_use_markup(True)
         label.set_alignment(1, 0)
-        self.table.attach(label, 0, 1, row, row + 1, Gtk.AttachOptions.FILL, Gtk.AttachOptions.FILL, 0, 0)
+        self.table.attach(label, 0, 1, row, row + 1, gtk.FILL, gtk.FILL, 0, 0)
         label.show()
 
-        label = Gtk.Label(label_value)
+        label = gtk.Label(label_value)
         label.set_use_markup(True)
         label.set_alignment(0, 1)
         label.show()
-        self.table.attach(label, 1, 2, row, row + 1, Gtk.AttachOptions.FILL, 0, 0, 0)
+        self.table.attach(label, 1, 2, row, row + 1, gtk.FILL, 0, 0, 0)
 
     def get_property_pages(self, vfs_files):
         if len(vfs_files) != 1:
@@ -326,13 +320,13 @@ class HgExtensionDefault(GObject.GObject):
         parents = '\n'.join([short(p.node()) for p in ctx.parents()])
         description = ctx.description()
         user = ctx.user()
-        user = GLib.markup_escape_text(user)
+        user = markup_escape_text(user)
         tags = ', '.join(ctx.tags())
         branch = ctx.branch()
 
-        self.property_label = Gtk.Label('Mercurial')
+        self.property_label = gtk.Label('Mercurial')
 
-        self.table = Gtk.Table(7, 2, False)
+        self.table = gtk.Table(7, 2, False)
         self.table.set_border_width(5)
         self.table.set_row_spacings(5)
         self.table.set_col_spacings(5)
@@ -348,7 +342,7 @@ class HgExtensionDefault(GObject.GObject):
             self.__add_row(6, '<b>Branch</b>:', branch)
 
         self.table.show()
-        return Caja.PropertyPage.new("MercurialPropertyPage::status",
+        return caja.PropertyPage("MercurialPropertyPage::status",
                                      self.property_label, self.table),
 
 class HgExtensionIcons(HgExtensionDefault):
@@ -357,7 +351,7 @@ class HgExtensionIcons(HgExtensionDefault):
         '''Queue file for emblem and hg status update'''
         self.scanStack.append(file)
         if len(self.scanStack) == 1:
-            GLib.idle_add(self.fileinfo_on_idle)
+            gobject.idle_add(self.fileinfo_on_idle)
 
     def fileinfo_on_idle(self):
         '''Update emblem and hg status for files when there is time'''
@@ -382,8 +376,8 @@ class HgExtensionIcons(HgExtensionDefault):
         return True
 
 if ui.ui().configbool("tortoisehg", "overlayicons", default = True):
-    class HgExtension(HgExtensionIcons, Caja.MenuProvider, Caja.ColumnProvider, Caja.PropertyPageProvider, Caja.InfoProvider):
+    class HgExtension(HgExtensionIcons, caja.MenuProvider, caja.ColumnProvider, caja.PropertyPageProvider, caja.InfoProvider):
         pass
 else:
-    class HgExtension(HgExtensionDefault, Caja.MenuProvider, Caja.ColumnProvider, Caja.PropertyPageProvider):
+    class HgExtension(HgExtensionDefault, caja.MenuProvider, caja.ColumnProvider, caja.PropertyPageProvider):
         pass
