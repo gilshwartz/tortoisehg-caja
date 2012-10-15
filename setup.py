@@ -421,7 +421,7 @@ def setup_posix():
     _data_files += [(os.path.join('share', root),
         [os.path.join(root, file_) for file_ in files])
         for root, dirs, files in os.walk('locale')]
-    _data_files += [('/usr/share/caja-python/extensions/',
+    _data_files += [('lib/caja/extensions-2.0/python',
                      ['contrib/caja-thg.py'])]
 
     # Create a config.py.  Distributions will need to supply their own
